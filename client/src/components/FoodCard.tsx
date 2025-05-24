@@ -2,10 +2,10 @@ import React from 'react';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import AllergyBadge from '@/components/AllergyBadge';
 import { FoodItem } from '@/stores/useRecommendStore';
 import { UserInfo } from '@/types';
-import { formatCurrency } from '@/lib/utils';
+import { Check, Info, Plus } from 'lucide-react';
+import AllergyBadge from './AllergyBadge';
 
 interface FoodCardProps {
   food: FoodItem;
@@ -15,80 +15,111 @@ interface FoodCardProps {
   onViewDetails: (food: FoodItem) => void;
 }
 
-const FoodCard: React.FC<FoodCardProps> = ({ 
-  food, 
-  isSelected, 
-  userInfo, 
-  onSelect, 
-  onViewDetails 
+const FoodCard: React.FC<FoodCardProps> = ({
+  food,
+  isSelected,
+  userInfo,
+  onSelect,
+  onViewDetails
 }) => {
+  // Determine if food contains any allergens
+  const hasAllergens = userInfo.allergies && userInfo.allergies.length > 0 && food.tags &&
+    userInfo.allergies.some(allergy => 
+      food.tags?.includes(allergy.toLowerCase())
+    );
+
+  // Get food tags for display (limited to first 2)
+  const displayTags = food.tags?.slice(0, 2) || [];
+
   return (
-    <Card 
-      className={`relative overflow-hidden transition-all duration-200 ${
-        isSelected 
-          ? 'border-2 border-primary shadow-md' 
-          : 'border border-neutral-200 hover:shadow-md'
-      }`}
-    >
-      {/* Allergy badge */}
-      <AllergyBadge food={food} userInfo={userInfo} />
-      
-      {/* Food image */}
-      <div className="relative h-48 overflow-hidden">
-        <img 
-          src={food.image} 
-          alt={food.name}
-          className="w-full h-full object-cover"
-        />
-        <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-2">
-          <div className="flex justify-between items-center">
-            <Badge variant="outline" className="bg-white/90 text-black text-xs">
-              {food.category}
-            </Badge>
-            <Badge variant="outline" className="bg-white/90 text-black text-xs">
-              {food.calories} kcal
-            </Badge>
-          </div>
+    <Card className={`overflow-hidden transition-shadow hover:shadow-md ${isSelected ? 'ring-2 ring-primary' : ''}`}>
+      {/* Food Image */}
+      {food.image && (
+        <div className="relative h-40 overflow-hidden">
+          <img 
+            src={food.image} 
+            alt={food.name} 
+            className="w-full h-full object-cover"
+          />
+          
+          {/* Selection Indicator */}
+          {isSelected && (
+            <div className="absolute top-2 right-2 bg-primary text-white rounded-full p-1">
+              <Check className="h-4 w-4" />
+            </div>
+          )}
+          
+          {/* Allergy Badge */}
+          {hasAllergens && (
+            <AllergyBadge food={food} userInfo={userInfo} />
+          )}
         </div>
-      </div>
+      )}
       
-      {/* Food info */}
+      {/* Food Information */}
       <CardContent className="p-4">
-        <h3 className="text-lg font-semibold mb-1">{food.name}</h3>
-        <div className="flex justify-between items-center mb-2">
-          <p className="text-sm text-neutral-600">
-            {food.mainNutrient.name}: {food.mainNutrient.amount}{food.mainNutrient.unit}
-          </p>
-          <p className="text-sm font-semibold">{formatCurrency(food.price)}</p>
+        <h3 className="font-medium text-base mb-1 line-clamp-2">{food.name}</h3>
+        
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-sm text-neutral-600">{food.calories || food.kcal || 0} kcal</span>
+          <span className="text-sm font-medium">${food.price?.toFixed(2)}</span>
         </div>
-        {food.tags && (
-          <div className="flex flex-wrap gap-1 mt-2">
-            {food.tags.slice(0, 3).map((tag, index) => (
-              <Badge key={index} variant="secondary" className="text-xs">
-                {tag}
-              </Badge>
-            ))}
-          </div>
-        )}
+        
+        {/* Nutrition Pills */}
+        <div className="flex flex-wrap gap-1 mb-3">
+          {food.protein && (
+            <Badge variant="outline" className="bg-blue-50 text-blue-800 border-blue-200 text-xs">
+              Protein: {food.protein}g
+            </Badge>
+          )}
+          
+          {food.carbs && (
+            <Badge variant="outline" className="bg-amber-50 text-amber-800 border-amber-200 text-xs">
+              Carbs: {food.carbs}g
+            </Badge>
+          )}
+          
+          {food.fat && (
+            <Badge variant="outline" className="bg-purple-50 text-purple-800 border-purple-200 text-xs">
+              Fat: {food.fat}g
+            </Badge>
+          )}
+        </div>
+        
+        {/* Tags */}
+        <div className="flex flex-wrap gap-1">
+          {displayTags.map(tag => (
+            <Badge key={tag} variant="secondary" className="text-xs">
+              {tag}
+            </Badge>
+          ))}
+        </div>
       </CardContent>
       
-      {/* Actions */}
-      <CardFooter className="p-4 pt-0 flex gap-2">
+      {/* Card Actions */}
+      <CardFooter className="p-2 pt-0 flex justify-between gap-2">
         <Button 
-          variant="outline" 
+          variant="ghost" 
           size="sm" 
-          className="w-1/2"
+          className="text-xs w-1/2"
           onClick={() => onViewDetails(food)}
         >
+          <Info className="h-3 w-3 mr-1" />
           Details
         </Button>
+        
         <Button 
           variant={isSelected ? "destructive" : "default"}
-          size="sm" 
-          className="w-1/2"
+          size="sm"
+          className="text-xs w-1/2"
           onClick={() => onSelect(food)}
         >
-          {isSelected ? 'Remove' : 'Select'}
+          {isSelected ? 'Remove' : (
+            <>
+              <Plus className="h-3 w-3 mr-1" />
+              Select
+            </>
+          )}
         </Button>
       </CardFooter>
     </Card>

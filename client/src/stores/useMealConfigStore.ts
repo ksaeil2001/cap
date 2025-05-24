@@ -1,14 +1,16 @@
 import { create } from 'zustand';
-import { Food, MealTime } from '@/types';
-import { FoodItem, NutritionSummary } from './useRecommendStore';
-import { useUserStore } from './useUserStore';
+import { FoodItem, NutritionSummary } from '@/stores/useRecommendStore';
+import { useUserStore } from '@/stores/useUserStore';
+import { MealTime } from '@/types';
 
+// Validation status for meal configuration
 interface ValidationStatus {
   budgetExceeded: boolean;
   nutritionMismatch: boolean;
   hasAllergies: boolean;
 }
 
+// Meal configuration for all meal types
 interface MealConfig {
   breakfast: FoodItem[];
   lunch: FoodItem[];
@@ -16,6 +18,7 @@ interface MealConfig {
   [key: string]: FoodItem[];
 }
 
+// Meal configuration store interface
 interface MealConfigStore {
   meals: MealConfig;
   nutritionSummary: NutritionSummary;
@@ -43,6 +46,7 @@ const initialNutritionSummary: NutritionSummary = {
   allergy: false
 };
 
+// Create the meal configuration store
 export const useMealConfigStore = create<MealConfigStore>((set, get) => ({
   // Initial state
   meals: {
@@ -58,165 +62,163 @@ export const useMealConfigStore = create<MealConfigStore>((set, get) => ({
     hasAllergies: false
   },
   
-  // Actions
+  // Add a food to a specific meal type
   addFoodToMeal: (mealType, food) => {
     set(state => {
-      // Create a copy of current meals
-      const updatedMeals = { ...state.meals };
+      // Create a new meals object with the food added to the specified meal type
+      const updatedMeals = {
+        ...state.meals,
+        [mealType]: [...state.meals[mealType], food]
+      };
       
-      // Add food to the specified meal
-      updatedMeals[mealType] = [...updatedMeals[mealType], food];
-      
-      return { meals: updatedMeals };
+      // Return the updated state
+      return {
+        meals: updatedMeals
+      };
     });
     
-    // Update nutrition summary after adding food
+    // Update nutrition summary and validation status after adding food
     get().updateNutritionSummary();
   },
   
+  // Remove a food from a specific meal type
   removeFoodFromMeal: (mealType, foodId) => {
     set(state => {
-      // Create a copy of current meals
-      const updatedMeals = { ...state.meals };
+      // Create a new meals object with the food removed from the specified meal type
+      const updatedMeals = {
+        ...state.meals,
+        [mealType]: state.meals[mealType].filter(food => food.id !== foodId)
+      };
       
-      // Remove food from the specified meal
-      updatedMeals[mealType] = updatedMeals[mealType].filter(food => food.id !== foodId);
-      
-      return { meals: updatedMeals };
+      // Return the updated state
+      return {
+        meals: updatedMeals
+      };
     });
     
-    // Update nutrition summary after removing food
+    // Update nutrition summary and validation status after removing food
     get().updateNutritionSummary();
   },
   
+  // Clear all meals
   clearMeals: () => {
     set({
       meals: {
         breakfast: [],
         lunch: [],
         dinner: []
-      },
-      nutritionSummary: initialNutritionSummary,
-      budgetUsed: 0,
-      validationStatus: {
-        budgetExceeded: false,
-        nutritionMismatch: false,
-        hasAllergies: false
       }
     });
+    
+    // Update nutrition summary and validation status after clearing meals
+    get().updateNutritionSummary();
   },
   
+  // Update nutrition summary based on current meals
   updateNutritionSummary: () => {
-    set(state => {
-      const allFoods = [
-        ...state.meals.breakfast,
-        ...state.meals.lunch,
-        ...state.meals.dinner
-      ];
-      
-      // Calculate actual nutrition values
-      const totalCalories = allFoods.reduce((sum, food) => sum + food.calories, 0);
-      const totalProtein = allFoods.reduce((sum, food) => {
-        if (food.mainNutrient.name.toLowerCase() === 'protein') {
-          return sum + food.mainNutrient.amount;
+    const state = get();
+    const userInfo = useUserStore.getState().userInfo;
+    
+    // Calculate total nutrition values from all meals
+    let totalCalories = 0;
+    let totalProtein = 0;
+    let totalFat = 0;
+    let totalCarbs = 0;
+    let totalCost = 0;
+    let hasAllergies = false;
+    
+    // Process all meal types
+    Object.values(state.meals).forEach(foods => {
+      foods.forEach(food => {
+        totalCalories += food.calories || food.kcal || 0;
+        totalProtein += food.protein || 0;
+        totalFat += food.fat || 0;
+        totalCarbs += food.carbs || 0;
+        totalCost += food.price || 0;
+        
+        // Check for allergies
+        if (userInfo.allergies && userInfo.allergies.length > 0 && food.tags) {
+          const allergensPresent = userInfo.allergies.some(allergy => 
+            food.tags?.includes(allergy.toLowerCase())
+          );
+          if (allergensPresent) {
+            hasAllergies = true;
+          }
         }
-        return sum;
-      }, 0);
-      
-      const totalFat = allFoods.reduce((sum, food) => {
-        if (food.mainNutrient.name.toLowerCase() === 'fats') {
-          return sum + food.mainNutrient.amount;
-        }
-        return sum;
-      }, 0);
-      
-      const totalCarbs = allFoods.reduce((sum, food) => {
-        if (food.mainNutrient.name.toLowerCase() === 'carbs') {
-          return sum + food.mainNutrient.amount;
-        }
-        return sum;
-      }, 0);
-      
-      // Calculate budget used
-      const totalCost = allFoods.reduce((sum, food) => sum + food.price, 0);
-      
-      // Get user info to calculate targets
-      const userInfo = useUserStore.getState().userInfo;
-      
-      // Calculate BMR and daily calorie target based on user info
-      let bmr = 0;
-      if (userInfo.gender === 'male') {
-        bmr = 10 * userInfo.weight + 6.25 * userInfo.height - 5 * userInfo.age + 5;
-      } else {
-        bmr = 10 * userInfo.weight + 6.25 * userInfo.height - 5 * userInfo.age - 161;
-      }
-      
-      // Apply activity multiplier
-      let calorieTarget = bmr;
-      if (userInfo.activityLevel === 'low') {
-        calorieTarget *= 1.2;
-      } else if (userInfo.activityLevel === 'medium') {
-        calorieTarget *= 1.55;
-      } else if (userInfo.activityLevel === 'high') {
-        calorieTarget *= 1.9;
-      } else {
-        calorieTarget *= 1.2; // Default to sedentary
-      }
-      
-      // Adjust based on goal
-      if (userInfo.goal === 'weight-loss') {
-        calorieTarget *= 0.8; // 20% deficit
-      } else if (userInfo.goal === 'muscle-gain') {
-        calorieTarget *= 1.1; // 10% surplus
-      }
-      
-      // Set macronutrient targets
-      const proteinTarget = userInfo.weight * (userInfo.goal === 'muscle-gain' ? 2 : 1.5); // g/kg of bodyweight
-      const fatTarget = (calorieTarget * 0.25) / 9; // 25% of calories from fat, 9 calories per gram
-      const carbsTarget = (calorieTarget * 0.5) / 4; // 50% of calories from carbs, 4 calories per gram
-      
-      // Check for allergies
-      const hasAllergies = userInfo.allergies.length > 0 && allFoods.some(food => 
-        userInfo.allergies.some(allergy => 
-          food.name.toLowerCase().includes(allergy.toLowerCase()) || 
-          (food.tags && food.tags.some(tag => tag.toLowerCase().includes(allergy.toLowerCase())))
-        )
-      );
-      
-      // Create updated nutrition summary
-      const updatedSummary: NutritionSummary = {
-        calories: { target: calorieTarget, actual: totalCalories },
-        protein: { target: proteinTarget, actual: totalProtein },
-        fat: { target: fatTarget, actual: totalFat },
-        carbs: { target: carbsTarget, actual: totalCarbs },
-        budget: { target: userInfo.budget, actual: totalCost },
-        allergy: hasAllergies
-      };
-      
-      // Update validation status
-      const validationStatus: ValidationStatus = {
-        budgetExceeded: totalCost > userInfo.budget,
-        nutritionMismatch: Math.abs(totalCalories - calorieTarget) > calorieTarget * 0.2, // Allow 20% deviation
-        hasAllergies: hasAllergies
-      };
-      
-      return { 
-        nutritionSummary: updatedSummary, 
-        budgetUsed: totalCost,
-        validationStatus
-      };
+      });
+    });
+    
+    // Calculate target values based on user info
+    // Note: These are simplified calculations; real-world applications would use more sophisticated formulas
+    const calorieTarget = userInfo.goal === 'weight-loss' ? 2000 : 2500; // Simplified target
+    const proteinTarget = userInfo.weight * 2; // 2g per kg of body weight
+    const fatTarget = calorieTarget * 0.3 / 9; // 30% of calories from fat (9 cal/g)
+    const carbsTarget = calorieTarget * 0.5 / 4; // 50% of calories from carbs (4 cal/g)
+    const budgetTarget = userInfo.budget || 0;
+    
+    // Create updated nutrition summary
+    const updatedSummary: NutritionSummary = {
+      calories: {
+        target: calorieTarget,
+        actual: totalCalories
+      },
+      protein: {
+        target: proteinTarget,
+        actual: totalProtein
+      },
+      fat: {
+        target: fatTarget,
+        actual: totalFat
+      },
+      carbs: {
+        target: carbsTarget,
+        actual: totalCarbs
+      },
+      budget: {
+        target: budgetTarget,
+        actual: totalCost
+      },
+      allergy: hasAllergies
+    };
+    
+    // Determine validation status
+    const validationStatus: ValidationStatus = {
+      budgetExceeded: totalCost > budgetTarget / 7, // Daily budget exceeded
+      nutritionMismatch: (
+        totalProtein < proteinTarget * 0.8 || 
+        totalProtein > proteinTarget * 1.2 ||
+        totalFat < fatTarget * 0.8 || 
+        totalFat > fatTarget * 1.2 ||
+        totalCarbs < carbsTarget * 0.8 || 
+        totalCarbs > carbsTarget * 1.2
+      ),
+      hasAllergies
+    };
+    
+    // Update state with new nutrition summary and validation status
+    set({
+      nutritionSummary: updatedSummary,
+      budgetUsed: totalCost,
+      validationStatus
     });
   },
   
-  // Helper methods
+  // Calculate total calories for a specific meal type
   getMealTotalCalories: (mealType) => {
-    const { meals } = get();
-    return meals[mealType].reduce((sum, food) => sum + food.calories, 0);
+    const state = get();
+    return state.meals[mealType].reduce(
+      (total, food) => total + (food.calories || food.kcal || 0), 
+      0
+    );
   },
   
+  // Calculate total cost for a specific meal type
   getMealTotalCost: (mealType) => {
-    const { meals } = get();
-    return meals[mealType].reduce((sum, food) => sum + food.price, 0);
+    const state = get();
+    return state.meals[mealType].reduce(
+      (total, food) => total + (food.price || 0), 
+      0
+    );
   }
 }));
 

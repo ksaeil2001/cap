@@ -1,38 +1,56 @@
 import React from 'react';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { MealTime } from '@/types';
+import { Coffee, UtensilsCrossed, Utensils } from 'lucide-react';
 
 interface MealTypeTabsProps {
   activeMealType: MealTime;
   onTabChange: (mealType: MealTime) => void;
 }
 
-const MealTypeTabs: React.FC<MealTypeTabsProps> = ({ activeMealType, onTabChange }) => {
-  const mealTypes: { id: MealTime; label: string }[] = [
-    { id: 'breakfast', label: 'Breakfast' },
-    { id: 'lunch', label: 'Lunch' },
-    { id: 'dinner', label: 'Dinner' },
+const MealTypeTabs: React.FC<MealTypeTabsProps> = ({ 
+  activeMealType, 
+  onTabChange 
+}) => {
+  const mealTypes: { id: MealTime; label: string; icon: React.ReactNode }[] = [
+    { 
+      id: 'breakfast', 
+      label: 'Breakfast', 
+      icon: <Coffee className="h-4 w-4 mr-2" /> 
+    },
+    { 
+      id: 'lunch', 
+      label: 'Lunch', 
+      icon: <UtensilsCrossed className="h-4 w-4 mr-2" /> 
+    },
+    { 
+      id: 'dinner', 
+      label: 'Dinner', 
+      icon: <Utensils className="h-4 w-4 mr-2" /> 
+    },
   ];
 
   return (
-    <div className="mb-8">
-      <div className="border-b border-neutral-200">
-        <nav className="-mb-px flex space-x-8 overflow-x-auto">
-          {mealTypes.map((mealType) => (
-            <button
-              key={mealType.id}
-              className={`py-4 px-1 font-medium transition-colors duration-200 ${
-                activeMealType === mealType.id
-                  ? "text-primary border-b-2 border-primary"
-                  : "text-neutral-500 hover:text-neutral-700"
-              }`}
-              onClick={() => onTabChange(mealType.id)}
-              aria-current={activeMealType === mealType.id ? 'page' : undefined}
+    <div className="mb-6">
+      <h3 className="text-lg font-medium mb-3">Select Meal Type</h3>
+      <Tabs 
+        value={activeMealType} 
+        onValueChange={(value) => onTabChange(value as MealTime)}
+        className="w-full"
+      >
+        <TabsList className="w-full">
+          {mealTypes.map((type) => (
+            <TabsTrigger 
+              key={type.id} 
+              value={type.id}
+              className="flex-1 flex items-center justify-center"
             >
-              {mealType.label}
-            </button>
+              {type.icon}
+              {type.label}
+            </TabsTrigger>
           ))}
-        </nav>
-      </div>
+        </TabsList>
+      </Tabs>
     </div>
   );
 };

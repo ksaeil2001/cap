@@ -1,268 +1,343 @@
-import { useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useUserStore } from "@/stores/useUserStore";
-import { useRecommendStore, FoodItem } from "@/stores/useRecommendStore";
-import { Button } from "@/components/ui/button";
-import { MealTime } from "@/types";
-import { getRecommendedFoods } from "@/api/mealApi";
-import { useToast } from "@/hooks/use-toast";
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Loader2, AlertTriangle } from 'lucide-react';
+import { useUserStore } from '@/stores/useUserStore';
+import { useRecommendStore, FoodItem } from '@/stores/useRecommendStore';
+import { getRecommendedFoods } from '@/api/mealApi';
+import NutritionProgressBar from '@/components/NutritionProgressBar';
+import FoodCardList from '@/components/FoodCardList';
+import FoodDetailModal from '@/components/FoodDetailModal';
+import MealTypeTabs from '@/components/MealTypeTabs';
+import { useToast } from '@/hooks/use-toast';
 
-// Import our new components
-import MealTypeTabs from "@/components/MealTypeTabs";
-import FoodCardList from "@/components/FoodCardList";
-import FoodDetailModal from "@/components/FoodDetailModal";
-
-const RecommendPage = () => {
+const RecommendPage: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const userInfo = useUserStore(state => state.userInfo);
+  
   const { 
-    selectedFoods, 
-    addFood, 
-    removeFood, 
-    clearFoods, 
-    setRecommendationData,
-    fallback
+    meals, 
+    summary, 
+    fallback, 
+    selectedFoods,
+    currentMealType,
+    setRecommendations,
+    selectFood,
+    removeFood,
+    setMealType
   } = useRecommendStore();
   
-  // Local state
   const [loading, setLoading] = useState(true);
-  const [foods, setFoods] = useState<FoodItem[]>([]);
-  const [activeMealType, setActiveMealType] = useState<MealTime>('breakfast');
+  const [error, setError] = useState<string | null>(null);
   const [selectedFood, setSelectedFood] = useState<FoodItem | null>(null);
   const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
   
-  // Group foods by meal type
-  const [mealTypeFoods, setMealTypeFoods] = useState<{
-    breakfast: FoodItem[];
-    lunch: FoodItem[];
-    dinner: FoodItem[];
-  }>({
-    breakfast: [],
-    lunch: [],
-    dinner: []
-  });
-
-  // Fetch recommended foods on component mount
+  // Fetch recommendations on component mount
   useEffect(() => {
-    const fetchRecommendedFoods = async () => {
-      setLoading(true);
+    const fetchRecommendations = async () => {
       try {
-        // Check if user info is available
-        if (!userInfo.height || !userInfo.weight || !userInfo.goal) {
+        setLoading(true);
+        setError(null);
+        
+        // Verify user has completed profile
+        if (!userInfo || !userInfo.gender || !userInfo.age || !userInfo.weight) {
           toast({
-            title: "Missing information",
-            description: "Please complete your profile first.",
+            title: "Profile incomplete",
+            description: "Please complete your profile information first.",
             variant: "destructive",
           });
           navigate("/");
           return;
         }
-
-        // Fetch recommended foods
-        const data = await getRecommendedFoods(userInfo);
-        setFoods(data);
         
-        // Generate meal type groupings
-        // Ensure foods are properly distributed and have unique IDs
-        const breakfastFoods = data
-          .filter((_, i) => i % 3 === 0)
-          .map((food, index) => ({
-            ...food,
-            id: `breakfast-${food.id}`
-          }));
+        // Get food recommendations
+        const response = await getRecommendedFoods(userInfo);
+        setRecommendations(
+          response.meals,
+          response.summary,
+          response.fallback
+        );
         
-        const lunchFoods = data
-          .filter((_, i) => i % 3 === 1)
-          .map((food, index) => ({
-            ...food,
-            id: `lunch-${food.id}`
-          }));
-        
-        const dinnerFoods = data
-          .filter((_, i) => i % 3 === 2)
-          .map((food, index) => ({
-            ...food,
-            id: `dinner-${food.id}`
-          }));
-        
-        setMealTypeFoods({
-          breakfast: breakfastFoods,
-          lunch: lunchFoods,
-          dinner: dinnerFoods
-        });
-        
-        // Create summary data for the recommendation store
-        // In a real app, this would come from the API
-        const mockSummary = {
-          calories: { target: 2000, actual: 1800 },
-          protein: { target: 150, actual: 120 },
-          fat: { target: 65, actual: 55 },
-          carbs: { target: 250, actual: 220 },
-          budget: { target: userInfo.budget, actual: data.reduce((sum, food) => sum + food.price, 0) },
-          allergy: false
-        };
-        
-        // Store in the global recommendation store
-        setRecommendationData({
-          meals: [breakfastFoods, lunchFoods, dinnerFoods],
-          summary: mockSummary,
-          fallback: false
-        });
+        // Show fallback warning if needed
+        if (response.fallback) {
+          toast({
+            title: "Limited recommendations",
+            description: "We've provided alternative options based on your preferences.",
+            variant: "default",
+          });
+        }
       } catch (error) {
-        console.error("Error fetching recommended foods:", error);
-        toast({
-          title: "Error",
-          description: "Failed to fetch food recommendations. Please try again.",
-          variant: "destructive",
-        });
+        console.error("Failed to fetch recommendations:", error);
+        setError("Failed to load food recommendations. Please try again.");
       } finally {
         setLoading(false);
       }
     };
-
-    fetchRecommendedFoods();
     
-    // Clear selected foods when component mounts
-    clearFoods();
-  }, [userInfo, navigate, toast, clearFoods, setRecommendationData]);
-
+    fetchRecommendations();
+  }, [userInfo, navigate, toast, setRecommendations]);
+  
   // Handle meal type tab change
-  const handleMealTypeChange = (mealType: MealTime) => {
-    setActiveMealType(mealType);
+  const handleMealTypeChange = (mealType: 'breakfast' | 'lunch' | 'dinner') => {
+    setMealType(mealType);
   };
-
+  
   // Handle food selection
   const handleSelectFood = (food: FoodItem) => {
-    if (selectedFoods.some(f => f.id === food.id)) {
+    const isAlreadySelected = selectedFoods.some(f => f.id === food.id);
+    
+    if (isAlreadySelected) {
       removeFood(food.id);
     } else {
-      addFood(food);
+      selectFood(food);
+    }
+    
+    // Close the modal if open
+    if (isDetailModalOpen) {
+      setIsDetailModalOpen(false);
     }
   };
-
-  // Open food detail modal
+  
+  // Handle viewing food details
   const handleViewDetails = (food: FoodItem) => {
     setSelectedFood(food);
     setIsDetailModalOpen(true);
   };
-
-  // Close food detail modal
-  const handleCloseDetailModal = () => {
-    setIsDetailModalOpen(false);
-    setSelectedFood(null);
-  };
-
-  // Handle retry when in fallback mode
-  const handleRetry = async () => {
-    setLoading(true);
-    try {
-      const data = await getRecommendedFoods(userInfo);
-      setFoods(data);
-      toast({
-        title: "Recommendations updated",
-        description: "We've refreshed your food recommendations.",
-      });
-    } catch (error) {
-      console.error("Error retrying recommendations:", error);
-      toast({
-        title: "Error",
-        description: "Failed to refresh recommendations. Please try again.",
-        variant: "destructive",
-      });
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // Continue to meal configuration
+  
+  // Handle continuing to meal configuration
   const handleContinue = () => {
     if (selectedFoods.length === 0) {
       toast({
         title: "No foods selected",
-        description: "Please select at least one food item.",
+        description: "Please select at least one food item before continuing.",
         variant: "destructive",
       });
       return;
     }
+    
     navigate("/meal-config");
   };
-
+  
+  // Get current meal foods
+  const getCurrentMealFoods = (): FoodItem[] => {
+    const mealIndex = currentMealType === 'breakfast' ? 0 : 
+                     currentMealType === 'lunch' ? 1 : 2;
+    
+    return meals[mealIndex] || [];
+  };
+  
+  // Render loading state
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+        <h2 className="text-2xl font-bold mb-2">Generating Recommendations</h2>
+        <p className="text-neutral-600 mb-8">
+          We're finding the perfect meals based on your profile...
+        </p>
+        
+        <div className="w-full max-w-md space-y-4">
+          <Skeleton className="h-[125px] w-full rounded-lg" />
+          <div className="grid grid-cols-2 gap-4">
+            <Skeleton className="h-[150px] w-full rounded-lg" />
+            <Skeleton className="h-[150px] w-full rounded-lg" />
+          </div>
+          <Skeleton className="h-[125px] w-full rounded-lg" />
+        </div>
+      </div>
+    );
+  }
+  
+  // Render error state
+  if (error) {
+    return (
+      <div className="flex flex-col items-center justify-center py-12">
+        <AlertTriangle className="h-12 w-12 text-destructive mb-4" />
+        <h2 className="text-2xl font-bold mb-2">Something Went Wrong</h2>
+        <p className="text-neutral-600 mb-6">{error}</p>
+        <Button onClick={() => window.location.reload()}>
+          Try Again
+        </Button>
+      </div>
+    );
+  }
+  
   return (
     <div>
-      <div className="mb-8 text-center">
-        <h2 className="text-3xl font-heading font-bold mb-4">Your Recommended Foods</h2>
+      <div className="mb-6 text-center">
+        <h2 className="text-3xl font-heading font-bold mb-4">Recommended Foods</h2>
         <p className="text-neutral-600 max-w-2xl mx-auto">
-          Based on your profile, we've selected these foods that match your nutritional needs and budget. 
-          Select items to add to your meal plan.
+          These foods are personalized based on your {userInfo.goal} goal, dietary preferences, and budget of ${userInfo.budget.toFixed(2)} per week.
+          Select items you like to include in your meal plan.
         </p>
       </div>
-
-      {/* Meal Type Tabs */}
-      <MealTypeTabs 
-        activeMealType={activeMealType} 
-        onTabChange={handleMealTypeChange} 
-      />
-
-      {/* Food Recommendations */}
-      {loading ? (
-        <div className="text-center py-10">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent align-[-0.125em] motion-reduce:animate-[spin_1.5s_linear_infinite]"></div>
-          <p className="mt-4 text-neutral-600">Loading recommended foods...</p>
-        </div>
-      ) : (
-        <>
-          {/* Show alert if in fallback mode */}
-          {fallback && (
-            <div className="bg-amber-50 border border-amber-200 p-4 rounded-md mb-6">
-              <h3 className="text-amber-800 font-medium">Using Fallback Recommendations</h3>
-              <p className="text-amber-700 text-sm mt-1">
-                We couldn't generate personalized recommendations based on your profile. 
-                We're showing alternative options instead.
-              </p>
-              <Button 
-                variant="outline" 
-                className="mt-3 text-amber-700 border-amber-300"
-                onClick={handleRetry}
-              >
-                Try Again
-              </Button>
+      
+      {/* Fallback Warning */}
+      {fallback && (
+        <Alert className="mb-6 bg-amber-50 border-amber-200 text-amber-800">
+          <AlertTriangle className="h-4 w-4" />
+          <AlertTitle>Alternative Recommendations</AlertTitle>
+          <AlertDescription>
+            Due to your dietary restrictions, we've included some alternative options.
+            Please check ingredients carefully.
+          </AlertDescription>
+        </Alert>
+      )}
+      
+      <Tabs defaultValue="browse" className="mb-6">
+        <TabsList className="w-full mb-6">
+          <TabsTrigger value="browse" className="flex-1">Browse Foods</TabsTrigger>
+          <TabsTrigger value="nutrition" className="flex-1">Nutrition Analysis</TabsTrigger>
+        </TabsList>
+        
+        {/* Browse Foods Tab */}
+        <TabsContent value="browse">
+          {/* Meal Type Tabs */}
+          <MealTypeTabs 
+            activeMealType={currentMealType}
+            onTabChange={handleMealTypeChange}
+          />
+          
+          {/* Selected Foods Summary */}
+          {selectedFoods.length > 0 && (
+            <div className="mb-6 p-4 bg-primary-50 rounded-lg border border-primary-200">
+              <h3 className="text-lg font-medium mb-2 text-primary-700">Selected Foods ({selectedFoods.length})</h3>
+              <div className="flex flex-wrap gap-2">
+                {selectedFoods.map(food => (
+                  <Card key={food.id} className="bg-white flex-grow-0">
+                    <CardContent className="p-2 flex items-center justify-between">
+                      <span className="text-sm font-medium">{food.name}</span>
+                      <Button 
+                        size="sm" 
+                        variant="ghost" 
+                        onClick={() => removeFood(food.id)}
+                        className="h-6 w-6 p-0"
+                      >
+                        ✕
+                      </Button>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </div>
           )}
-
-          <FoodCardList
-            foods={mealTypeFoods[activeMealType]}
-            userInfo={userInfo}
-            selectedFoods={selectedFoods}
-            onSelectFood={handleSelectFood}
-            onViewDetails={handleViewDetails}
-          />
-
-          {/* Selected Food Count and Continue Button */}
-          <div className="mt-8 flex flex-col md:flex-row items-center justify-between gap-4">
-            <div className="text-neutral-600">
-              {selectedFoods.length > 0 ? (
-                <span>You've selected {selectedFoods.length} foods for your meal plan.</span>
-              ) : (
-                <span>Select foods to add to your meal plan.</span>
-              )}
-            </div>
-            <Button 
-              onClick={handleContinue}
-              className="bg-primary hover:bg-primary-600 text-white font-medium py-3 px-6 rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-            >
-              Continue to Meal Configuration
-            </Button>
+          
+          {/* Food Card List */}
+          <div className="mb-6">
+            <FoodCardList 
+              foods={getCurrentMealFoods()}
+              userInfo={userInfo}
+              selectedFoods={selectedFoods}
+              onSelectFood={handleSelectFood}
+              onViewDetails={handleViewDetails}
+            />
           </div>
-        </>
-      )}
-
+        </TabsContent>
+        
+        {/* Nutrition Analysis Tab */}
+        <TabsContent value="nutrition">
+          {summary && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <Card>
+                <CardContent className="pt-6">
+                  <h3 className="text-lg font-medium mb-4">Nutritional Information</h3>
+                  <div className="space-y-6">
+                    <NutritionProgressBar
+                      label="Daily Calories"
+                      current={summary.calories.actual}
+                      target={summary.calories.target}
+                      unit="kcal"
+                    />
+                    
+                    <NutritionProgressBar
+                      label="Protein"
+                      current={summary.protein.actual}
+                      target={summary.protein.target}
+                      color="bg-blue-500"
+                    />
+                    
+                    <NutritionProgressBar
+                      label="Carbohydrates"
+                      current={summary.carbs.actual}
+                      target={summary.carbs.target}
+                      color="bg-amber-500"
+                    />
+                    
+                    <NutritionProgressBar
+                      label="Fats"
+                      current={summary.fat.actual}
+                      target={summary.fat.target}
+                      color="bg-purple-500"
+                    />
+                  </div>
+                </CardContent>
+              </Card>
+              
+              <Card>
+                <CardContent className="pt-6">
+                  <h3 className="text-lg font-medium mb-4">Budget Analysis</h3>
+                  <NutritionProgressBar
+                    label="Daily Budget"
+                    current={summary.budget.actual}
+                    target={summary.budget.target / 7} // Daily budget
+                    unit="$"
+                    color="bg-green-500"
+                  />
+                  
+                  <div className="mt-8 space-y-4">
+                    <div className="flex justify-between items-center">
+                      <span className="text-neutral-600">Weekly Budget:</span>
+                      <span className="font-medium">${summary.budget.target.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-neutral-600">Daily Cost:</span>
+                      <span className="font-medium">${summary.budget.actual.toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-neutral-600">Weekly Cost (Estimated):</span>
+                      <span className="font-medium">${(summary.budget.actual * 7).toFixed(2)}</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-neutral-600">Remaining Budget:</span>
+                      <span className="font-medium text-green-600">
+                        ${(summary.budget.target - summary.budget.actual * 7).toFixed(2)}
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          )}
+        </TabsContent>
+      </Tabs>
+      
+      {/* Bottom Navigation */}
+      <div className="flex justify-between">
+        <Button 
+          variant="outline" 
+          onClick={() => navigate("/")}
+        >
+          Back to Profile
+        </Button>
+        <Button 
+          onClick={handleContinue}
+          disabled={selectedFoods.length === 0}
+        >
+          Continue to Meal Configuration
+        </Button>
+      </div>
+      
       {/* Food Detail Modal */}
       <FoodDetailModal
         food={selectedFood}
         isOpen={isDetailModalOpen}
         isSelected={selectedFood ? selectedFoods.some(f => f.id === selectedFood.id) : false}
-        onClose={handleCloseDetailModal}
+        onClose={() => setIsDetailModalOpen(false)}
         onSelect={handleSelectFood}
       />
     </div>

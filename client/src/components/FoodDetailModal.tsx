@@ -4,13 +4,13 @@ import {
   DialogContent,
   DialogHeader,
   DialogTitle,
-  DialogFooter,
   DialogDescription,
+  DialogFooter
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { FoodItem } from '@/stores/useRecommendStore';
-import { formatCurrency } from '@/lib/utils';
+import { Check, Plus } from 'lucide-react';
 
 interface FoodDetailModalProps {
   food: FoodItem | null;
@@ -25,68 +25,89 @@ const FoodDetailModal: React.FC<FoodDetailModalProps> = ({
   isOpen,
   isSelected,
   onClose,
-  onSelect,
+  onSelect
 }) => {
   if (!food) return null;
-
-  const handleSelect = () => {
-    onSelect(food);
-    onClose();
-  };
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle className="text-xl">{food.name}</DialogTitle>
+          <DialogTitle>{food.name}</DialogTitle>
           <DialogDescription>
-            <Badge variant="outline" className="mr-2 mt-2">
-              {food.category}
-            </Badge>
-            <Badge variant="outline" className="mr-2 mt-2">
-              {food.calories} kcal
-            </Badge>
-            {food.tags?.map((tag, index) => (
-              <Badge key={index} variant="secondary" className="mr-2 mt-2">
-                {tag}
-              </Badge>
-            ))}
+            {food.category || 'Food Item'} • {food.calories || food.kcal || 0} kcal
           </DialogDescription>
         </DialogHeader>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <img
-              src={food.image}
+        {/* Food Image */}
+        {food.image && (
+          <div className="w-full h-48 overflow-hidden rounded-md mb-4">
+            <img 
+              src={food.image} 
               alt={food.name}
-              className="w-full h-40 object-cover rounded-md"
+              className="w-full h-full object-cover"
             />
           </div>
-          
-          <div className="space-y-2">
-            <h3 className="font-medium text-base">Nutrition Information</h3>
-            <div className="grid grid-cols-2 gap-2 text-sm">
-              <div>Calories:</div>
-              <div className="font-medium">{food.calories} kcal</div>
-              
-              <div>{food.mainNutrient.name}:</div>
-              <div className="font-medium">{food.mainNutrient.amount} {food.mainNutrient.unit}</div>
-              
-              <div>Price:</div>
-              <div className="font-medium">{formatCurrency(food.price)}</div>
+        )}
+
+        {/* Nutritional Information */}
+        <div className="space-y-4">
+          <div>
+            <h4 className="text-sm font-medium mb-2">Nutritional Information</h4>
+            <div className="grid grid-cols-2 gap-2">
+              <div className="bg-blue-50 p-2 rounded-md">
+                <div className="text-xs text-neutral-600">Protein</div>
+                <div className="text-sm font-medium">{food.protein || 0}g</div>
+              </div>
+              <div className="bg-amber-50 p-2 rounded-md">
+                <div className="text-xs text-neutral-600">Carbs</div>
+                <div className="text-sm font-medium">{food.carbs || 0}g</div>
+              </div>
+              <div className="bg-purple-50 p-2 rounded-md">
+                <div className="text-xs text-neutral-600">Fat</div>
+                <div className="text-sm font-medium">{food.fat || 0}g</div>
+              </div>
+              <div className="bg-green-50 p-2 rounded-md">
+                <div className="text-xs text-neutral-600">Price</div>
+                <div className="text-sm font-medium">${food.price?.toFixed(2) || 0}</div>
+              </div>
             </div>
           </div>
+
+          {/* Tags */}
+          {food.tags && food.tags.length > 0 && (
+            <div>
+              <h4 className="text-sm font-medium mb-2">Tags</h4>
+              <div className="flex flex-wrap gap-1">
+                {food.tags.map(tag => (
+                  <Badge key={tag} variant="secondary" className="text-xs">
+                    {tag}
+                  </Badge>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
 
-        <DialogFooter className="flex justify-between sm:justify-between mt-4">
-          <Button variant="outline" onClick={onClose}>
+        <DialogFooter className="sm:justify-between">
+          <Button 
+            variant="outline" 
+            onClick={onClose}
+          >
             Close
           </Button>
-          <Button 
+          <Button
             variant={isSelected ? "destructive" : "default"}
-            onClick={handleSelect}
+            onClick={() => onSelect(food)}
           >
-            {isSelected ? 'Remove from Meal' : 'Add to Meal'}
+            {isSelected ? (
+              "Remove from Selection"
+            ) : (
+              <>
+                <Plus className="mr-2 h-4 w-4" />
+                Add to Selection
+              </>
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>

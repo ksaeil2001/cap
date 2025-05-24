@@ -1,7 +1,7 @@
 import React from 'react';
-import FoodCard from './FoodCard';
 import { FoodItem } from '@/stores/useRecommendStore';
 import { UserInfo } from '@/types';
+import FoodCard from './FoodCard';
 
 interface FoodCardListProps {
   foods: FoodItem[];
@@ -20,22 +20,22 @@ const FoodCardList: React.FC<FoodCardListProps> = ({
 }) => {
   if (foods.length === 0) {
     return (
-      <div className="text-center py-10">
-        <p className="text-neutral-600">No foods available for this meal type.</p>
+      <div className="text-center py-12 bg-neutral-50 rounded-lg border border-neutral-200">
+        <p className="text-neutral-500">No foods available for this meal type.</p>
       </div>
     );
   }
 
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
       {foods.map((food) => (
         <FoodCard
           key={food.id}
           food={food}
           isSelected={selectedFoods.some(f => f.id === food.id)}
           userInfo={userInfo}
-          onSelect={onSelectFood}
-          onViewDetails={onViewDetails}
+          onSelect={() => onSelectFood(food)}
+          onViewDetails={() => onViewDetails(food)}
         />
       ))}
     </div>

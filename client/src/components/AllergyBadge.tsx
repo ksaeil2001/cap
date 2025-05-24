@@ -1,7 +1,8 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { UserInfo } from '@/types';
 import { FoodItem } from '@/stores/useRecommendStore';
+import { UserInfo } from '@/types';
+import { AlertTriangle } from 'lucide-react';
 
 interface AllergyBadgeProps {
   food: FoodItem;
@@ -9,20 +10,24 @@ interface AllergyBadgeProps {
 }
 
 const AllergyBadge: React.FC<AllergyBadgeProps> = ({ food, userInfo }) => {
-  // Check if the food contains any allergens the user is allergic to
-  const hasAllergen = userInfo.allergies.some(allergy => {
-    const allergyLower = allergy.toLowerCase();
-    return (
-      food.name.toLowerCase().includes(allergyLower) ||
-      (food.tags && food.tags.some(tag => tag.toLowerCase().includes(allergyLower)))
-    );
-  });
+  // Find the allergens present in the food
+  const allergensPresent = userInfo.allergies.filter(allergy => 
+    food.tags?.some(tag => tag.toLowerCase() === allergy.toLowerCase())
+  );
 
-  if (!hasAllergen) return null;
+  if (allergensPresent.length === 0) {
+    return null;
+  }
 
   return (
-    <Badge variant="destructive" className="absolute top-2 right-2 z-10">
-      Allergy Alert
+    <Badge 
+      variant="destructive" 
+      className="absolute top-2 left-2 flex items-center gap-1"
+    >
+      <AlertTriangle className="h-3 w-3" />
+      {allergensPresent.length === 1 
+        ? `Contains ${allergensPresent[0]}` 
+        : 'Allergens'}
     </Badge>
   );
 };

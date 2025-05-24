@@ -400,7 +400,7 @@ const SummaryPage = () => {
               <h2 className="text-2xl font-bold mb-4">Advanced Nutrition Analysis</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  {userStore && selectedDayPlan && (
+                  {selectedDayPlan && (
                     <DetailedNutritionAnalysis 
                       foods={[...selectedDayPlan.meals.breakfast, ...selectedDayPlan.meals.lunch, ...selectedDayPlan.meals.dinner]}
                       nutritionData={{
@@ -421,20 +421,20 @@ const SummaryPage = () => {
                           actual: selectedDayPlan.nutritionSummary.fat
                         }
                       }}
-                      userGoal={userStore.goal || 'weight-loss'}
-                      userWeight={userStore.weight || 70}
-                      userHeight={userStore.height || 170}
-                      userGender={userStore.gender || 'male'}
-                      userAge={userStore.age || 30}
-                      userActivityLevel={userStore.activityLevel || 'medium'}
+                      userGoal={'weight-loss'}
+                      userWeight={70}
+                      userHeight={170}
+                      userGender={'male'}
+                      userAge={30}
+                      userActivityLevel={'medium'}
                     />
                   )}
                 </div>
                 <div>
                   <h3 className="text-xl font-bold mb-4">AI Nutrition Coach</h3>
-                  {userStore && selectedDayPlan && (
+                  {selectedDayPlan && (
                     <AIRecommendations 
-                      userGoal={userStore.goal || 'weight-loss'}
+                      userGoal={'weight-loss'}
                       foods={[...selectedDayPlan.meals.breakfast, ...selectedDayPlan.meals.lunch, ...selectedDayPlan.meals.dinner]}
                       nutritionSummary={{
                         calories: {
@@ -455,12 +455,12 @@ const SummaryPage = () => {
                         }
                       }}
                       userProfile={{
-                        gender: userStore.gender || 'male',
-                        age: userStore.age || 30,
-                        height: userStore.height || 170,
-                        weight: userStore.weight || 70,
-                        activityLevel: userStore.activityLevel || 'medium',
-                        allergies: userStore.allergies || []
+                        gender: 'male',
+                        age: 30,
+                        height: 170,
+                        weight: 70,
+                        activityLevel: 'medium',
+                        allergies: []
                       }}
                     />
                   )}

@@ -1,79 +1,74 @@
-import { Food } from "@/types";
-import { cn } from "@/lib/utils";
+import React from 'react';
+import { Card, CardContent } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { FoodItem } from '@/stores/useRecommendStore';
+import { formatCurrency } from '@/lib/utils';
+import { X } from 'lucide-react';
 
 interface DraggableMealProps {
-  food: Food;
+  food: FoodItem;
   onRemove?: () => void;
   className?: string;
   iconType?: 'primary' | 'secondary' | 'accent';
 }
 
-const DraggableMeal = ({ 
-  food, 
-  onRemove, 
-  className,
+const DraggableMeal: React.FC<DraggableMealProps> = ({
+  food,
+  onRemove,
+  className = '',
   iconType = 'primary'
-}: DraggableMealProps) => {
-  const getIconBgClass = () => {
-    switch (iconType) {
-      case 'primary':
-        return 'bg-primary-100 text-primary-600';
-      case 'secondary':
-        return 'bg-secondary-100 text-secondary-600';
-      case 'accent':
-        return 'bg-accent-100 text-accent-600';
-      default:
-        return 'bg-primary-100 text-primary-600';
-    }
+}) => {
+  // Map icon type to color classes
+  const iconColors = {
+    primary: 'bg-primary text-white',
+    secondary: 'bg-secondary text-secondary-foreground',
+    accent: 'bg-amber-500 text-white'
   };
 
-  const getIconByCategory = () => {
-    switch (food.category.toLowerCase()) {
-      case 'protein':
-        return 'ri-seedling-line';
-      case 'carb':
-        return 'ri-seedling-line';
-      case 'vegetable':
-        return 'ri-plant-line';
-      case 'fruit':
-        return 'ri-apple-line';
-      default:
-        return 'ri-restaurant-line';
-    }
+  // Make the component draggable
+  const handleDragStart = (e: React.DragEvent<HTMLDivElement>) => {
+    e.dataTransfer.setData('application/json', JSON.stringify(food));
+    e.dataTransfer.effectAllowed = 'move';
   };
 
   return (
-    <div 
-      className={cn("draggable-meal flex items-center justify-between", className)}
+    <Card 
+      className={`relative shadow-sm hover:shadow-md transition-shadow duration-200 ${className}`}
       draggable
-      onDragStart={(e) => {
-        e.dataTransfer.setData('text/plain', JSON.stringify(food));
-        e.currentTarget.classList.add('opacity-50');
-      }}
-      onDragEnd={(e) => {
-        e.currentTarget.classList.remove('opacity-50');
-      }}
+      onDragStart={handleDragStart}
     >
-      <div className="flex items-center">
-        <div className={`${getIconBgClass()} rounded-md p-2 mr-3`}>
-          <i className={getIconByCategory()}></i>
+      <CardContent className="p-4 flex items-center gap-3">
+        {/* Color icon based on the type */}
+        <div className={`h-10 w-10 rounded-full flex items-center justify-center ${iconColors[iconType]}`}>
+          <span className="font-semibold text-sm">{food.calories}</span>
         </div>
-        <div>
-          <h4 className="font-medium">{food.name}</h4>
-          <span className="text-xs text-neutral-500">
-            {food.calories} kcal | {food.mainNutrient.amount}{food.mainNutrient.unit} {food.mainNutrient.name}
-          </span>
+
+        <div className="flex-1 min-w-0">
+          <h4 className="font-medium text-sm truncate" title={food.name}>{food.name}</h4>
+          <div className="flex items-center gap-2 mt-1">
+            <Badge variant="outline" className="text-xs">
+              {food.category}
+            </Badge>
+            <span className="text-xs text-neutral-500">
+              {formatCurrency(food.price)}
+            </span>
+          </div>
         </div>
-      </div>
-      {onRemove && (
-        <div 
-          className="text-neutral-400 hover:text-neutral-600 cursor-pointer"
-          onClick={onRemove}
-        >
-          <i className="ri-close-line"></i>
-        </div>
-      )}
-    </div>
+
+        {onRemove && (
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            className="h-8 w-8 p-0 rounded-full"
+            onClick={onRemove}
+          >
+            <X className="h-4 w-4" />
+            <span className="sr-only">Remove</span>
+          </Button>
+        )}
+      </CardContent>
+    </Card>
   );
 };
 

@@ -1,14 +1,17 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
-import { useRecommendStore } from "@/stores/useRecommendStore";
-import { useMealConfigStore } from "@/stores/useMealConfigStore";
 import { Button } from "@/components/ui/button";
-import MealSlot from "@/components/ui/meal-slot";
-import DraggableMeal from "@/components/DraggableMeal";
-import { Food, MealTime } from "@/types";
-import { calculateCalories, formatCurrency } from "@/lib/utils";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { MealTime } from "@/types";
 import { useUserStore } from "@/stores/useUserStore";
+import { useRecommendStore, FoodItem } from "@/stores/useRecommendStore";
+import { useMealConfigStore } from "@/stores/useMealConfigStore";
 import { useToast } from "@/hooks/use-toast";
+import MealSlot from "@/components/MealSlot";
+import DraggableMeal from "@/components/DraggableMeal";
+import NutritionProgressBar from "@/components/NutritionProgressBar";
+import { AlertTriangle, UtensilsCrossed, Check } from 'lucide-react';
 
 const mealTypes: { id: MealTime; label: string; icon: string }[] = [
   { id: "breakfast", label: "Breakfast", icon: "ri-sun-line" },

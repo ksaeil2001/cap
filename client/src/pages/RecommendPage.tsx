@@ -63,11 +63,28 @@ const RecommendPage = () => {
         const data = await getRecommendedFoods(userInfo);
         setFoods(data);
         
-        // Generate meal type groupings - in a real app this would likely come from the API
-        // Here we're just distributing the foods evenly for demonstration
-        const breakfastFoods = data.filter((_, i) => i % 3 === 0);
-        const lunchFoods = data.filter((_, i) => i % 3 === 1);
-        const dinnerFoods = data.filter((_, i) => i % 3 === 2);
+        // Generate meal type groupings
+        // Ensure foods are properly distributed and have unique IDs
+        const breakfastFoods = data
+          .filter((_, i) => i % 3 === 0)
+          .map((food, index) => ({
+            ...food,
+            id: `breakfast-${food.id}`
+          }));
+        
+        const lunchFoods = data
+          .filter((_, i) => i % 3 === 1)
+          .map((food, index) => ({
+            ...food,
+            id: `lunch-${food.id}`
+          }));
+        
+        const dinnerFoods = data
+          .filter((_, i) => i % 3 === 2)
+          .map((food, index) => ({
+            ...food,
+            id: `dinner-${food.id}`
+          }));
         
         setMealTypeFoods({
           breakfast: breakfastFoods,

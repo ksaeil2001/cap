@@ -1,4 +1,6 @@
-import { cn } from "@/lib/utils";
+import React from 'react';
+import { Progress } from '@/components/ui/progress';
+import { getPercentage } from '@/lib/utils';
 
 interface NutritionProgressBarProps {
   label: string;
@@ -9,29 +11,53 @@ interface NutritionProgressBarProps {
   className?: string;
 }
 
-const NutritionProgressBar = ({
+const NutritionProgressBar: React.FC<NutritionProgressBarProps> = ({
   label,
   current,
   target,
-  unit = "",
-  color = "bg-primary-500",
-  className,
-}: NutritionProgressBarProps) => {
-  const percentage = Math.min(Math.round((current / target) * 100), 100);
+  unit = 'g',
+  color = 'bg-primary',
+  className = '',
+}) => {
+  // Calculate percentage of target reached
+  const percentage = getPercentage(current, target);
+  
+  // Status indicator: under, optimal, or over
+  let status = 'text-neutral-600';
+  let statusText = 'Optimal';
+  
+  if (percentage < 80) {
+    status = 'text-amber-600';
+    statusText = 'Under';
+  } else if (percentage > 120) {
+    status = 'text-red-600';
+    statusText = 'Over';
+  } else {
+    status = 'text-green-600';
+    statusText = 'Optimal';
+  }
 
   return (
-    <div className={cn("mb-6", className)}>
-      <div className="flex justify-between mb-1">
-        <span className="text-sm text-neutral-600">{label}</span>
-        <span className="text-sm text-neutral-700 font-medium">
-          {current}{unit} {percentage > 0 ? `(${percentage}%)` : ''}
-        </span>
+    <div className={`space-y-1.5 ${className}`}>
+      <div className="flex justify-between items-center">
+        <div className="text-sm font-medium text-neutral-700">{label}</div>
+        <div className={`text-xs font-medium ${status}`}>
+          {statusText}
+        </div>
       </div>
-      <div className="w-full bg-neutral-200 rounded-full h-2">
-        <div 
-          className={`${color} h-2 rounded-full`} 
-          style={{ width: `${percentage}%` }}
-        ></div>
+      
+      <Progress 
+        value={Math.min(percentage, 100)} 
+        className={`h-2 ${color}`} 
+      />
+      
+      <div className="flex justify-between items-center text-xs text-neutral-500">
+        <div>
+          {Math.round(current)}{unit} / {Math.round(target)}{unit}
+        </div>
+        <div>
+          {Math.round(percentage)}%
+        </div>
       </div>
     </div>
   );

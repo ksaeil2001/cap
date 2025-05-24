@@ -164,7 +164,7 @@ const mockFoods: FoodItem[] = [
 // Helper function to create food objects for the application format
 const createFoodObject = (foodItem: FoodItem) => {
   return {
-    id: foodItem.foodId.toString(),
+    id: foodItem.foodId.toString(), // Ensure this is a unique string ID
     name: foodItem.name,
     category: foodItem.tags[0] || 'General',
     calories: foodItem.kcal,
@@ -174,7 +174,8 @@ const createFoodObject = (foodItem: FoodItem) => {
       unit: 'g'
     },
     price: foodItem.price / 100, // Convert cents to dollars for UI display
-    image: foodItem.image || 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&h=300'
+    image: foodItem.image || 'https://images.unsplash.com/photo-1519708227418-c8fd9a32b7a2?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&h=300',
+    tags: foodItem.tags // Pass through the tags for use in the UI
   };
 };
 

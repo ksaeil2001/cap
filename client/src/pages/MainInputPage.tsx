@@ -139,9 +139,9 @@ const MainInputPage = () => {
           {/* Personal Information Card */}
           <Card>
             <CardHeader>
-              <CardTitle>Personal Information</CardTitle>
+              <CardTitle>개인 정보</CardTitle>
               <CardDescription>
-                Enter your physical details for accurate nutritional recommendations.
+                정확한 영양소 추천을 위해 신체 정보를 입력해주세요.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -151,7 +151,7 @@ const MainInputPage = () => {
                 name="gender"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Gender</FormLabel>
+                    <FormLabel>성별</FormLabel>
                     <FormControl>
                       <RadioGroup
                         onValueChange={field.onChange}
@@ -162,13 +162,13 @@ const MainInputPage = () => {
                           <FormControl>
                             <RadioGroupItem value="male" />
                           </FormControl>
-                          <FormLabel className="font-normal cursor-pointer">Male</FormLabel>
+                          <FormLabel className="font-normal cursor-pointer">남성</FormLabel>
                         </FormItem>
                         <FormItem className="flex items-center space-x-2 space-y-0">
                           <FormControl>
                             <RadioGroupItem value="female" />
                           </FormControl>
-                          <FormLabel className="font-normal cursor-pointer">Female</FormLabel>
+                          <FormLabel className="font-normal cursor-pointer">여성</FormLabel>
                         </FormItem>
                       </RadioGroup>
                     </FormControl>
@@ -183,7 +183,7 @@ const MainInputPage = () => {
                 name="age"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Age (years)</FormLabel>
+                    <FormLabel>나이 (세)</FormLabel>
                     <FormControl>
                       <Input type="number" {...field} />
                     </FormControl>
@@ -198,7 +198,7 @@ const MainInputPage = () => {
                 name="height"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Height (cm)</FormLabel>
+                    <FormLabel>키 (cm)</FormLabel>
                     <FormControl>
                       <Input type="number" {...field} />
                     </FormControl>
@@ -213,7 +213,7 @@ const MainInputPage = () => {
                 name="weight"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Weight (kg)</FormLabel>
+                    <FormLabel>몸무게 (kg)</FormLabel>
                     <FormControl>
                       <Input type="number" {...field} />
                     </FormControl>
@@ -228,7 +228,7 @@ const MainInputPage = () => {
                 name="bodyFatPercent"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Body Fat Percentage (optional)</FormLabel>
+                    <FormLabel>체지방률 (선택사항)</FormLabel>
                     <FormControl>
                       <div className="pt-2">
                         <Slider
@@ -246,7 +246,7 @@ const MainInputPage = () => {
                       </div>
                     </FormControl>
                     <FormDescription>
-                      Approximate body fat percentage helps tailor nutrient ratios.
+                      대략적인 체지방률은 영양소 비율을 조정하는 데 도움이 됩니다.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -258,9 +258,9 @@ const MainInputPage = () => {
           {/* Goals and Preferences Card */}
           <Card>
             <CardHeader>
-              <CardTitle>Goals and Preferences</CardTitle>
+              <CardTitle>목표 및 선호도</CardTitle>
               <CardDescription>
-                Set your nutritional goals and dietary preferences.
+                영양 목표와 식단 선호도를 설정하세요.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -270,18 +270,18 @@ const MainInputPage = () => {
                 name="goal"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Primary Goal</FormLabel>
+                    <FormLabel>주요 목표</FormLabel>
                     <FormControl>
                       <Select
                         onValueChange={field.onChange}
                         defaultValue={field.value}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select your primary goal" />
+                          <SelectValue placeholder="주요 목표를 선택하세요" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="weight-loss">Weight Loss</SelectItem>
-                          <SelectItem value="muscle-gain">Muscle Gain</SelectItem>
+                          <SelectItem value="weight-loss">체중 감량</SelectItem>
+                          <SelectItem value="muscle-gain">근육 증가</SelectItem>
                         </SelectContent>
                       </Select>
                     </FormControl>
@@ -296,19 +296,19 @@ const MainInputPage = () => {
                 name="activityLevel"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Activity Level</FormLabel>
+                    <FormLabel>활동 수준</FormLabel>
                     <FormControl>
                       <Select
                         onValueChange={field.onChange}
                         defaultValue={field.value}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select your activity level" />
+                          <SelectValue placeholder="활동 수준을 선택하세요" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="low">Low (Mostly Sedentary)</SelectItem>
-                          <SelectItem value="medium">Medium (Moderate Exercise 3-5 days/week)</SelectItem>
-                          <SelectItem value="high">High (Intense Exercise 6-7 days/week)</SelectItem>
+                          <SelectItem value="low">낮음 (주로 앉아서 생활)</SelectItem>
+                          <SelectItem value="medium">보통 (주 3-5일 운동)</SelectItem>
+                          <SelectItem value="high">높음 (주 6-7일 고강도 운동)</SelectItem>
                         </SelectContent>
                       </Select>
                     </FormControl>

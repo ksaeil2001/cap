@@ -80,10 +80,6 @@ const MealConfigPage = () => {
       return;
     }
     
-    setAvailableFoods(selectedFoods.filter(food => 
-      !Object.values(meals).flat().some(mealFood => mealFood.id === food.id)
-    ));
-
     // Calculate daily calories target based on user info
     if (userInfo.gender && userInfo.weight && userInfo.height && userInfo.goal) {
       const caloriesTarget = calculateCalories(
@@ -100,7 +96,14 @@ const MealConfigPage = () => {
       const dailyBudget = userInfo.budget / 7;
       setDailyBudgetTarget(dailyBudget);
     }
-  }, [selectedFoods, navigate, toast, clearMeals, meals, userInfo]);
+  }, [selectedFoods, navigate, toast, clearMeals, userInfo]);
+  
+  // Separate useEffect to update available foods when meals change
+  useEffect(() => {
+    setAvailableFoods(selectedFoods.filter(food => 
+      !Object.values(meals).flat().some(mealFood => mealFood.id === food.id)
+    ));
+  }, [selectedFoods, meals]);
 
   const handleDragOver = (e: React.DragEvent<HTMLDivElement>, mealType: MealTime) => {
     e.preventDefault();

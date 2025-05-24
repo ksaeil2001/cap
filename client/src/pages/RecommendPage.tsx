@@ -277,21 +277,21 @@ const RecommendPage: React.FC = () => {
                     />
                     
                     <NutritionProgressBar
-                      label="Protein"
+                      label="단백질"
                       current={summary.protein.actual}
                       target={summary.protein.target}
                       color="bg-blue-500"
                     />
                     
                     <NutritionProgressBar
-                      label="Carbohydrates"
+                      label="탄수화물"
                       current={summary.carbs.actual}
                       target={summary.carbs.target}
                       color="bg-amber-500"
                     />
                     
                     <NutritionProgressBar
-                      label="Fats"
+                      label="지방"
                       current={summary.fat.actual}
                       target={summary.fat.target}
                       color="bg-purple-500"
@@ -302,32 +302,32 @@ const RecommendPage: React.FC = () => {
               
               <Card>
                 <CardContent className="pt-6">
-                  <h3 className="text-lg font-medium mb-4">Budget Analysis</h3>
+                  <h3 className="text-lg font-medium mb-4">예산 분석</h3>
                   <NutritionProgressBar
-                    label="Daily Budget"
+                    label="일일 예산"
                     current={summary.budget.actual}
                     target={summary.budget.target / 7} // Daily budget
-                    unit="$"
+                    unit="₩"
                     color="bg-green-500"
                   />
                   
                   <div className="mt-8 space-y-4">
                     <div className="flex justify-between items-center">
-                      <span className="text-neutral-600">Weekly Budget:</span>
-                      <span className="font-medium">${summary.budget.target.toFixed(2)}</span>
+                      <span className="text-neutral-600">주간 예산:</span>
+                      <span className="font-medium">₩{(summary.budget.target * 1000).toFixed(0)}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-neutral-600">Daily Cost:</span>
-                      <span className="font-medium">${summary.budget.actual.toFixed(2)}</span>
+                      <span className="text-neutral-600">일일 비용:</span>
+                      <span className="font-medium">₩{(summary.budget.actual * 1000).toFixed(0)}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-neutral-600">Weekly Cost (Estimated):</span>
-                      <span className="font-medium">${(summary.budget.actual * 7).toFixed(2)}</span>
+                      <span className="text-neutral-600">주간 비용 (예상):</span>
+                      <span className="font-medium">₩{(summary.budget.actual * 7 * 1000).toFixed(0)}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-neutral-600">Remaining Budget:</span>
+                      <span className="text-neutral-600">남은 예산:</span>
                       <span className="font-medium text-green-600">
-                        ${(summary.budget.target - summary.budget.actual * 7).toFixed(2)}
+                        ₩{((summary.budget.target - summary.budget.actual * 7) * 1000).toFixed(0)}
                       </span>
                     </div>
                   </div>
@@ -344,13 +344,13 @@ const RecommendPage: React.FC = () => {
           variant="outline" 
           onClick={() => navigate("/")}
         >
-          Back to Profile
+          프로필로 돌아가기
         </Button>
         <Button 
           onClick={handleContinue}
           disabled={!Array.isArray(selectedFoods) || selectedFoods.length === 0}
         >
-          Continue to Meal Configuration
+          식단 구성으로 계속하기
         </Button>
       </div>
       

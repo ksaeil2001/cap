@@ -31,6 +31,9 @@ const SummaryPage = () => {
   const userStore = useUserStore();
   const summaryStore = useSummaryStore();
   
+  // For debugging
+  console.log("User store:", userStore);
+  
   // Generate week plan on component mount
   useEffect(() => {
     summaryStore.generateWeekPlan();
@@ -402,66 +405,70 @@ const SummaryPage = () => {
               <h2 className="text-2xl font-bold mb-4">Advanced Nutrition Analysis</h2>
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
-                  <DetailedNutritionAnalysis 
-                    foods={[...selectedDayPlan.meals.breakfast, ...selectedDayPlan.meals.lunch, ...selectedDayPlan.meals.dinner]}
-                    nutritionData={{
-                      calories: {
-                        target: nutritionSummary.calories.target,
-                        actual: selectedDayPlan.nutritionSummary.calories
-                      },
-                      protein: {
-                        target: nutritionSummary.protein.target,
-                        actual: selectedDayPlan.nutritionSummary.protein
-                      },
-                      carbs: {
-                        target: nutritionSummary.carbs.target,
-                        actual: selectedDayPlan.nutritionSummary.carbs
-                      },
-                      fat: {
-                        target: nutritionSummary.fat.target,
-                        actual: selectedDayPlan.nutritionSummary.fat
-                      }
-                    }}
-                    userGoal={userStore.goal}
-                    userWeight={userStore.weight}
-                    userHeight={userStore.height}
-                    userGender={userStore.gender}
-                    userAge={userStore.age}
-                    userActivityLevel={userStore.activityLevel}
-                  />
+                  {userStore && selectedDayPlan && (
+                    <DetailedNutritionAnalysis 
+                      foods={[...selectedDayPlan.meals.breakfast, ...selectedDayPlan.meals.lunch, ...selectedDayPlan.meals.dinner]}
+                      nutritionData={{
+                        calories: {
+                          target: nutritionSummary.calories.target,
+                          actual: selectedDayPlan.nutritionSummary.calories
+                        },
+                        protein: {
+                          target: nutritionSummary.protein.target,
+                          actual: selectedDayPlan.nutritionSummary.protein
+                        },
+                        carbs: {
+                          target: nutritionSummary.carbs.target,
+                          actual: selectedDayPlan.nutritionSummary.carbs
+                        },
+                        fat: {
+                          target: nutritionSummary.fat.target,
+                          actual: selectedDayPlan.nutritionSummary.fat
+                        }
+                      }}
+                      userGoal={userStore.goal || 'weight-loss'}
+                      userWeight={userStore.weight || 70}
+                      userHeight={userStore.height || 170}
+                      userGender={userStore.gender || 'male'}
+                      userAge={userStore.age || 30}
+                      userActivityLevel={userStore.activityLevel || 'medium'}
+                    />
+                  )}
                 </div>
                 <div>
                   <h3 className="text-xl font-bold mb-4">AI Nutrition Coach</h3>
-                  <AIRecommendations 
-                    userGoal={userStore.goal}
-                    foods={[...selectedDayPlan.meals.breakfast, ...selectedDayPlan.meals.lunch, ...selectedDayPlan.meals.dinner]}
-                    nutritionSummary={{
-                      calories: {
-                        target: nutritionSummary.calories.target,
-                        actual: selectedDayPlan.nutritionSummary.calories
-                      },
-                      protein: {
-                        target: nutritionSummary.protein.target,
-                        actual: selectedDayPlan.nutritionSummary.protein
-                      },
-                      carbs: {
-                        target: nutritionSummary.carbs.target,
-                        actual: selectedDayPlan.nutritionSummary.carbs
-                      },
-                      fat: {
-                        target: nutritionSummary.fat.target,
-                        actual: selectedDayPlan.nutritionSummary.fat
-                      }
-                    }}
-                    userProfile={{
-                      gender: userStore.gender,
-                      age: userStore.age,
-                      height: userStore.height,
-                      weight: userStore.weight,
-                      activityLevel: userStore.activityLevel,
-                      allergies: userStore.allergies
-                    }}
-                  />
+                  {userStore && selectedDayPlan && (
+                    <AIRecommendations 
+                      userGoal={userStore.goal || 'weight-loss'}
+                      foods={[...selectedDayPlan.meals.breakfast, ...selectedDayPlan.meals.lunch, ...selectedDayPlan.meals.dinner]}
+                      nutritionSummary={{
+                        calories: {
+                          target: nutritionSummary.calories.target,
+                          actual: selectedDayPlan.nutritionSummary.calories
+                        },
+                        protein: {
+                          target: nutritionSummary.protein.target,
+                          actual: selectedDayPlan.nutritionSummary.protein
+                        },
+                        carbs: {
+                          target: nutritionSummary.carbs.target,
+                          actual: selectedDayPlan.nutritionSummary.carbs
+                        },
+                        fat: {
+                          target: nutritionSummary.fat.target,
+                          actual: selectedDayPlan.nutritionSummary.fat
+                        }
+                      }}
+                      userProfile={{
+                        gender: userStore.gender || 'male',
+                        age: userStore.age || 30,
+                        height: userStore.height || 170,
+                        weight: userStore.weight || 70,
+                        activityLevel: userStore.activityLevel || 'medium',
+                        allergies: userStore.allergies || []
+                      }}
+                    />
+                  )}
                 </div>
               </div>
             </div>

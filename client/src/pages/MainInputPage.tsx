@@ -435,7 +435,7 @@ const MainInputPage = () => {
                       </div>
                     </FormControl>
                     <FormDescription>
-                      We'll optimize your meal plan to stay within this budget.
+                      이 예산 범위 내에서 식단을 최적화합니다.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -473,10 +473,10 @@ const MainInputPage = () => {
               variant="outline"
               onClick={handleReset}
             >
-              Reset Form
+              양식 초기화
             </Button>
             <Button type="submit">
-              Get Recommendations
+              추천 받기
             </Button>
           </div>
         </form>

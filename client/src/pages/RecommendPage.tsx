@@ -175,16 +175,16 @@ const RecommendPage: React.FC = () => {
   return (
     <div>
       <div className="mb-6 text-center">
-        <h2 className="text-3xl font-heading font-bold mb-4">Recommended Foods</h2>
+        <h2 className="text-3xl font-heading font-bold mb-4">추천 식품</h2>
         {userInfo ? (
           <p className="text-neutral-600 max-w-2xl mx-auto">
-            These foods are personalized based on your {userInfo?.goal} goal, dietary preferences, and budget of ${userInfo?.budget?.toFixed(2) || '0.00'} per week.
-            Select items you like to include in your meal plan.
+            이 식품들은 {userInfo?.goal === 'weight-loss' ? '체중 감량' : '근육 증가'} 목표, 식이 선호도, 주간 예산 ₩{(userInfo?.budget * 1000)?.toFixed(0) || '0'}원에 맞춰 개인화되었습니다.
+            식단에 포함하고 싶은 항목을 선택하세요.
           </p>
         ) : (
           <p className="text-neutral-600 max-w-2xl mx-auto">
-            These foods are personalized based on your dietary preferences and budget.
-            Select items you like to include in your meal plan.
+            이 식품들은 식이 선호도와 예산에 맞춰 개인화되었습니다.
+            식단에 포함하고 싶은 항목을 선택하세요.
           </p>
         )}
       </div>
@@ -193,18 +193,18 @@ const RecommendPage: React.FC = () => {
       {fallback && (
         <Alert className="mb-6 bg-amber-50 border-amber-200 text-amber-800">
           <AlertTriangle className="h-4 w-4" />
-          <AlertTitle>Alternative Recommendations</AlertTitle>
+          <AlertTitle>대체 추천 식품</AlertTitle>
           <AlertDescription>
-            Due to your dietary restrictions, we've included some alternative options.
-            Please check ingredients carefully.
+            식이 제한으로 인해 일부 대체 옵션을 포함했습니다.
+            성분을 주의 깊게 확인해주세요.
           </AlertDescription>
         </Alert>
       )}
       
       <Tabs defaultValue="browse" className="mb-6">
         <TabsList className="w-full mb-6">
-          <TabsTrigger value="browse" className="flex-1">Browse Foods</TabsTrigger>
-          <TabsTrigger value="nutrition" className="flex-1">Nutrition Analysis</TabsTrigger>
+          <TabsTrigger value="browse" className="flex-1">식품 둘러보기</TabsTrigger>
+          <TabsTrigger value="nutrition" className="flex-1">영양 분석</TabsTrigger>
         </TabsList>
         
         {/* Browse Foods Tab */}
@@ -218,7 +218,7 @@ const RecommendPage: React.FC = () => {
           {/* Selected Foods Summary */}
           {Array.isArray(selectedFoods) && selectedFoods.length > 0 && (
             <div className="mb-6 p-4 bg-primary-50 rounded-lg border border-primary-200">
-              <h3 className="text-lg font-medium mb-2 text-primary-700">Selected Foods ({selectedFoods.length})</h3>
+              <h3 className="text-lg font-medium mb-2 text-primary-700">선택한 식품 ({selectedFoods.length})</h3>
               <div className="flex flex-wrap gap-2">
                 {selectedFoods.map(food => (
                   <Card key={food.id} className="bg-white flex-grow-0">
@@ -267,10 +267,10 @@ const RecommendPage: React.FC = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Card>
                 <CardContent className="pt-6">
-                  <h3 className="text-lg font-medium mb-4">Nutritional Information</h3>
+                  <h3 className="text-lg font-medium mb-4">영양 정보</h3>
                   <div className="space-y-6">
                     <NutritionProgressBar
-                      label="Daily Calories"
+                      label="일일 칼로리"
                       current={summary.calories.actual}
                       target={summary.calories.target}
                       unit="kcal"

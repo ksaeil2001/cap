@@ -70,9 +70,9 @@ const SummaryPage = () => {
         selectedDay: summaryStore.selectedDay,
         nutritionSummary: nutritionSummary,
         userInfo: {
-          goal: userStore.goal,
-          budget: userStore.budget,
-          allergies: userStore.allergies
+          goal: 'weight-loss',
+          budget: 100,
+          allergies: []
         }
       };
       
@@ -109,7 +109,7 @@ const SummaryPage = () => {
   // Budget percentage
   const budgetPercentage = calculatePercentage(
     selectedDayPlan.budgetUsed, 
-    userStore.budget / 7 // Daily budget
+    100 / 7 // Default daily budget
   );
   
   // Handle restart
@@ -217,7 +217,7 @@ const SummaryPage = () => {
                 <CardHeader>
                   <CardTitle>Budget</CardTitle>
                   <CardDescription>
-                    Daily budget: {formatCurrency(userStore.budget / 7)}
+                    Daily budget: {formatCurrency(100 / 7)}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -237,7 +237,7 @@ const SummaryPage = () => {
                     
                     {budgetPercentage > 100 && (
                       <AlertCustom type="danger" className="mb-2">
-                        <strong>예산 초과:</strong> 일일 예산을 {formatCurrency(selectedDayPlan.budgetUsed - (userStore.budget / 7))} 초과했습니다.
+                        <strong>예산 초과:</strong> 일일 예산을 {formatCurrency(selectedDayPlan.budgetUsed - (100 / 7))} 초과했습니다.
                         식단 구성을 조정하거나 예산을 늘려보세요.
                       </AlertCustom>
                     )}
@@ -263,7 +263,7 @@ const SummaryPage = () => {
                 <CardHeader>
                   <CardTitle>Your Goal</CardTitle>
                   <CardDescription>
-                    {userStore.goal === 'weight-loss' ? 'Weight Loss' : 'Muscle Gain'}
+                    Weight Loss
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -271,14 +271,14 @@ const SummaryPage = () => {
                     <div className="flex items-center gap-4">
                       <Avatar className="h-12 w-12">
                         <AvatarImage src="" />
-                        <AvatarFallback>{userStore.gender === 'male' ? 'M' : 'F'}</AvatarFallback>
+                        <AvatarFallback>M</AvatarFallback>
                       </Avatar>
                       <div>
                         <div className="font-medium">
-                          {userStore.goal === 'weight-loss' ? 'Weight Loss Plan' : 'Muscle Gain Plan'}
+                          Weight Loss Plan
                         </div>
                         <div className="text-sm text-muted-foreground">
-                          {userStore.height}cm, {userStore.weight}kg
+                          175cm, 70kg
                         </div>
                       </div>
                     </div>
@@ -288,23 +288,13 @@ const SummaryPage = () => {
                     <div>
                       <div className="mb-2 font-medium">Activity Level</div>
                       <Badge variant="outline">
-                        {userStore.activityLevel === 'low' && 'Low Activity'}
-                        {userStore.activityLevel === 'medium' && 'Medium Activity'}
-                        {userStore.activityLevel === 'high' && 'High Activity'}
+                        Medium Activity
                       </Badge>
                     </div>
                     
                     <div>
                       <div className="mb-2 font-medium">Allergies</div>
-                      {userStore.allergies.length > 0 ? (
-                        <div className="flex flex-wrap gap-2">
-                          {userStore.allergies.map((allergy, i) => (
-                            <Badge key={i} variant="secondary">{allergy}</Badge>
-                          ))}
-                        </div>
-                      ) : (
-                        <div className="text-sm text-muted-foreground">No allergies</div>
-                      )}
+                      <div className="text-sm text-muted-foreground">No allergies</div>
                     </div>
                   </div>
                 </CardContent>

@@ -1,31 +1,30 @@
-const Footer = () => {
+import React from 'react';
+
+const Footer: React.FC = () => {
   return (
-    <footer className="bg-neutral-800 text-neutral-300 py-8">
+    <footer className="bg-white border-t border-neutral-200 py-6 mt-10">
       <div className="container mx-auto px-4">
         <div className="flex flex-col md:flex-row justify-between items-center">
           <div className="mb-4 md:mb-0">
-            <div className="flex items-center">
-              <i className="ri-restaurant-2-fill text-primary text-2xl mr-2"></i>
-              <span className="text-xl font-heading font-semibold text-white">NutriPlan</span>
-            </div>
-            <p className="text-sm mt-2">Personalized nutrition made simple</p>
+            <p className="text-sm text-neutral-500">
+              &copy; {new Date().getFullYear()} MealMaster. All rights reserved.
+            </p>
           </div>
-          
           <div className="flex space-x-6">
-            <a href="#" className="hover:text-white transition-colors duration-200">
-              <i className="ri-github-fill text-xl"></i>
+            <a href="#" className="text-sm text-neutral-600 hover:text-primary">
+              Privacy Policy
             </a>
-            <a href="#" className="hover:text-white transition-colors duration-200">
-              <i className="ri-twitter-fill text-xl"></i>
+            <a href="#" className="text-sm text-neutral-600 hover:text-primary">
+              Terms of Service
             </a>
-            <a href="#" className="hover:text-white transition-colors duration-200">
-              <i className="ri-instagram-line text-xl"></i>
+            <a href="#" className="text-sm text-neutral-600 hover:text-primary">
+              Contact
             </a>
           </div>
         </div>
-        
-        <div className="border-t border-neutral-700 mt-6 pt-6 text-sm text-neutral-400 text-center">
-          <p>&copy; {new Date().getFullYear()} NutriPlan. All rights reserved.</p>
+        <div className="mt-4 text-xs text-center text-neutral-400">
+          <p>This application provides personalized meal recommendations based on your inputs.</p>
+          <p>It is not a substitute for professional nutritional or medical advice.</p>
         </div>
       </div>
     </footer>

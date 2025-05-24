@@ -1,396 +1,379 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { useForm } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
-import { z } from "zod";
-import { 
-  Form, 
-  FormControl, 
-  FormField, 
-  FormItem, 
-  FormLabel,
-  FormMessage
-} from "@/components/ui/form";
-import { 
-  RadioGroup, 
-  RadioGroupItem 
-} from "@/components/ui/radio-group";
-import { Checkbox } from "@/components/ui/checkbox";
-import { Input } from "@/components/ui/input";
-import { 
-  Select, 
-  SelectContent, 
-  SelectItem, 
-  SelectTrigger, 
-  SelectValue 
-} from "@/components/ui/select";
-import { Button } from "@/components/ui/button";
-import { useUserStore } from "@/stores/useUserStore";
-import { useToast } from "@/hooks/use-toast";
+import React from 'react';
+import { useNavigate } from 'react-router-dom';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
 
-const allergyOptions = [
-  { id: "eggs", label: "Eggs" },
-  { id: "milk", label: "Milk" },
-  { id: "peanuts", label: "Peanuts" },
-  { id: "fish", label: "Fish" },
-  { id: "shellfish", label: "Shellfish" },
-  { id: "soy", label: "Soy" },
-  { id: "wheat", label: "Wheat" },
-];
+import { Button } from '@/components/ui/button';
+import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Slider } from '@/components/ui/slider';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Separator } from '@/components/ui/separator';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 
+import { useUserStore } from '@/stores/useUserStore';
+import { useToast } from '@/hooks/use-toast';
+
+// Form schema validation
 const formSchema = z.object({
-  gender: z.enum(["male", "female"]),
-  age: z.coerce.number().min(10, "Age must be at least 10 years").max(120, "Age must be less than 120 years"),
-  height: z.coerce.number().min(100, "Height must be at least 100 cm").max(250, "Height must be less than 250 cm"),
-  weight: z.coerce.number().min(30, "Weight must be at least 30 kg").max(250, "Weight must be less than 250 kg"),
-  bodyFatPercent: z.coerce.number().min(5, "Body fat must be at least 5%").max(50, "Body fat must be less than 50%").optional(),
-  goal: z.enum(["weight-loss", "muscle-gain"]),
-  activityLevel: z.enum(["low", "medium", "high"]).optional(),
-  budget: z.coerce.number().min(20, "Budget must be at least $20"),
-  mealCount: z.enum(["2", "3"]).default("3"),
-  allergies: z.array(z.string()).default([]),
-  consent: z.boolean().refine(val => val === true, {
-    message: "You must consent to data usage for meal recommendations",
+  gender: z.enum(['male', 'female'], {
+    required_error: 'Please select your gender',
+  }),
+  age: z.coerce.number().min(16).max(100),
+  height: z.coerce.number().min(100).max(250),
+  weight: z.coerce.number().min(30).max(250),
+  bodyFatPercent: z.coerce.number().min(3).max(50).optional(),
+  goal: z.enum(['weight-loss', 'muscle-gain'], {
+    required_error: 'Please select your goal',
+  }),
+  activityLevel: z.enum(['low', 'medium', 'high'], {
+    required_error: 'Please select your activity level',
+  }),
+  mealCount: z.coerce.number().min(3).max(6),
+  allergies: z.array(z.string()).optional().default([]),
+  budget: z.coerce.number().min(20).max(300),
+  isAgreementChecked: z.literal(true, {
+    invalid_type_error: 'You must agree to the terms',
   }),
 });
 
 type FormValues = z.infer<typeof formSchema>;
 
+// Allergies options
+const allergiesOptions = [
+  { id: 'gluten', label: 'Gluten' },
+  { id: 'dairy', label: 'Dairy' },
+  { id: 'nuts', label: 'Nuts' },
+  { id: 'eggs', label: 'Eggs' },
+  { id: 'soy', label: 'Soy' },
+  { id: 'fish', label: 'Fish' },
+  { id: 'shellfish', label: 'Shellfish' },
+];
+
 const MainInputPage = () => {
-  const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
   const { toast } = useToast();
-  const setUserInfo = useUserStore(state => state.setUserInfo);
+  const { userInfo, setUserInfo, resetUserInfo } = useUserStore();
 
+  // Initialize form with existing user info
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      gender: "male",
-      age: undefined,
-      height: undefined,
-      weight: undefined,
-      bodyFatPercent: undefined,
-      goal: "weight-loss",
-      activityLevel: undefined,
-      budget: undefined,
-      mealCount: "3",
-      allergies: [],
-      consent: false,
+      gender: userInfo.gender || 'male',
+      age: userInfo.age || 30,
+      height: userInfo.height || 175,
+      weight: userInfo.weight || 70,
+      bodyFatPercent: userInfo.bodyFatPercent || 15,
+      goal: userInfo.goal || 'muscle-gain',
+      activityLevel: userInfo.activityLevel || 'medium',
+      mealCount: userInfo.mealCount || 3,
+      allergies: userInfo.allergies || [],
+      budget: userInfo.budget || 100,
+      isAgreementChecked: userInfo.isAgreementChecked || false,
     },
   });
 
+  // Form submission handler
   const onSubmit = async (data: FormValues) => {
-    setLoading(true);
     try {
-      // Store the user info in Zustand with partial update
-      setUserInfo({
-        gender: data.gender,
-        age: data.age,
-        height: data.height,
-        weight: data.weight,
-        bodyFatPercent: data.bodyFatPercent,
-        goal: data.goal,
-        activityLevel: data.activityLevel,
-        budget: data.budget,
-        mealCount: parseInt(data.mealCount),
-        allergies: data.allergies,
-        isAgreementChecked: data.consent,
-      });
-
-      // Log the updated user info
-      console.log("User info updated:", data);
-
-      // Navigate to the recommend page
-      navigate("/recommend");
-    } catch (error) {
-      console.error("Error:", error);
+      // Update user info in store
+      setUserInfo(data);
+      
+      // Show success toast
       toast({
-        title: "Error",
-        description: "Failed to submit form. Please try again.",
-        variant: "destructive",
+        title: 'Profile Updated',
+        description: 'Your profile has been saved successfully.',
       });
-    } finally {
-      setLoading(false);
+      
+      // Navigate to recommendation page
+      navigate('/recommend');
+    } catch (error) {
+      console.error('Form submission error:', error);
+      toast({
+        title: 'Error',
+        description: 'There was a problem saving your profile.',
+        variant: 'destructive',
+      });
     }
   };
 
+  // Handle reset form
+  const handleReset = () => {
+    resetUserInfo();
+    form.reset({
+      gender: 'male',
+      age: 30,
+      height: 175,
+      weight: 70,
+      bodyFatPercent: 15,
+      goal: 'muscle-gain',
+      activityLevel: 'medium',
+      mealCount: 3,
+      allergies: [],
+      budget: 100,
+      isAgreementChecked: false,
+    });
+    
+    toast({
+      title: 'Form Reset',
+      description: 'Your profile has been reset to default values.',
+    });
+  };
+
   return (
-    <div className="mb-8">
-      <div className="max-w-2xl mx-auto">
-        <div className="mb-8 text-center">
-          <h2 className="text-3xl font-heading font-bold mb-4">Personalized Meal Planning</h2>
-          <p className="text-neutral-600">Let's gather some information to create your perfect meal plan</p>
-        </div>
-        
-        <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="bg-white rounded-xl shadow-md p-6">
-            <div className="flex flex-col md:flex-row md:space-x-4 mb-6">
-              <div className="mb-4 md:mb-0 w-full md:w-1/2">
-                <FormField
-                  control={form.control}
-                  name="gender"
-                  render={({ field }) => (
-                    <FormItem className="space-y-1">
-                      <FormLabel className="text-sm font-medium text-neutral-700">Gender</FormLabel>
-                      <FormControl>
-                        <RadioGroup
-                          onValueChange={field.onChange}
-                          defaultValue={field.value}
-                          className="flex space-x-4"
-                        >
-                          <div className="flex items-center">
-                            <RadioGroupItem value="male" id="male" className="text-primary focus:ring-primary" />
-                            <label htmlFor="male" className="ml-2">Male</label>
-                          </div>
-                          <div className="flex items-center">
-                            <RadioGroupItem value="female" id="female" className="text-primary focus:ring-primary" />
-                            <label htmlFor="female" className="ml-2">Female</label>
-                          </div>
-                        </RadioGroup>
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              <div className="w-full md:w-1/2">
-                <FormField
-                  control={form.control}
-                  name="age"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel htmlFor="age" className="text-sm font-medium text-neutral-700">Age (years)</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          id="age"
-                          placeholder="e.g. 30"
-                          min={10}
-                          max={120}
-                          required
-                          {...field}
-                          value={field.value || ''}
-                          className="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </div>
-            
-            <div className="flex flex-col md:flex-row md:space-x-4 mb-6">
-              <div className="mb-4 md:mb-0 w-full md:w-1/2">
-                <FormField
-                  control={form.control}
-                  name="height"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel htmlFor="height" className="text-sm font-medium text-neutral-700">Height (cm)</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          id="height"
-                          placeholder="e.g. 175"
-                          min={100}
-                          max={250}
-                          required
-                          {...field}
-                          value={field.value || ''}
-                          className="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              <div className="w-full md:w-1/2">
-                <FormField
-                  control={form.control}
-                  name="weight"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel htmlFor="weight" className="text-sm font-medium text-neutral-700">Weight (kg)</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          id="weight"
-                          placeholder="e.g. 70"
-                          min={30}
-                          max={250}
-                          required
-                          {...field}
-                          value={field.value || ''}
-                          className="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </div>
+    <div className="container max-w-3xl py-6">
+      <div className="mb-8 text-center">
+        <h1 className="text-3xl font-heading font-bold mb-2">Personalized Meal Planner</h1>
+        <p className="text-neutral-600 max-w-2xl mx-auto">
+          Complete your profile to receive personalized meal recommendations tailored to your goals, dietary preferences, and budget.
+        </p>
+      </div>
 
-            <div className="flex flex-col md:flex-row md:space-x-4 mb-6">
-              <div className="mb-4 md:mb-0 w-full md:w-1/2">
-                <FormField
-                  control={form.control}
-                  name="bodyFatPercent"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel htmlFor="bodyFat" className="text-sm font-medium text-neutral-700">Body Fat % (optional)</FormLabel>
-                      <FormControl>
-                        <Input
-                          type="number"
-                          id="bodyFat"
-                          placeholder="e.g. 18"
-                          min={5}
-                          max={50}
-                          {...field}
-                          value={field.value || ''}
-                          className="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                        />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              <div className="w-full md:w-1/2">
-                <FormField
-                  control={form.control}
-                  name="activityLevel"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel htmlFor="activityLevel" className="text-sm font-medium text-neutral-700">Activity Level</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger className="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
-                            <SelectValue placeholder="Select activity level" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="low">Low</SelectItem>
-                          <SelectItem value="medium">Medium</SelectItem>
-                          <SelectItem value="high">High</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </div>
-
-            <div className="flex flex-col md:flex-row md:space-x-4 mb-6">
-              <div className="mb-4 md:mb-0 w-full md:w-1/2">
-                <FormField
-                  control={form.control}
-                  name="goal"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel htmlFor="goal" className="text-sm font-medium text-neutral-700">Health Goal</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger className="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
-                            <SelectValue placeholder="Select your goal" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="weight-loss">Weight Loss</SelectItem>
-                          <SelectItem value="muscle-gain">Muscle Gain</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-              <div className="w-full md:w-1/2">
-                <FormField
-                  control={form.control}
-                  name="mealCount"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel htmlFor="mealCount" className="text-sm font-medium text-neutral-700">Meals per day</FormLabel>
-                      <Select onValueChange={field.onChange} defaultValue={field.value}>
-                        <FormControl>
-                          <SelectTrigger className="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
-                            <SelectValue placeholder="Number of meals" />
-                          </SelectTrigger>
-                        </FormControl>
-                        <SelectContent>
-                          <SelectItem value="2">2 meals</SelectItem>
-                          <SelectItem value="3">3 meals</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </div>
-            </div>
-
-            <div className="mb-6">
+      <Form {...form}>
+        <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+          {/* Personal Information Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Personal Information</CardTitle>
+              <CardDescription>
+                Enter your physical details for accurate nutritional recommendations.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Gender Selection */}
               <FormField
                 control={form.control}
-                name="budget"
+                name="gender"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel htmlFor="budget" className="text-sm font-medium text-neutral-700">Weekly Budget ($)</FormLabel>
+                    <FormLabel>Gender</FormLabel>
                     <FormControl>
-                      <div className="relative">
-                        <div className="absolute inset-y-0 left-0 flex items-center pl-3 pointer-events-none">
-                          <span className="text-neutral-500">$</span>
-                        </div>
-                        <Input
-                          type="number"
-                          id="budget"
-                          placeholder="e.g. 100"
-                          min={20}
-                          required
-                          {...field}
-                          value={field.value || ''}
-                          className="w-full pl-8 px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
-                        />
-                      </div>
+                      <RadioGroup
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                        className="flex space-x-4"
+                      >
+                        <FormItem className="flex items-center space-x-2 space-y-0">
+                          <FormControl>
+                            <RadioGroupItem value="male" />
+                          </FormControl>
+                          <FormLabel className="font-normal cursor-pointer">Male</FormLabel>
+                        </FormItem>
+                        <FormItem className="flex items-center space-x-2 space-y-0">
+                          <FormControl>
+                            <RadioGroupItem value="female" />
+                          </FormControl>
+                          <FormLabel className="font-normal cursor-pointer">Female</FormLabel>
+                        </FormItem>
+                      </RadioGroup>
                     </FormControl>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-            </div>
 
-            <div className="mb-6">
+              {/* Age Input */}
+              <FormField
+                control={form.control}
+                name="age"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Age (years)</FormLabel>
+                    <FormControl>
+                      <Input type="number" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Height Input */}
+              <FormField
+                control={form.control}
+                name="height"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Height (cm)</FormLabel>
+                    <FormControl>
+                      <Input type="number" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Weight Input */}
+              <FormField
+                control={form.control}
+                name="weight"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Weight (kg)</FormLabel>
+                    <FormControl>
+                      <Input type="number" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Body Fat Percentage */}
+              <FormField
+                control={form.control}
+                name="bodyFatPercent"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Body Fat Percentage (optional)</FormLabel>
+                    <FormControl>
+                      <div className="pt-2">
+                        <Slider
+                          defaultValue={[field.value || 15]}
+                          min={3}
+                          max={50}
+                          step={1}
+                          onValueChange={(vals) => field.onChange(vals[0])}
+                        />
+                        <div className="flex justify-between mt-2">
+                          <span className="text-xs text-neutral-500">3%</span>
+                          <span className="text-xs font-medium">{field.value || 15}%</span>
+                          <span className="text-xs text-neutral-500">50%</span>
+                        </div>
+                      </div>
+                    </FormControl>
+                    <FormDescription>
+                      Approximate body fat percentage helps tailor nutrient ratios.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Goals and Preferences Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Goals and Preferences</CardTitle>
+              <CardDescription>
+                Set your nutritional goals and dietary preferences.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Goal Selection */}
+              <FormField
+                control={form.control}
+                name="goal"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Primary Goal</FormLabel>
+                    <FormControl>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select your primary goal" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="weight-loss">Weight Loss</SelectItem>
+                          <SelectItem value="muscle-gain">Muscle Gain</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Activity Level */}
+              <FormField
+                control={form.control}
+                name="activityLevel"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Activity Level</FormLabel>
+                    <FormControl>
+                      <Select
+                        onValueChange={field.onChange}
+                        defaultValue={field.value}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select your activity level" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="low">Low (Mostly Sedentary)</SelectItem>
+                          <SelectItem value="medium">Medium (Moderate Exercise 3-5 days/week)</SelectItem>
+                          <SelectItem value="high">High (Intense Exercise 6-7 days/week)</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Meal Count */}
+              <FormField
+                control={form.control}
+                name="mealCount"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Preferred Meals Per Day</FormLabel>
+                    <FormControl>
+                      <Select
+                        onValueChange={(value) => field.onChange(parseInt(value))}
+                        value={field.value.toString()}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Select number of meals" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="3">3 Meals</SelectItem>
+                          <SelectItem value="4">4 Meals</SelectItem>
+                          <SelectItem value="5">5 Meals</SelectItem>
+                          <SelectItem value="6">6 Meals</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </FormControl>
+                    <FormDescription>
+                      We'll adjust portion sizes based on your meal frequency.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+
+              {/* Allergies */}
               <FormField
                 control={form.control}
                 name="allergies"
                 render={() => (
                   <FormItem>
-                    <FormLabel className="text-sm font-medium text-neutral-700">Allergies or Restrictions (max 5)</FormLabel>
-                    <div className="flex flex-wrap gap-2">
-                      {allergyOptions.map((option) => (
+                    <div className="mb-4">
+                      <FormLabel>Allergies and Dietary Restrictions</FormLabel>
+                      <FormDescription>
+                        Select any allergies or foods you want to avoid.
+                      </FormDescription>
+                    </div>
+                    <div className="grid grid-cols-2 gap-2">
+                      {allergiesOptions.map((option) => (
                         <FormField
                           key={option.id}
                           control={form.control}
                           name="allergies"
                           render={({ field }) => {
                             return (
-                              <FormItem className="inline-flex items-center bg-neutral-100 px-3 py-2 rounded-full">
+                              <FormItem
+                                key={option.id}
+                                className="flex flex-row items-start space-x-3 space-y-0"
+                              >
                                 <FormControl>
                                   <Checkbox
                                     checked={field.value?.includes(option.id)}
                                     onCheckedChange={(checked) => {
-                                      if (checked && field.value.length >= 5) {
-                                        toast({
-                                          title: "Maximum allergies reached",
-                                          description: "You can select a maximum of 5 allergies",
-                                          variant: "destructive",
-                                        });
-                                        return;
-                                      }
                                       return checked
                                         ? field.onChange([...field.value, option.id])
                                         : field.onChange(
@@ -399,10 +382,9 @@ const MainInputPage = () => {
                                             )
                                           )
                                     }}
-                                    className="text-primary focus:ring-primary h-4 w-4"
                                   />
                                 </FormControl>
-                                <FormLabel className="ml-2 text-sm">
+                                <FormLabel className="font-normal cursor-pointer">
                                   {option.label}
                                 </FormLabel>
                               </FormItem>
@@ -415,54 +397,88 @@ const MainInputPage = () => {
                   </FormItem>
                 )}
               />
-            </div>
+            </CardContent>
+          </Card>
 
-            <div className="mb-8">
+          {/* Budget Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Weekly Budget</CardTitle>
+              <CardDescription>
+                Set your weekly grocery budget for meal planning.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Budget Slider */}
               <FormField
                 control={form.control}
-                name="consent"
+                name="budget"
                 render={({ field }) => (
-                  <FormItem className="flex flex-row items-start space-x-2 space-y-0">
+                  <FormItem>
+                    <FormLabel>Weekly Food Budget (USD)</FormLabel>
                     <FormControl>
-                      <Checkbox
-                        checked={field.value}
-                        onCheckedChange={field.onChange}
-                        className="text-primary focus:ring-primary h-4 w-4"
-                      />
+                      <div className="pt-2">
+                        <Slider
+                          defaultValue={[field.value]}
+                          min={20}
+                          max={300}
+                          step={5}
+                          onValueChange={(vals) => field.onChange(vals[0])}
+                        />
+                        <div className="flex justify-between mt-2">
+                          <span className="text-xs text-neutral-500">$20</span>
+                          <span className="text-xs font-medium">${field.value}</span>
+                          <span className="text-xs text-neutral-500">$300</span>
+                        </div>
+                      </div>
                     </FormControl>
-                    <FormLabel className="text-sm text-neutral-600">
-                      I consent to my data being used to generate personalized meal recommendations
-                    </FormLabel>
+                    <FormDescription>
+                      We'll optimize your meal plan to stay within this budget.
+                    </FormDescription>
                     <FormMessage />
                   </FormItem>
                 )}
               />
-            </div>
+            </CardContent>
+          </Card>
 
-            <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
-              <Button
-                type="submit"
-                disabled={loading}
-                className="w-full bg-primary hover:bg-primary-600 text-white font-medium py-3 px-4 rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-              >
-                {loading ? "Processing..." : "Get Recommendations"}
-              </Button>
-              
-              <Button
-                type="button"
-                variant="outline"
-                onClick={() => {
-                  form.reset();
-                  useUserStore.getState().resetUserInfo();
-                }}
-                className="w-full border-neutral-300 text-neutral-700 hover:bg-neutral-100 font-medium py-3 px-4 rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-              >
-                Reset Form
-              </Button>
-            </div>
-          </form>
-        </Form>
-      </div>
+          {/* Agreement Checkbox */}
+          <FormField
+            control={form.control}
+            name="isAgreementChecked"
+            render={({ field }) => (
+              <FormItem className="flex flex-row items-start space-x-3 space-y-0">
+                <FormControl>
+                  <Checkbox
+                    checked={field.value}
+                    onCheckedChange={field.onChange}
+                  />
+                </FormControl>
+                <div className="space-y-1 leading-none">
+                  <FormLabel className="font-normal">
+                    I understand that this application provides recommendations only and not professional medical or nutrition advice.
+                  </FormLabel>
+                  <FormMessage />
+                </div>
+              </FormItem>
+            )}
+          />
+
+          {/* Form Actions */}
+          <div className="flex justify-between">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={handleReset}
+            >
+              Reset Form
+            </Button>
+            <Button type="submit">
+              Get Recommendations
+            </Button>
+          </div>
+        </form>
+      </Form>
     </div>
   );
 };

@@ -7,7 +7,8 @@ import {
   CardContent, 
   CardDescription, 
   CardHeader, 
-  CardTitle 
+  CardTitle,
+  CardFooter
 } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { 
@@ -281,6 +282,17 @@ const MealConfigPage: React.FC = () => {
                   )}
                 </div>
               </CardContent>
+              <CardFooter className="flex justify-between">
+                <Button variant="outline" onClick={() => navigate('/recommend')}>
+                  Back to Recommendations
+                </Button>
+                <Button 
+                  onClick={() => navigate('/summary')}
+                  disabled={!isReadyForSummary()}
+                >
+                  View Summary
+                </Button>
+              </CardFooter>
             </Card>
           </div>
         </div>

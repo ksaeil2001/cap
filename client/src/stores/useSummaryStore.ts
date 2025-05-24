@@ -1,286 +1,107 @@
 import { create } from 'zustand';
-import { FoodItem } from '@/stores/useRecommendStore';
-import { useUserStore } from '@/stores/useUserStore';
-import { useMealConfigStore } from '@/stores/useMealConfigStore';
+import { FoodItem } from '@/api/mockRecommend';
+import { MealTime } from './useMealConfigStore';
+import { useUserStore } from './useUserStore';
 
-// Type definition for a day in the weekly plan
-export interface WeeklyPlanDay {
-  day: string;
-  meals: {
-    breakfast: FoodItem[];
-    lunch: FoodItem[];
-    dinner: FoodItem[];
-    [key: string]: FoodItem[];
-  };
-  totalCalories: number;
-  totalCost: number;
-}
-
-// Type definition for nutrition data
-interface NutritionData {
+export interface NutritionSummary {
+  calories: number;
   protein: number;
+  fat: number;
   carbs: number;
-  fats: number;
-  fiber: number;
-  proteinTarget: number;
-  carbsTarget: number;
-  fatsTarget: number;
-  fiberTarget: number;
-  averageCalories: number;
-  calorieTarget: number;
 }
 
-// Type definition for budget data
-interface BudgetData {
-  weeklyBudget: number;
-  actualSpend: number;
-  savings: number;
-  mealCosts: {
-    breakfast: number;
-    lunch: number;
-    dinner: number;
-  };
-  mealCostPercentages: {
-    breakfast: number;
-    lunch: number;
-    dinner: number;
-  };
+interface MealPlan {
+  breakfast: FoodItem[];
+  lunch: FoodItem[];
+  dinner: FoodItem[];
+  [key: string]: FoodItem[];
 }
 
-// Summary store interface
+export interface DayPlan {
+  day: number;
+  meals: MealPlan;
+  nutritionSummary: NutritionSummary;
+  budgetUsed: number;
+}
+
 interface SummaryStore {
-  weeklyPlan: WeeklyPlanDay[];
-  nutritionData: NutritionData;
-  budgetData: BudgetData;
-  generateWeeklyPlan: () => void;
-  exportMealPlan: () => string;
+  weekPlan: DayPlan[];
+  selectedDay: number;
+  
+  // Computed values
+  selectedDayPlan: DayPlan;
+  
+  // Actions
+  setWeekPlan: (weekPlan: DayPlan[]) => void;
+  setSelectedDay: (day: number) => void;
+  generateWeekPlan: () => void;
+  reset: () => void;
 }
 
-// Initial nutrition data
-const initialNutritionData: NutritionData = {
-  protein: 0,
-  carbs: 0,
-  fats: 0,
-  fiber: 0,
-  proteinTarget: 0,
-  carbsTarget: 0,
-  fatsTarget: 0,
-  fiberTarget: 0,
-  averageCalories: 0,
-  calorieTarget: 0,
-};
-
-// Initial budget data
-const initialBudgetData: BudgetData = {
-  weeklyBudget: 0,
-  actualSpend: 0,
-  savings: 0,
-  mealCosts: {
-    breakfast: 0,
-    lunch: 0,
-    dinner: 0,
-  },
-  mealCostPercentages: {
-    breakfast: 0,
-    lunch: 0,
-    dinner: 0,
-  },
-};
-
-// Days of the week
-const daysOfWeek = [
-  'Monday',
-  'Sunday',
-  'Tuesday',
-  'Wednesday',
-  'Thursday',
-  'Friday',
-  'Saturday',
-];
-
-// Create the summary store
 export const useSummaryStore = create<SummaryStore>((set, get) => ({
-  // Initial state
-  weeklyPlan: [],
-  nutritionData: initialNutritionData,
-  budgetData: initialBudgetData,
-
-  // Generate the weekly meal plan
-  generateWeeklyPlan: () => {
-    const userInfo = useUserStore.getState().userInfo;
-    const { meals, nutritionSummary } = useMealConfigStore.getState();
-    
-    // Calculate daily meal costs
-    const dailyBreakfastCost = meals.breakfast.reduce((sum, food) => sum + (food.price || 0), 0);
-    const dailyLunchCost = meals.lunch.reduce((sum, food) => sum + (food.price || 0), 0);
-    const dailyDinnerCost = meals.dinner.reduce((sum, food) => sum + (food.price || 0), 0);
-    
-    // Calculate daily calories
-    const dailyCalories = 
-      meals.breakfast.reduce((sum, food) => sum + (food.calories || food.kcal || 0), 0) +
-      meals.lunch.reduce((sum, food) => sum + (food.calories || food.kcal || 0), 0) +
-      meals.dinner.reduce((sum, food) => sum + (food.calories || food.kcal || 0), 0);
-    
-    // Calculate daily cost
-    const dailyCost = dailyBreakfastCost + dailyLunchCost + dailyDinnerCost;
-    
-    // Generate weekly plan
-    const weeklyPlan: WeeklyPlanDay[] = daysOfWeek.map(day => ({
-      day,
-      meals: {
-        breakfast: [...meals.breakfast],
-        lunch: [...meals.lunch],
-        dinner: [...meals.dinner],
-      },
-      totalCalories: dailyCalories,
-      totalCost: dailyCost,
-    }));
-
-    // Calculate total nutrition values
-    const totalProtein = nutritionSummary?.protein.actual || 0;
-    const totalCarbs = nutritionSummary?.carbs.actual || 0;
-    const totalFat = nutritionSummary?.fat.actual || 0;
-    const totalFiber = 0; // Placeholder since we don't have fiber data yet
-    
-    // Calculate target nutrition values based on user goals
-    const proteinTarget = nutritionSummary?.protein.target || 0;
-    const carbsTarget = nutritionSummary?.carbs.target || 0;
-    const fatsTarget = nutritionSummary?.fat.target || 0;
-    const fiberTarget = 25; // Default fiber target
-    
-    // Calculate average calories
-    const averageCalories = nutritionSummary?.calories.actual || 0;
-    const calorieTarget = nutritionSummary?.calories.target || 0;
-    
-    // Create nutrition data object
-    const nutritionData: NutritionData = {
-      protein: totalProtein,
-      carbs: totalCarbs,
-      fats: totalFat,
-      fiber: totalFiber,
-      proteinTarget,
-      carbsTarget,
-      fatsTarget,
-      fiberTarget,
-      averageCalories,
-      calorieTarget,
+  weekPlan: [],
+  selectedDay: 0,
+  
+  // Computed getter for selected day plan
+  get selectedDayPlan() {
+    const { weekPlan, selectedDay } = get();
+    return weekPlan[selectedDay] || {
+      day: 0,
+      meals: { breakfast: [], lunch: [], dinner: [] },
+      nutritionSummary: { calories: 0, protein: 0, fat: 0, carbs: 0 },
+      budgetUsed: 0
     };
-    
-    // Calculate budget metrics
-    const weeklyBudget = userInfo.budget || 0;
-    const actualSpend = dailyCost * 7;
-    const savings = weeklyBudget - actualSpend;
-    
-    // Calculate meal cost percentages
-    const totalDailyCost = dailyBreakfastCost + dailyLunchCost + dailyDinnerCost;
-    const breakfastPercentage = totalDailyCost > 0 ? (dailyBreakfastCost / totalDailyCost) * 100 : 0;
-    const lunchPercentage = totalDailyCost > 0 ? (dailyLunchCost / totalDailyCost) * 100 : 0;
-    const dinnerPercentage = totalDailyCost > 0 ? (dailyDinnerCost / totalDailyCost) * 100 : 0;
-    
-    // Create budget data object
-    const budgetData: BudgetData = {
-      weeklyBudget,
-      actualSpend,
-      savings,
-      mealCosts: {
-        breakfast: dailyBreakfastCost,
-        lunch: dailyLunchCost,
-        dinner: dailyDinnerCost,
-      },
-      mealCostPercentages: {
-        breakfast: breakfastPercentage,
-        lunch: lunchPercentage,
-        dinner: dinnerPercentage,
-      },
-    };
-    
-    // Update state
-    set({
-      weeklyPlan,
-      nutritionData,
-      budgetData,
-    });
   },
   
-  // Export the meal plan as text
-  exportMealPlan: () => {
-    const { weeklyPlan, nutritionData, budgetData } = get();
-    const userInfo = useUserStore.getState().userInfo;
+  // Actions
+  setWeekPlan: (weekPlan) => set({ weekPlan }),
+  setSelectedDay: (day) => set({ selectedDay: day }),
+  
+  // Generate a week-long meal plan based on current configuration
+  generateWeekPlan: () => {
+    const { weekPlan } = get();
+    const mealConfigStore = require('./useMealConfigStore').useMealConfigStore.getState();
+    const userInfo = useUserStore.getState();
     
-    // Create a string representation of the meal plan
-    let exportText = `PERSONALIZED MEAL PLAN\n`;
-    exportText += `====================\n\n`;
+    // If we already have a week plan, don't regenerate
+    if (weekPlan.length > 0) return;
     
-    // Add user info
-    exportText += `USER PROFILE\n`;
-    exportText += `-----------\n`;
-    exportText += `Gender: ${userInfo.gender}\n`;
-    exportText += `Age: ${userInfo.age}\n`;
-    exportText += `Height: ${userInfo.height} cm\n`;
-    exportText += `Weight: ${userInfo.weight} kg\n`;
-    exportText += `Goal: ${userInfo.goal}\n`;
-    exportText += `Activity Level: ${userInfo.activityLevel}\n`;
-    exportText += `Weekly Budget: $${userInfo.budget.toFixed(2)}\n\n`;
+    // Create 7 days of meal plans with slight variations
+    const newWeekPlan: DayPlan[] = [];
     
-    // Add nutrition summary
-    exportText += `NUTRITION SUMMARY\n`;
-    exportText += `----------------\n`;
-    exportText += `Daily Calories: ${Math.round(nutritionData.averageCalories)} kcal\n`;
-    exportText += `Protein: ${Math.round(nutritionData.protein)}g\n`;
-    exportText += `Carbohydrates: ${Math.round(nutritionData.carbs)}g\n`;
-    exportText += `Fats: ${Math.round(nutritionData.fats)}g\n\n`;
-    
-    // Add budget summary
-    exportText += `BUDGET SUMMARY\n`;
-    exportText += `--------------\n`;
-    exportText += `Weekly Budget: $${budgetData.weeklyBudget.toFixed(2)}\n`;
-    exportText += `Actual Spend: $${budgetData.actualSpend.toFixed(2)}\n`;
-    exportText += `Savings: $${budgetData.savings.toFixed(2)}\n\n`;
-    
-    // Add weekly plan
-    exportText += `WEEKLY MEAL PLAN\n`;
-    exportText += `---------------\n\n`;
-    
-    weeklyPlan.forEach(day => {
-      exportText += `${day.day.toUpperCase()}\n`;
-      exportText += `${'-'.repeat(day.day.length)}\n`;
+    for (let i = 0; i < 7; i++) {
+      const baseMeals = mealConfigStore.meals;
       
-      // Breakfast
-      exportText += `Breakfast:\n`;
-      if (day.meals.breakfast.length > 0) {
-        day.meals.breakfast.forEach(food => {
-          exportText += `- ${food.name} (${food.calories || food.kcal || 0} kcal, $${food.price?.toFixed(2) || 0})\n`;
-        });
-      } else {
-        exportText += `- No breakfast items\n`;
-      }
+      // Create a slightly varied version of meals for each day
+      // (In a real app, this would use the AI to generate truly different meals)
+      const dayMeals: MealPlan = {
+        breakfast: [...baseMeals.breakfast],
+        lunch: [...baseMeals.lunch],
+        dinner: [...baseMeals.dinner]
+      };
       
-      // Lunch
-      exportText += `\nLunch:\n`;
-      if (day.meals.lunch.length > 0) {
-        day.meals.lunch.forEach(food => {
-          exportText += `- ${food.name} (${food.calories || food.kcal || 0} kcal, $${food.price?.toFixed(2) || 0})\n`;
-        });
-      } else {
-        exportText += `- No lunch items\n`;
-      }
+      // Calculate nutrition summary for this day
+      const allFoods = [...dayMeals.breakfast, ...dayMeals.lunch, ...dayMeals.dinner];
+      const nutritionSummary: NutritionSummary = {
+        calories: Math.round(allFoods.reduce((sum, food) => sum + food.kcal, 0)),
+        protein: Math.round(allFoods.reduce((sum, food) => sum + food.protein, 0)),
+        fat: Math.round(allFoods.reduce((sum, food) => sum + food.fat, 0)),
+        carbs: Math.round(allFoods.reduce((sum, food) => sum + food.carbs, 0))
+      };
       
-      // Dinner
-      exportText += `\nDinner:\n`;
-      if (day.meals.dinner.length > 0) {
-        day.meals.dinner.forEach(food => {
-          exportText += `- ${food.name} (${food.calories || food.kcal || 0} kcal, $${food.price?.toFixed(2) || 0})\n`;
-        });
-      } else {
-        exportText += `- No dinner items\n`;
-      }
+      // Calculate budget for this day
+      const budgetUsed = Math.round(allFoods.reduce((sum, food) => sum + food.price, 0));
       
-      exportText += `\nDaily Totals: ${Math.round(day.totalCalories)} kcal, $${day.totalCost.toFixed(2)}\n\n`;
-      exportText += `${'-'.repeat(40)}\n\n`;
-    });
+      newWeekPlan.push({
+        day: i + 1,
+        meals: dayMeals,
+        nutritionSummary,
+        budgetUsed
+      });
+    }
     
-    return exportText;
+    set({ weekPlan: newWeekPlan });
   },
+  
+  reset: () => set({ weekPlan: [], selectedDay: 0 })
 }));
-
-export default useSummaryStore;

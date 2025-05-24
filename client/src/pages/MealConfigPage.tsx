@@ -116,35 +116,23 @@ const MealConfigPage: React.FC = () => {
         {/* Validation Alerts */}
         <div className="space-y-3">
           {validationStatus.budgetExceeded && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Budget Exceeded</AlertTitle>
-              <AlertDescription>
-                Your meal selections exceed your daily budget of {formatCurrency(nutritionSummary.budget.target)}.
-                Current total: {formatCurrency(nutritionSummary.budget.actual)}
-              </AlertDescription>
-            </Alert>
+            <AlertCustom type="danger" className="mb-2">
+              <strong>예산 초과:</strong> 설정한 일일 예산 {formatCurrency(nutritionSummary.budget.target)}을 초과했습니다. 
+              현재 총액: {formatCurrency(nutritionSummary.budget.actual)}
+            </AlertCustom>
           )}
           
           {validationStatus.hasAllergies && (
-            <Alert variant="destructive">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Allergies Detected</AlertTitle>
-              <AlertDescription>
-                Your meal plan contains foods that conflict with your allergy preferences.
-                Please review and adjust your selections.
-              </AlertDescription>
-            </Alert>
+            <AlertCustom type="danger" className="mb-2">
+              <strong>알레르기 경고:</strong> 선택한 식단에 알레르기 유발 성분이 포함되어 있습니다.
+              식단 구성을 다시 확인하고 조정해 주세요.
+            </AlertCustom>
           )}
           
           {validationStatus.missingMeals && (
-            <Alert variant="destructive">
-              <AlertTriangle className="h-4 w-4" />
-              <AlertTitle>Incomplete Meal Plan</AlertTitle>
-              <AlertDescription>
-                Please add at least one food item to each meal (breakfast, lunch, and dinner).
-              </AlertDescription>
-            </Alert>
+            <AlertCustom type="warning" className="mb-2">
+              <strong>미완성 식단:</strong> 모든 끼니(아침, 점심, 저녁)에 최소 한 가지 이상의 음식을 추가해 주세요.
+            </AlertCustom>
           )}
           
           {isReadyForSummary() && (

@@ -19,6 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import DetailedNutritionAnalysis from '@/components/DetailedNutritionAnalysis';
 import AIRecommendations from '@/components/AIRecommendations';
+import AlertCustom from '@/components/ui/alert-custom';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
@@ -235,23 +236,17 @@ const SummaryPage = () => {
                     </div>
                     
                     {budgetPercentage > 100 && (
-                      <Alert variant="destructive">
-                        <AlertCircle className="h-4 w-4" />
-                        <AlertTitle>Budget Exceeded</AlertTitle>
-                        <AlertDescription>
-                          You have exceeded your daily budget by {formatCurrency(selectedDayPlan.budgetUsed - (userStore.budget / 7))}
-                        </AlertDescription>
-                      </Alert>
+                      <AlertCustom type="danger" className="mb-2">
+                        <strong>예산 초과:</strong> 일일 예산을 {formatCurrency(selectedDayPlan.budgetUsed - (userStore.budget / 7))} 초과했습니다.
+                        식단 구성을 조정하거나 예산을 늘려보세요.
+                      </AlertCustom>
                     )}
                     
                     {validationStatus.hasAllergies && (
-                      <Alert variant="destructive">
-                        <AlertTriangle className="h-4 w-4" />
-                        <AlertTitle>Allergy Warning</AlertTitle>
-                        <AlertDescription>
-                          Your meal plan contains foods you're allergic to. Please review carefully.
-                        </AlertDescription>
-                      </Alert>
+                      <AlertCustom type="danger" className="mb-2">
+                        <strong>알레르기 경고:</strong> 현재 식단에 알레르기 유발 성분이 포함되어 있습니다.
+                        신중하게 검토하고 필요시 조정해 주세요.
+                      </AlertCustom>
                     )}
                   </div>
                 </CardContent>

@@ -21,23 +21,23 @@ import { useToast } from '@/hooks/use-toast';
 // Form schema validation
 const formSchema = z.object({
   gender: z.enum(['male', 'female'], {
-    required_error: 'Please select your gender',
+    required_error: '성별을 선택해주세요',
   }),
   age: z.coerce.number().min(16).max(100),
   height: z.coerce.number().min(100).max(250),
   weight: z.coerce.number().min(30).max(250),
   bodyFatPercent: z.coerce.number().min(3).max(50).optional(),
   goal: z.enum(['weight-loss', 'muscle-gain'], {
-    required_error: 'Please select your goal',
+    required_error: '목표를 선택해주세요',
   }),
   activityLevel: z.enum(['low', 'medium', 'high'], {
-    required_error: 'Please select your activity level',
+    required_error: '활동 수준을 선택해주세요',
   }),
   mealCount: z.coerce.number().min(3).max(6),
   allergies: z.array(z.string()).optional().default([]),
   budget: z.coerce.number().min(20).max(300),
   isAgreementChecked: z.literal(true, {
-    invalid_type_error: 'You must agree to the terms',
+    invalid_type_error: '이용 약관에 동의해주세요',
   }),
 });
 
@@ -45,13 +45,13 @@ type FormValues = z.infer<typeof formSchema>;
 
 // Allergies options
 const allergiesOptions = [
-  { id: 'gluten', label: 'Gluten' },
-  { id: 'dairy', label: 'Dairy' },
-  { id: 'nuts', label: 'Nuts' },
-  { id: 'eggs', label: 'Eggs' },
-  { id: 'soy', label: 'Soy' },
-  { id: 'fish', label: 'Fish' },
-  { id: 'shellfish', label: 'Shellfish' },
+  { id: 'gluten', label: '글루텐' },
+  { id: 'dairy', label: '유제품' },
+  { id: 'nuts', label: '견과류' },
+  { id: 'eggs', label: '계란' },
+  { id: 'soy', label: '대두(콩)' },
+  { id: 'fish', label: '생선' },
+  { id: 'shellfish', label: '조개류' },
 ];
 
 const MainInputPage = () => {
@@ -86,8 +86,8 @@ const MainInputPage = () => {
       
       // Show success toast
       toast({
-        title: 'Profile Updated',
-        description: 'Your profile has been saved successfully.',
+        title: '프로필 업데이트 완료',
+        description: '프로필이 성공적으로 저장되었습니다.',
       });
       
       // Navigate to recommendation page
@@ -95,8 +95,8 @@ const MainInputPage = () => {
     } catch (error) {
       console.error('Form submission error:', error);
       toast({
-        title: 'Error',
-        description: 'There was a problem saving your profile.',
+        title: '오류',
+        description: '프로필 저장 중 문제가 발생했습니다.',
         variant: 'destructive',
       });
     }
@@ -120,17 +120,17 @@ const MainInputPage = () => {
     });
     
     toast({
-      title: 'Form Reset',
-      description: 'Your profile has been reset to default values.',
+      title: '양식 초기화',
+      description: '프로필이 기본값으로 초기화되었습니다.',
     });
   };
 
   return (
     <div className="container max-w-3xl py-6">
       <div className="mb-8 text-center">
-        <h1 className="text-3xl font-heading font-bold mb-2">Personalized Meal Planner</h1>
+        <h1 className="text-3xl font-heading font-bold mb-2">맞춤형 식단 플래너</h1>
         <p className="text-neutral-600 max-w-2xl mx-auto">
-          Complete your profile to receive personalized meal recommendations tailored to your goals, dietary preferences, and budget.
+          프로필을 작성하여 목표, 식단 선호도, 예산에 맞춘 개인화된 식단 추천을 받으세요.
         </p>
       </div>
 

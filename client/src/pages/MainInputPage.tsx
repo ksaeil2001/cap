@@ -323,25 +323,25 @@ const MainInputPage = () => {
                 name="mealCount"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Preferred Meals Per Day</FormLabel>
+                    <FormLabel>하루 식사 횟수</FormLabel>
                     <FormControl>
                       <Select
                         onValueChange={(value) => field.onChange(parseInt(value))}
                         value={field.value.toString()}
                       >
                         <SelectTrigger>
-                          <SelectValue placeholder="Select number of meals" />
+                          <SelectValue placeholder="식사 횟수 선택" />
                         </SelectTrigger>
                         <SelectContent>
-                          <SelectItem value="3">3 Meals</SelectItem>
-                          <SelectItem value="4">4 Meals</SelectItem>
-                          <SelectItem value="5">5 Meals</SelectItem>
-                          <SelectItem value="6">6 Meals</SelectItem>
+                          <SelectItem value="3">3끼</SelectItem>
+                          <SelectItem value="4">4끼</SelectItem>
+                          <SelectItem value="5">5끼</SelectItem>
+                          <SelectItem value="6">6끼</SelectItem>
                         </SelectContent>
                       </Select>
                     </FormControl>
                     <FormDescription>
-                      We'll adjust portion sizes based on your meal frequency.
+                      식사 횟수에 따라 1회 식사량을 조정합니다.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -355,9 +355,9 @@ const MainInputPage = () => {
                 render={() => (
                   <FormItem>
                     <div className="mb-4">
-                      <FormLabel>Allergies and Dietary Restrictions</FormLabel>
+                      <FormLabel>알레르기 및 식이 제한</FormLabel>
                       <FormDescription>
-                        Select any allergies or foods you want to avoid.
+                        피하고 싶은 알레르기 식품이나 음식을 선택하세요.
                       </FormDescription>
                     </div>
                     <div className="grid grid-cols-2 gap-2">
@@ -405,9 +405,9 @@ const MainInputPage = () => {
           {/* Budget Card */}
           <Card>
             <CardHeader>
-              <CardTitle>Weekly Budget</CardTitle>
+              <CardTitle>주간 예산</CardTitle>
               <CardDescription>
-                Set your weekly grocery budget for meal planning.
+                식단 계획을 위한 주간 식료품 예산을 설정하세요.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -417,7 +417,7 @@ const MainInputPage = () => {
                 name="budget"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>Weekly Food Budget (USD)</FormLabel>
+                    <FormLabel>주간 식품 예산 (원)</FormLabel>
                     <FormControl>
                       <div className="pt-2">
                         <Slider
@@ -428,9 +428,9 @@ const MainInputPage = () => {
                           onValueChange={(vals) => field.onChange(vals[0])}
                         />
                         <div className="flex justify-between mt-2">
-                          <span className="text-xs text-neutral-500">$20</span>
-                          <span className="text-xs font-medium">${field.value}</span>
-                          <span className="text-xs text-neutral-500">$300</span>
+                          <span className="text-xs text-neutral-500">₩20,000</span>
+                          <span className="text-xs font-medium">₩{field.value * 1000}</span>
+                          <span className="text-xs text-neutral-500">₩300,000</span>
                         </div>
                       </div>
                     </FormControl>

@@ -38,6 +38,14 @@ app.use((req, res, next) => {
 });
 
 (async () => {
+  // Seed the database with initial data
+  try {
+    await storage.seedDatabase();
+    log("Database initialized successfully");
+  } catch (error) {
+    log(`Error initializing database: ${error}`, "error");
+  }
+  
   const server = await registerRoutes(app);
 
   app.use((err: any, _req: Request, res: Response, _next: NextFunction) => {

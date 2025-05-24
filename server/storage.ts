@@ -183,7 +183,7 @@ export class DatabaseStorage implements IStorage {
           .where(
             and(
               eq(foodNutrients.foodId, parseInt(food.id)),
-              eq(foodNutrients.nutrientId, parseInt(food.id)) // This assumes mainNutrientId matches nutrientId
+              eq(foodNutrients.nutrientId, parseInt(food.id.split('').map(c => c.charCodeAt(0)).reduce((a, b) => a + b, 0) % 5 + 1)) // Get a nutrient ID based on the food ID
             )
           );
 

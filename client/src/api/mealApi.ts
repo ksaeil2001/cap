@@ -10,9 +10,17 @@ const foodImages = [
   "https://images.unsplash.com/photo-1542814880-7e62cf14b7c8?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&h=300"
 ];
 
+import mockRecommend from './mockRecommend';
+
 export async function getRecommendedFoods(userInfo: UserInfo): Promise<Food[]> {
   try {
-    // Make API call to backend
+    // Check for development environment
+    if (import.meta.env.DEV) {
+      console.log('Using mock API for development');
+      return await mockRecommend(userInfo);
+    }
+    
+    // Make API call to backend in production
     const response = await fetch('/api/recommend', {
       method: 'POST',
       headers: {

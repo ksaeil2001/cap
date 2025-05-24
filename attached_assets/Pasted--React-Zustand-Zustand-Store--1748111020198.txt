@@ -1,0 +1,168 @@
+다음은 명확한 타입 정의와 상태 관리 방법을 포함한
+React + Zustand 환경에서 사용할 수 있는 추천 결과 관리용 Zustand Store의 전체 코드입니다.
+
+✅ Zustand Store 코드 전체 구현 (useRecommendStore.ts)
+경로: src/stores/useRecommendStore.ts
+
+import { create } from 'zustand';
+
+// 개별 음식 아이템 타입 정의
+export interface FoodItem {
+  foodId: number;
+  name: string;
+  kcal: number;
+  protein: number;
+  fat: number;
+  carbs: number;
+  price: number;
+  tags: string[];
+}
+
+// 영양 요약 타입 정의
+export interface NutritionSummary {
+  calories: {
+    target: number;
+    actual: number;
+  };
+  protein: {
+    target: number;
+    actual: number;
+  };
+  fat: {
+    target: number;
+    actual: number;
+  };
+  carbs: {
+    target: number;
+    actual: number;
+  };
+  budget: {
+    target: number;
+    actual: number;
+  };
+  allergy: boolean;
+}
+
+// Recommend Store의 상태 인터페이스 정의
+interface RecommendStore {
+  meals: FoodItem[][];
+  summary: NutritionSummary | null;
+  fallback: boolean;
+  selectedFoods: FoodItem[];
+  setRecommendations: (meals: FoodItem[][], summary: NutritionSummary, fallback: boolean) => void;
+  selectFood: (food: FoodItem) => void;
+  removeFood: (foodId: number) => void;
+  reset: () => void;
+}
+
+// 초기 상태 값
+const initialState = {
+  meals: [],
+  summary: null,
+  fallback: false,
+  selectedFoods: [],
+};
+
+// Zustand store 생성
+export const useRecommendStore = create<RecommendStore>((set) => ({
+  ...initialState,
+
+  // API 결과 상태 설정
+  setRecommendations: (meals, summary, fallback) =>
+    set(() => ({
+      meals,
+      summary,
+      fallback,
+      selectedFoods: [], // 새로운 추천이 들어올 경우 선택 음식 초기화
+    })),
+
+  // 음식 선택 시 상태 업데이트
+  selectFood: (food) =>
+    set((state) => ({
+      selectedFoods: state.selectedFoods.find((f) => f.foodId === food.foodId)
+        ? state.selectedFoods // 이미 선택된 음식은 중복 추가 방지
+        : [...state.selectedFoods, food],
+    })),
+
+  // 음식 선택 취소 시 상태 업데이트
+  removeFood: (foodId) =>
+    set((state) => ({
+      selectedFoods: state.selectedFoods.filter((food) => food.foodId !== foodId),
+    })),
+
+  // 상태를 초기 값으로 리셋
+  reset: () => set(() => ({ ...initialState })),
+}));
+🚀 Zustand Store의 상태 관리 방식 설명
+Zustand 상태 (RecommendStore)의 구성 요소:
+
+meals: AI가 추천한 끼니별 음식 리스트 (배열 형태)
+
+summary: 추천받은 음식 리스트의 영양 성분 요약 데이터
+
+fallback: 추천 조건이 까다로워 대체 식단이 제공된 경우 true
+
+selectedFoods: 사용자가 직접 선택한 음식 리스트 (상세보기 후 선택 시 추가)
+
+🎯 Zustand Store 사용법 예시 (컴포넌트 내에서)
+import React, { useEffect } from 'react';
+import axios from 'axios';
+import { useRecommendStore } from '../stores/useRecommendStore';
+import { useUserInfoStore } from '../stores/useUserInfoStore';
+
+const RecommendPage: React.FC = () => {
+  const { meals, summary, selectedFoods, setRecommendations, selectFood, removeFood } =
+    useRecommendStore();
+
+  const userInfo = useUserInfoStore((state) => state.userInfo);
+
+  useEffect(() => {
+    const fetchRecommendations = async () => {
+      if (!userInfo) return;
+
+      const response = await axios.post('/api/recommend', userInfo);
+      setRecommendations(response.data.meals, response.data.summary, response.data.fallback);
+    };
+
+    fetchRecommendations();
+  }, [userInfo, setRecommendations]);
+
+  const handleSelect = (foodId: number) => {
+    const foodItem = meals.flat().find((food) => food.foodId === foodId);
+    if (foodItem) selectFood(foodItem);
+  };
+
+  const handleRemove = (foodId: number) => {
+    removeFood(foodId);
+  };
+
+  return (
+    <div>
+      <h2>Recommended Meals</h2>
+      {meals.flat().map((food) => (
+        <div key={food.foodId}>
+          <span>{food.name}</span>
+          <button onClick={() => handleSelect(food.foodId)}>Select</button>
+          <button onClick={() => handleRemove(food.foodId)}>Remove</button>
+        </div>
+      ))}
+
+      <h3>Selected Foods</h3>
+      {selectedFoods.map((food) => (
+        <div key={food.foodId}>{food.name}</div>
+      ))}
+
+      <pre>{JSON.stringify(summary, null, 2)}</pre>
+    </div>
+  );
+};
+
+export default RecommendPage;
+📌 구현 주요 특징 및 장점
+명확하고 강력한 타입스크립트 인터페이스로 상태 타입 안정성 제공
+
+상태 설정(set), 음식 선택(select), 제거(remove), 초기화(reset)를 명확히 분리하여 관리 가능
+
+React 컴포넌트에서 상태를 쉽게 접근 및 관리 가능하여 유지보수성 향상
+
+중복 음식 선택 방지, 추천 업데이트 시 자동 선택 초기화 등 로직 포함으로 사용성 높임

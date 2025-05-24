@@ -1,348 +1,620 @@
-import { useEffect } from "react";
-import { useNavigate } from "react-router-dom";
-import { useMealConfigStore } from "@/stores/useMealConfigStore";
-import { useUserStore } from "@/stores/useUserStore";
-import { useSummaryStore } from "@/stores/useSummaryStore";
-import { Button } from "@/components/ui/button";
-import NutritionProgressBar from "@/components/NutritionProgressBar";
-import { formatCurrency, getPercentage } from "@/lib/utils";
-import { useToast } from "@/hooks/use-toast";
+import React, { useEffect, useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { 
+  PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, 
+  CartesianGrid, Tooltip, ResponsiveContainer, Legend 
+} from 'recharts';
+import { Calendar } from '@/components/ui/calendar';
+import NutritionProgressBar from '@/components/NutritionProgressBar';
+import { FoodItem } from '@/stores/useRecommendStore';
+import { useUserStore } from '@/stores/useUserStore';
+import { useMealConfigStore } from '@/stores/useMealConfigStore';
+import { useSummaryStore, WeeklyPlanDay } from '@/stores/useSummaryStore';
+import { useToast } from '@/hooks/use-toast';
+import { CalendarIcon, Printer, Download, Copy, CheckCircle2 } from 'lucide-react';
 
-const SummaryPage = () => {
+const SummaryPage: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const meals = useMealConfigStore(state => state.meals);
-  const userInfo = useUserStore(state => state.userInfo);
-  const { generateWeeklyPlan, weeklyPlan, nutritionData, budgetData } = useSummaryStore();
-
+  const userInfo = useUserStore((state) => state.userInfo);
+  const { meals, nutritionSummary } = useMealConfigStore();
+  const { 
+    weeklyPlan, 
+    nutritionData, 
+    budgetData, 
+    generateWeeklyPlan,
+    exportMealPlan
+  } = useSummaryStore();
+  
+  const [activeTab, setActiveTab] = useState('overview');
+  const [date, setDate] = useState<Date>(new Date());
+  const [copySuccess, setCopySuccess] = useState(false);
+  
+  // Generate the weekly plan on component mount
   useEffect(() => {
-    // Check if meals are configured
-    const hasMeals = Object.values(meals).some(mealFoods => mealFoods.length > 0);
-    
-    if (!hasMeals) {
+    // Check if we have configured meals
+    if (Object.values(meals).some(mealFoods => mealFoods.length === 0)) {
       toast({
-        title: "No meals configured",
-        description: "Please configure your meals first.",
+        title: "Incomplete meal configuration",
+        description: "Please complete your meal configuration before viewing the summary.",
         variant: "destructive",
       });
       navigate("/meal-config");
       return;
     }
-
-    // Generate weekly plan
-    generateWeeklyPlan(meals, userInfo);
-  }, [meals, userInfo, generateWeeklyPlan, navigate, toast]);
-
-  const handleExportPlan = () => {
+    
+    // Generate the weekly plan
+    generateWeeklyPlan();
+  }, [meals, generateWeeklyPlan, navigate, toast]);
+  
+  // Get the selected day's meal plan
+  const getSelectedDayPlan = (): WeeklyPlanDay | undefined => {
+    if (weeklyPlan.length === 0) return undefined;
+    
+    const dateString = date.toLocaleDateString('en-US', { weekday: 'long' });
+    return weeklyPlan.find(day => day.day === dateString);
+  };
+  
+  const selectedDayPlan = getSelectedDayPlan();
+  
+  // Handle printing the meal plan
+  const handlePrint = () => {
+    window.print();
+  };
+  
+  // Handle exporting the meal plan
+  const handleExport = () => {
+    const exportData = exportMealPlan();
+    const blob = new Blob([exportData], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'meal-plan.txt';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
     toast({
-      title: "Plan Exported",
-      description: "Your meal plan has been exported successfully.",
+      title: "Meal plan exported",
+      description: "Your meal plan has been downloaded as a text file.",
     });
   };
-
-  const handleSharePlan = () => {
-    toast({
-      title: "Plan Shared",
-      description: "Your meal plan has been shared successfully.",
-    });
+  
+  // Handle copying the meal plan to clipboard
+  const handleCopy = () => {
+    const exportData = exportMealPlan();
+    navigator.clipboard.writeText(exportData)
+      .then(() => {
+        setCopySuccess(true);
+        setTimeout(() => setCopySuccess(false), 2000);
+        
+        toast({
+          title: "Meal plan copied",
+          description: "Your meal plan has been copied to clipboard.",
+        });
+      })
+      .catch(err => {
+        console.error('Failed to copy: ', err);
+        toast({
+          title: "Copy failed",
+          description: "Failed to copy meal plan to clipboard.",
+          variant: "destructive",
+        });
+      });
   };
-
-  const handleEditPlan = () => {
+  
+  // Handle going back to meal configuration
+  const handleBack = () => {
     navigate("/meal-config");
   };
-
-  const handleGenerateShoppingList = () => {
-    toast({
-      title: "Shopping List Generated",
-      description: "Your shopping list has been generated successfully.",
-    });
-  };
-
+  
+  // Create data for the nutrition breakdown pie chart
+  const nutritionPieData = [
+    { name: 'Protein', value: nutritionData.protein, color: '#3b82f6' },
+    { name: 'Carbs', value: nutritionData.carbs, color: '#f59e0b' },
+    { name: 'Fats', value: nutritionData.fats, color: '#8b5cf6' },
+  ];
+  
+  // Create data for the meal cost breakdown pie chart
+  const costPieData = [
+    { name: 'Breakfast', value: budgetData.mealCosts.breakfast, color: '#3b82f6' },
+    { name: 'Lunch', value: budgetData.mealCosts.lunch, color: '#f59e0b' },
+    { name: 'Dinner', value: budgetData.mealCosts.dinner, color: '#8b5cf6' },
+  ];
+  
+  // Create data for the daily calories bar chart
+  const caloriesBarData = weeklyPlan.map(day => ({
+    name: day.day.slice(0, 3),
+    calories: day.totalCalories,
+    target: nutritionData.calorieTarget,
+  }));
+  
   return (
-    <div>
-      <div className="mb-8 text-center">
-        <h2 className="text-3xl font-heading font-bold mb-4">Your Meal Plan Summary</h2>
+    <div className="pb-10">
+      <div className="mb-6 text-center">
+        <h2 className="text-3xl font-heading font-bold mb-4">Weekly Meal Plan Summary</h2>
         <p className="text-neutral-600 max-w-2xl mx-auto">
-          Here's a complete summary of your personalized meal plan, nutritional breakdown, and budget analysis.
+          Review your personalized meal plan, nutritional breakdown, and budget analysis.
         </p>
       </div>
-
-      {/* Hero Image */}
-      <img 
-        src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?ixlib=rb-4.0.3&auto=format&fit=crop&w=1200&h=400" 
-        alt="Colorful healthy meal with various foods" 
-        className="w-full h-64 object-cover rounded-xl mb-8" 
-      />
       
-      {/* Weekly Meal Plan */}
-      <div className="bg-white rounded-xl shadow-md p-6 mb-8">
-        <h3 className="font-heading font-semibold text-xl mb-4">Weekly Meal Plan</h3>
+      {/* Actions Row */}
+      <div className="flex flex-wrap gap-3 mb-6 justify-end">
+        <Button variant="outline" size="sm" onClick={handlePrint} className="flex items-center gap-2">
+          <Printer className="h-4 w-4" />
+          Print
+        </Button>
         
-        <div className="overflow-x-auto">
-          <table className="min-w-full">
-            <thead>
-              <tr>
-                <th className="py-3 px-4 border-b border-neutral-200 text-left text-sm font-semibold text-neutral-600">Day</th>
-                <th className="py-3 px-4 border-b border-neutral-200 text-left text-sm font-semibold text-neutral-600">Breakfast</th>
-                <th className="py-3 px-4 border-b border-neutral-200 text-left text-sm font-semibold text-neutral-600">Lunch</th>
-                <th className="py-3 px-4 border-b border-neutral-200 text-left text-sm font-semibold text-neutral-600">Dinner</th>
-                <th className="py-3 px-4 border-b border-neutral-200 text-left text-sm font-semibold text-neutral-600">Calories</th>
-                <th className="py-3 px-4 border-b border-neutral-200 text-left text-sm font-semibold text-neutral-600">Cost</th>
-              </tr>
-            </thead>
-            <tbody>
-              {weeklyPlan.map((day, index) => (
-                <tr key={day.day} className={index % 2 === 1 ? "bg-neutral-50" : ""}>
-                  <td className="py-3 px-4 border-b border-neutral-100 text-sm text-neutral-700 font-medium">
-                    {day.day}
-                  </td>
-                  <td className="py-3 px-4 border-b border-neutral-100 text-sm text-neutral-600">
-                    {day.meals.breakfast.map(f => f.name).join(", ")}
-                  </td>
-                  <td className="py-3 px-4 border-b border-neutral-100 text-sm text-neutral-600">
-                    {day.meals.lunch.map(f => f.name).join(", ")}
-                  </td>
-                  <td className="py-3 px-4 border-b border-neutral-100 text-sm text-neutral-600">
-                    {day.meals.dinner.map(f => f.name).join(", ")}
-                  </td>
-                  <td className="py-3 px-4 border-b border-neutral-100 text-sm text-neutral-700">
-                    {day.totalCalories} kcal
-                  </td>
-                  <td className="py-3 px-4 border-b border-neutral-100 text-sm text-neutral-700">
-                    {formatCurrency(day.totalCost)}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <Button variant="outline" size="sm" onClick={handleExport} className="flex items-center gap-2">
+          <Download className="h-4 w-4" />
+          Export
+        </Button>
+        
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={handleCopy} 
+          className="flex items-center gap-2"
+          disabled={copySuccess}
+        >
+          {copySuccess ? (
+            <>
+              <CheckCircle2 className="h-4 w-4 text-green-500" />
+              Copied!
+            </>
+          ) : (
+            <>
+              <Copy className="h-4 w-4" />
+              Copy
+            </>
+          )}
+        </Button>
       </div>
-
-      {/* Nutrition Analysis */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
-        <div className="bg-white rounded-xl shadow-md p-6">
-          <h3 className="font-heading font-semibold text-xl mb-4">Nutritional Breakdown</h3>
-          
-          <NutritionProgressBar
-            label="Protein"
-            current={nutritionData.protein}
-            target={nutritionData.proteinTarget}
-            unit="g"
-            color="bg-secondary"
-          />
-          
-          <NutritionProgressBar
-            label="Carbohydrates"
-            current={nutritionData.carbs}
-            target={nutritionData.carbsTarget}
-            unit="g"
-            color="bg-accent"
-          />
-          
-          <NutritionProgressBar
-            label="Fats"
-            current={nutritionData.fats}
-            target={nutritionData.fatsTarget}
-            unit="g"
-            color="bg-primary"
-          />
-          
-          <NutritionProgressBar
-            label="Fiber"
-            current={nutritionData.fiber}
-            target={nutritionData.fiberTarget}
-            unit="g"
-            color="bg-neutral-700"
-          />
-          
-          <div className="mt-8 pt-4 border-t border-neutral-100">
-            <div className="flex items-center flex-wrap">
-              <div className="flex items-center mr-4 mb-2">
-                <div className="w-3 h-3 rounded-full bg-secondary mr-2"></div>
-                <span className="text-xs text-neutral-600">Protein</span>
-              </div>
-              
-              <div className="flex items-center mr-4 mb-2">
-                <div className="w-3 h-3 rounded-full bg-accent mr-2"></div>
-                <span className="text-xs text-neutral-600">Carbs</span>
-              </div>
-              
-              <div className="flex items-center mr-4 mb-2">
-                <div className="w-3 h-3 rounded-full bg-primary mr-2"></div>
-                <span className="text-xs text-neutral-600">Fats</span>
-              </div>
-              
-              <div className="flex items-center mb-2">
-                <div className="w-3 h-3 rounded-full bg-neutral-700 mr-2"></div>
-                <span className="text-xs text-neutral-600">Fiber</span>
-              </div>
-            </div>
-          </div>
-        </div>
+      
+      <Tabs defaultValue="overview" value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="w-full mb-6">
+          <TabsTrigger value="overview" className="flex-1">Overview</TabsTrigger>
+          <TabsTrigger value="nutrition" className="flex-1">Nutrition Analysis</TabsTrigger>
+          <TabsTrigger value="budget" className="flex-1">Budget Analysis</TabsTrigger>
+          <TabsTrigger value="calendar" className="flex-1">Weekly Calendar</TabsTrigger>
+        </TabsList>
         
-        <div className="bg-white rounded-xl shadow-md p-6">
-          <h3 className="font-heading font-semibold text-xl mb-4">Budget Analysis</h3>
-          
-          <div className="mb-6">
-            <div className="flex justify-between items-center mb-4">
-              <div>
-                <p className="text-neutral-600 text-sm">Weekly Budget</p>
-                <p className="text-2xl font-semibold">{formatCurrency(budgetData.weeklyBudget)}</p>
-              </div>
-              <div>
-                <p className="text-neutral-600 text-sm">Actual Spend</p>
-                <p className="text-2xl font-semibold text-primary">{formatCurrency(budgetData.actualSpend)}</p>
-              </div>
-              <div>
-                <p className="text-neutral-600 text-sm">Savings</p>
-                <p className="text-2xl font-semibold text-accent">{formatCurrency(budgetData.savings)}</p>
-              </div>
-            </div>
+        {/* Overview Tab */}
+        <TabsContent value="overview">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            {/* Daily Averages Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Daily Averages</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-neutral-600">Calories:</span>
+                    <span className="font-medium">{Math.round(nutritionData.averageCalories)} kcal</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-neutral-600">Protein:</span>
+                    <span className="font-medium">{Math.round(nutritionData.protein)}g</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-neutral-600">Carbohydrates:</span>
+                    <span className="font-medium">{Math.round(nutritionData.carbs)}g</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-neutral-600">Fats:</span>
+                    <span className="font-medium">{Math.round(nutritionData.fats)}g</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-neutral-600">Daily Cost:</span>
+                    <span className="font-medium">${(budgetData.actualSpend / 7).toFixed(2)}</span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
             
-            <div className="w-full bg-neutral-200 rounded-full h-4 mb-2">
-              <div 
-                className="bg-primary h-4 rounded-full" 
-                style={{ width: `${getPercentage(budgetData.actualSpend, budgetData.weeklyBudget)}%` }}
-              ></div>
-            </div>
-            <p className="text-xs text-neutral-500">
-              You're using {getPercentage(budgetData.actualSpend, budgetData.weeklyBudget)}% of your weekly budget
-            </p>
+            {/* Budget Summary Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Budget Summary</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  <div className="flex justify-between items-center">
+                    <span className="text-neutral-600">Weekly Budget:</span>
+                    <span className="font-medium">${budgetData.weeklyBudget.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-neutral-600">Actual Spend:</span>
+                    <span className="font-medium">${budgetData.actualSpend.toFixed(2)}</span>
+                  </div>
+                  <div className="flex justify-between items-center">
+                    <span className="text-neutral-600">Savings:</span>
+                    <span className="font-medium text-green-600">${budgetData.savings.toFixed(2)}</span>
+                  </div>
+                  <div className="h-10"></div> {/* Spacer */}
+                  <div className="flex justify-between items-center pt-4 border-t border-neutral-200">
+                    <span className="text-neutral-600">Budget Utilization:</span>
+                    <span className="font-medium">
+                      {Math.round((budgetData.actualSpend / budgetData.weeklyBudget) * 100)}%
+                    </span>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
           </div>
           
-          <div className="mb-6">
-            <h4 className="font-semibold text-sm mb-3">Expense Breakdown</h4>
-            
-            <div className="grid grid-cols-3 gap-2 mb-4">
-              <div className="bg-neutral-50 p-3 rounded-md">
-                <p className="text-xs text-neutral-500 mb-1">Breakfast</p>
-                <p className="font-semibold">{formatCurrency(budgetData.mealCosts.breakfast)}</p>
+          {/* Nutrition Distribution Chart */}
+          <Card className="mb-6">
+            <CardHeader>
+              <CardTitle>Macronutrient Distribution</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={nutritionPieData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      outerRadius={80}
+                      fill="#8884d8"
+                      dataKey="value"
+                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                    >
+                      {nutritionPieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip formatter={(value) => `${value}g`} />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
               </div>
-              <div className="bg-neutral-50 p-3 rounded-md">
-                <p className="text-xs text-neutral-500 mb-1">Lunch</p>
-                <p className="font-semibold">{formatCurrency(budgetData.mealCosts.lunch)}</p>
-              </div>
-              <div className="bg-neutral-50 p-3 rounded-md">
-                <p className="text-xs text-neutral-500 mb-1">Dinner</p>
-                <p className="font-semibold">{formatCurrency(budgetData.mealCosts.dinner)}</p>
-              </div>
-            </div>
-            
-            <div className="w-full bg-neutral-200 rounded-full h-2 mb-1">
-              <div 
-                className="bg-primary-200 h-2 rounded-l-full" 
-                style={{ width: `${budgetData.mealCostPercentages.breakfast}%` }}
-              ></div>
-              <div 
-                className="bg-primary-400 h-2" 
-                style={{ 
-                  width: `${budgetData.mealCostPercentages.lunch}%`, 
-                  marginLeft: `${budgetData.mealCostPercentages.breakfast}%` 
-                }}
-              ></div>
-              <div 
-                className="bg-primary-600 h-2 rounded-r-full" 
-                style={{ 
-                  width: `${budgetData.mealCostPercentages.dinner}%`, 
-                  marginLeft: `${budgetData.mealCostPercentages.breakfast + budgetData.mealCostPercentages.lunch}%` 
-                }}
-              ></div>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-xs text-neutral-500">{budgetData.mealCostPercentages.breakfast}%</span>
-              <span className="text-xs text-neutral-500">{budgetData.mealCostPercentages.lunch}%</span>
-              <span className="text-xs text-neutral-500">{budgetData.mealCostPercentages.dinner}%</span>
-            </div>
-          </div>
-        </div>
-      </div>
-
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 mb-8">
-        {/* Health Insights */}
-        <div className="bg-white rounded-xl shadow-md p-6">
-          <h3 className="font-heading font-semibold text-xl mb-4">Health Insights</h3>
+            </CardContent>
+          </Card>
           
-          <div className="mb-4">
-            <div className="flex items-start mb-3">
-              <div className="bg-primary-100 p-2 rounded-md text-primary-600 mr-3">
-                <i className="ri-heart-pulse-line"></i>
+          {/* Daily Calories Chart */}
+          <Card>
+            <CardHeader>
+              <CardTitle>Daily Calories</CardTitle>
+            </CardHeader>
+            <CardContent>
+              <div className="h-64">
+                <ResponsiveContainer width="100%" height="100%">
+                  <BarChart data={caloriesBarData}>
+                    <CartesianGrid strokeDasharray="3 3" />
+                    <XAxis dataKey="name" />
+                    <YAxis />
+                    <Tooltip />
+                    <Legend />
+                    <Bar dataKey="calories" name="Daily Calories" fill="#3b82f6" />
+                    <Bar dataKey="target" name="Target" fill="#e5e7eb" />
+                  </BarChart>
+                </ResponsiveContainer>
               </div>
-              <div>
-                <h4 className="font-medium text-neutral-800">Balanced Macronutrients</h4>
-                <p className="text-sm text-neutral-600">Your meal plan provides a balanced ratio of proteins, carbs, and fats to support your {userInfo.goal === 'muscle-gain' ? 'muscle gain' : 'weight loss'} goal.</p>
-              </div>
-            </div>
-            
-            <div className="flex items-start mb-3">
-              <div className="bg-accent-100 p-2 rounded-md text-accent-600 mr-3">
-                <i className="ri-scales-3-line"></i>
-              </div>
-              <div>
-                <h4 className="font-medium text-neutral-800">Caloric Target</h4>
-                <p className="text-sm text-neutral-600">
-                  {nutritionData.averageCalories < nutritionData.calorieTarget 
-                    ? "Your daily intake is slightly below your target. Consider adding a small snack to reach optimal levels."
-                    : "Your daily caloric intake is optimal for your goals. Great job balancing your meals!"}
-                </p>
-              </div>
-            </div>
-            
-            <div className="flex items-start">
-              <div className="bg-secondary-100 p-2 rounded-md text-secondary-600 mr-3">
-                <i className="ri-mental-health-line"></i>
-              </div>
-              <div>
-                <h4 className="font-medium text-neutral-800">Nutrient Rich</h4>
-                <p className="text-sm text-neutral-600">Your selections provide excellent sources of omega-3 fatty acids, fiber, and essential vitamins.</p>
-              </div>
-            </div>
-          </div>
-        </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
         
-        {/* Action Items */}
-        <div className="bg-white rounded-xl shadow-md p-6">
-          <h3 className="font-heading font-semibold text-xl mb-4">Next Steps</h3>
-          
-          <div className="mb-6">
-            <div className="flex items-center mb-4">
-              <Button
-                onClick={handleExportPlan}
-                className="flex-1 bg-primary hover:bg-primary-600 text-white font-medium py-3 px-4 rounded-md transition-colors duration-200 mr-3"
-              >
-                <i className="ri-download-line mr-2"></i> Export Plan
-              </Button>
-              <Button
-                onClick={handleSharePlan}
-                className="flex-1 bg-secondary hover:bg-secondary-600 text-white font-medium py-3 px-4 rounded-md transition-colors duration-200"
-              >
-                <i className="ri-share-line mr-2"></i> Share Plan
-              </Button>
-            </div>
+        {/* Nutrition Analysis Tab */}
+        <TabsContent value="nutrition">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            {/* Nutrition Progress Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Nutrition Progress</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <NutritionProgressBar
+                  label="Daily Calories"
+                  current={nutritionData.averageCalories}
+                  target={nutritionData.calorieTarget}
+                  unit="kcal"
+                />
+                
+                <NutritionProgressBar
+                  label="Protein"
+                  current={nutritionData.protein}
+                  target={nutritionData.proteinTarget}
+                  color="bg-blue-500"
+                />
+                
+                <NutritionProgressBar
+                  label="Carbohydrates"
+                  current={nutritionData.carbs}
+                  target={nutritionData.carbsTarget}
+                  color="bg-amber-500"
+                />
+                
+                <NutritionProgressBar
+                  label="Fats"
+                  current={nutritionData.fats}
+                  target={nutritionData.fatsTarget}
+                  color="bg-purple-500"
+                />
+                
+                <NutritionProgressBar
+                  label="Fiber"
+                  current={nutritionData.fiber}
+                  target={nutritionData.fiberTarget}
+                  color="bg-green-500"
+                />
+              </CardContent>
+            </Card>
             
-            <Button
-              onClick={handleEditPlan}
-              variant="outline"
-              className="w-full border-primary text-primary hover:bg-primary-50 font-medium py-3 px-4 rounded-md transition-colors duration-200 mb-4"
-            >
-              <i className="ri-edit-line mr-2"></i> Edit Meal Plan
-            </Button>
+            {/* Nutrition Distribution Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Macronutrient Distribution</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={nutritionPieData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={true}
+                        outerRadius={100}
+                        fill="#8884d8"
+                        dataKey="value"
+                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      >
+                        {nutritionPieData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value) => `${value}g`} />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                
+                <div className="mt-6 pt-6 border-t border-neutral-200">
+                  <h4 className="font-medium mb-3">Nutrition Insights</h4>
+                  <ul className="space-y-2 text-sm text-neutral-600">
+                    <li>• Your protein intake is {nutritionData.protein >= nutritionData.proteinTarget ? 'sufficient' : 'below target'} for your goals.</li>
+                    <li>• Your calorie intake is aligned with your {userInfo.goal} goal.</li>
+                    <li>• Your fat intake is within the recommended range for hormonal health.</li>
+                  </ul>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+        
+        {/* Budget Analysis Tab */}
+        <TabsContent value="budget">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+            {/* Budget Overview Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Budget Overview</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <div className="flex justify-between items-center">
+                  <span className="text-neutral-600">Weekly Budget:</span>
+                  <span className="font-medium">${budgetData.weeklyBudget.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-neutral-600">Actual Spend:</span>
+                  <span className="font-medium">${budgetData.actualSpend.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-neutral-600">Savings:</span>
+                  <span className="font-medium text-green-600">${budgetData.savings.toFixed(2)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <span className="text-neutral-600">Daily Average:</span>
+                  <span className="font-medium">${(budgetData.actualSpend / 7).toFixed(2)}</span>
+                </div>
+                
+                <div className="pt-4 mt-4 border-t border-neutral-200">
+                  <h4 className="font-medium mb-3">Meal Cost Breakdown</h4>
+                  <div className="space-y-2">
+                    <div className="flex justify-between items-center">
+                      <span className="text-neutral-600">Breakfast:</span>
+                      <span className="font-medium">${budgetData.mealCosts.breakfast.toFixed(2)} ({budgetData.mealCostPercentages.breakfast.toFixed(0)}%)</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-neutral-600">Lunch:</span>
+                      <span className="font-medium">${budgetData.mealCosts.lunch.toFixed(2)} ({budgetData.mealCostPercentages.lunch.toFixed(0)}%)</span>
+                    </div>
+                    <div className="flex justify-between items-center">
+                      <span className="text-neutral-600">Dinner:</span>
+                      <span className="font-medium">${budgetData.mealCosts.dinner.toFixed(2)} ({budgetData.mealCostPercentages.dinner.toFixed(0)}%)</span>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
             
-            <Button
-              onClick={handleGenerateShoppingList}
-              variant="outline"
-              className="w-full border-neutral-300 text-neutral-700 hover:bg-neutral-50 font-medium py-3 px-4 rounded-md transition-colors duration-200"
-            >
-              <i className="ri-shopping-cart-line mr-2"></i> Generate Shopping List
-            </Button>
+            {/* Meal Cost Distribution Card */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Meal Cost Distribution</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="h-80">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <PieChart>
+                      <Pie
+                        data={costPieData}
+                        cx="50%"
+                        cy="50%"
+                        labelLine={true}
+                        outerRadius={100}
+                        fill="#8884d8"
+                        dataKey="value"
+                        label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      >
+                        {costPieData.map((entry, index) => (
+                          <Cell key={`cell-${index}`} fill={entry.color} />
+                        ))}
+                      </Pie>
+                      <Tooltip formatter={(value) => `$${value.toFixed(2)}`} />
+                      <Legend />
+                    </PieChart>
+                  </ResponsiveContainer>
+                </div>
+                
+                <div className="mt-6 pt-6 border-t border-neutral-200">
+                  <h4 className="font-medium mb-3">Budget Insights</h4>
+                  <ul className="space-y-2 text-sm text-neutral-600">
+                    <li>• You're currently spending {budgetData.savings > 0 ? 'less than' : 'more than'} your weekly budget.</li>
+                    <li>• Your {Object.entries(budgetData.mealCostPercentages).sort((a, b) => b[1] - a[1])[0][0]} meals account for the largest portion of your food budget.</li>
+                    <li>• At this rate, your monthly food expense would be approximately ${(budgetData.actualSpend * 4).toFixed(2)}.</li>
+                  </ul>
+                </div>
+              </CardContent>
+            </Card>
           </div>
-          
-          <div className="text-sm text-neutral-600">
-            <p className="mb-2">Looking for more guidance?</p>
-            <a href="#" className="text-primary hover:text-primary-700 font-medium">
-              Connect with a nutrition expert <i className="ri-arrow-right-line"></i>
-            </a>
+        </TabsContent>
+        
+        {/* Calendar Tab */}
+        <TabsContent value="calendar">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {/* Calendar Column */}
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <CalendarIcon className="h-5 w-5" />
+                  Weekly Calendar
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <Calendar
+                  mode="single"
+                  selected={date}
+                  onSelect={(date) => date && setDate(date)}
+                  className="rounded-md border"
+                />
+                
+                <div className="mt-4 pt-4 border-t border-neutral-200">
+                  <div className="flex justify-between text-sm text-neutral-600">
+                    <span>Selected day:</span>
+                    <span className="font-medium">{date.toLocaleDateString('en-US', { weekday: 'long', month: 'short', day: 'numeric' })}</span>
+                  </div>
+                  {selectedDayPlan && (
+                    <div className="mt-2 text-sm">
+                      <div className="flex justify-between">
+                        <span>Calories:</span>
+                        <span>{Math.round(selectedDayPlan.totalCalories)} kcal</span>
+                      </div>
+                      <div className="flex justify-between">
+                        <span>Cost:</span>
+                        <span>${selectedDayPlan.totalCost.toFixed(2)}</span>
+                      </div>
+                    </div>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+            
+            {/* Day Plan Column */}
+            <Card className="md:col-span-2">
+              <CardHeader>
+                <CardTitle>
+                  Meal Plan for {date.toLocaleDateString('en-US', { weekday: 'long' })}
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                {selectedDayPlan ? (
+                  <div className="space-y-6">
+                    {/* Breakfast */}
+                    <div>
+                      <h4 className="font-medium text-blue-600 mb-2">Breakfast</h4>
+                      {selectedDayPlan.meals.breakfast.length > 0 ? (
+                        <div className="space-y-2">
+                          {selectedDayPlan.meals.breakfast.map((food: FoodItem) => (
+                            <Card key={food.id} className="bg-blue-50">
+                              <CardContent className="p-3">
+                                <div className="font-medium">{food.name}</div>
+                                <div className="text-sm text-neutral-600">
+                                  {food.calories || food.kcal || 0} kcal | ${food.price?.toFixed(2)}
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-neutral-500 italic">No breakfast items selected</div>
+                      )}
+                    </div>
+                    
+                    {/* Lunch */}
+                    <div>
+                      <h4 className="font-medium text-amber-600 mb-2">Lunch</h4>
+                      {selectedDayPlan.meals.lunch.length > 0 ? (
+                        <div className="space-y-2">
+                          {selectedDayPlan.meals.lunch.map((food: FoodItem) => (
+                            <Card key={food.id} className="bg-amber-50">
+                              <CardContent className="p-3">
+                                <div className="font-medium">{food.name}</div>
+                                <div className="text-sm text-neutral-600">
+                                  {food.calories || food.kcal || 0} kcal | ${food.price?.toFixed(2)}
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-neutral-500 italic">No lunch items selected</div>
+                      )}
+                    </div>
+                    
+                    {/* Dinner */}
+                    <div>
+                      <h4 className="font-medium text-purple-600 mb-2">Dinner</h4>
+                      {selectedDayPlan.meals.dinner.length > 0 ? (
+                        <div className="space-y-2">
+                          {selectedDayPlan.meals.dinner.map((food: FoodItem) => (
+                            <Card key={food.id} className="bg-purple-50">
+                              <CardContent className="p-3">
+                                <div className="font-medium">{food.name}</div>
+                                <div className="text-sm text-neutral-600">
+                                  {food.calories || food.kcal || 0} kcal | ${food.price?.toFixed(2)}
+                                </div>
+                              </CardContent>
+                            </Card>
+                          ))}
+                        </div>
+                      ) : (
+                        <div className="text-neutral-500 italic">No dinner items selected</div>
+                      )}
+                    </div>
+                  </div>
+                ) : (
+                  <div className="text-center py-10 text-neutral-500">
+                    Select a day to view the meal plan
+                  </div>
+                )}
+              </CardContent>
+            </Card>
           </div>
-        </div>
+        </TabsContent>
+      </Tabs>
+      
+      {/* Bottom Navigation */}
+      <div className="flex justify-between mt-10">
+        <Button 
+          variant="outline" 
+          onClick={handleBack}
+        >
+          Back to Meal Configuration
+        </Button>
+        
+        <Button>
+          Start New Plan
+        </Button>
       </div>
     </div>
   );

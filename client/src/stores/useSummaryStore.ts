@@ -1,9 +1,22 @@
 import { create } from 'zustand';
-import { useMealConfigStore } from './useMealConfigStore';
-import { useUserStore } from './useUserStore';
-import { MealTime } from '@/types';
-import { FoodItem } from './useRecommendStore';
+import { FoodItem } from '@/stores/useRecommendStore';
+import { useUserStore } from '@/stores/useUserStore';
+import { useMealConfigStore } from '@/stores/useMealConfigStore';
 
+// Type definition for a day in the weekly plan
+export interface WeeklyPlanDay {
+  day: string;
+  meals: {
+    breakfast: FoodItem[];
+    lunch: FoodItem[];
+    dinner: FoodItem[];
+    [key: string]: FoodItem[];
+  };
+  totalCalories: number;
+  totalCost: number;
+}
+
+// Type definition for nutrition data
 interface NutritionData {
   protein: number;
   carbs: number;
@@ -17,6 +30,7 @@ interface NutritionData {
   calorieTarget: number;
 }
 
+// Type definition for budget data
 interface BudgetData {
   weeklyBudget: number;
   actualSpend: number;
@@ -33,18 +47,7 @@ interface BudgetData {
   };
 }
 
-export interface WeeklyPlanDay {
-  day: string;
-  meals: {
-    breakfast: FoodItem[];
-    lunch: FoodItem[];
-    dinner: FoodItem[];
-    [key: string]: FoodItem[];
-  };
-  totalCalories: number;
-  totalCost: number;
-}
-
+// Summary store interface
 interface SummaryStore {
   weeklyPlan: WeeklyPlanDay[];
   nutritionData: NutritionData;
@@ -64,7 +67,7 @@ const initialNutritionData: NutritionData = {
   fatsTarget: 0,
   fiberTarget: 0,
   averageCalories: 0,
-  calorieTarget: 0
+  calorieTarget: 0,
 };
 
 // Initial budget data
@@ -75,237 +78,209 @@ const initialBudgetData: BudgetData = {
   mealCosts: {
     breakfast: 0,
     lunch: 0,
-    dinner: 0
+    dinner: 0,
   },
   mealCostPercentages: {
     breakfast: 0,
     lunch: 0,
-    dinner: 0
-  }
+    dinner: 0,
+  },
 };
 
 // Days of the week
 const daysOfWeek = [
-  'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday', 'Sunday'
+  'Monday',
+  'Sunday',
+  'Tuesday',
+  'Wednesday',
+  'Thursday',
+  'Friday',
+  'Saturday',
 ];
 
+// Create the summary store
 export const useSummaryStore = create<SummaryStore>((set, get) => ({
   // Initial state
   weeklyPlan: [],
   nutritionData: initialNutritionData,
   budgetData: initialBudgetData,
-  
-  // Generate weekly meal plan based on current meal configuration
+
+  // Generate the weekly meal plan
   generateWeeklyPlan: () => {
-    const mealConfig = useMealConfigStore.getState().meals;
     const userInfo = useUserStore.getState().userInfo;
+    const { meals, nutritionSummary } = useMealConfigStore.getState();
     
-    // Create a plan for each day of the week
-    const weeklyPlan: WeeklyPlanDay[] = daysOfWeek.map(day => {
-      // Slightly vary the meals each day for variety
-      // This is a simple approach - in a real app, you might have more complex logic
-      const dailyMeals = {
-        breakfast: [...mealConfig.breakfast].sort(() => Math.random() - 0.5),
-        lunch: [...mealConfig.lunch].sort(() => Math.random() - 0.5),
-        dinner: [...mealConfig.dinner].sort(() => Math.random() - 0.5)
-      };
-      
-      // Calculate total calories and cost for the day
-      const allDailyFoods = [
-        ...dailyMeals.breakfast,
-        ...dailyMeals.lunch,
-        ...dailyMeals.dinner
-      ];
-      
-      const totalCalories = allDailyFoods.reduce((sum, food) => sum + food.calories, 0);
-      const totalCost = allDailyFoods.reduce((sum, food) => sum + food.price, 0);
-      
-      return {
-        day,
-        meals: dailyMeals,
-        totalCalories,
-        totalCost
-      };
-    });
+    // Calculate daily meal costs
+    const dailyBreakfastCost = meals.breakfast.reduce((sum, food) => sum + (food.price || 0), 0);
+    const dailyLunchCost = meals.lunch.reduce((sum, food) => sum + (food.price || 0), 0);
+    const dailyDinnerCost = meals.dinner.reduce((sum, food) => sum + (food.price || 0), 0);
     
-    // Calculate nutrition data
-    const allConfigFoods = [
-      ...mealConfig.breakfast,
-      ...mealConfig.lunch,
-      ...mealConfig.dinner
-    ];
+    // Calculate daily calories
+    const dailyCalories = 
+      meals.breakfast.reduce((sum, food) => sum + (food.calories || food.kcal || 0), 0) +
+      meals.lunch.reduce((sum, food) => sum + (food.calories || food.kcal || 0), 0) +
+      meals.dinner.reduce((sum, food) => sum + (food.calories || food.kcal || 0), 0);
     
-    // Calculate average values across the configured meals
-    const totalProtein = allConfigFoods.reduce((sum, food) => {
-      if (food.mainNutrient.name.toLowerCase() === 'protein') {
-        return sum + food.mainNutrient.amount;
-      }
-      return sum;
-    }, 0);
+    // Calculate daily cost
+    const dailyCost = dailyBreakfastCost + dailyLunchCost + dailyDinnerCost;
     
-    const totalCarbs = allConfigFoods.reduce((sum, food) => {
-      if (food.mainNutrient.name.toLowerCase() === 'carbs') {
-        return sum + food.mainNutrient.amount;
-      }
-      return sum;
-    }, 0);
+    // Generate weekly plan
+    const weeklyPlan: WeeklyPlanDay[] = daysOfWeek.map(day => ({
+      day,
+      meals: {
+        breakfast: [...meals.breakfast],
+        lunch: [...meals.lunch],
+        dinner: [...meals.dinner],
+      },
+      totalCalories: dailyCalories,
+      totalCost: dailyCost,
+    }));
+
+    // Calculate total nutrition values
+    const totalProtein = nutritionSummary?.protein.actual || 0;
+    const totalCarbs = nutritionSummary?.carbs.actual || 0;
+    const totalFat = nutritionSummary?.fat.actual || 0;
+    const totalFiber = 0; // Placeholder since we don't have fiber data yet
     
-    const totalFats = allConfigFoods.reduce((sum, food) => {
-      if (food.mainNutrient.name.toLowerCase() === 'fats') {
-        return sum + food.mainNutrient.amount;
-      }
-      return sum;
-    }, 0);
+    // Calculate target nutrition values based on user goals
+    const proteinTarget = nutritionSummary?.protein.target || 0;
+    const carbsTarget = nutritionSummary?.carbs.target || 0;
+    const fatsTarget = nutritionSummary?.fat.target || 0;
+    const fiberTarget = 25; // Default fiber target
     
-    const totalFiber = allConfigFoods.reduce((sum, food) => {
-      if (food.mainNutrient.name.toLowerCase() === 'fiber') {
-        return sum + food.mainNutrient.amount;
-      }
-      return sum;
-    }, 0);
+    // Calculate average calories
+    const averageCalories = nutritionSummary?.calories.actual || 0;
+    const calorieTarget = nutritionSummary?.calories.target || 0;
     
-    const totalCalories = allConfigFoods.reduce((sum, food) => sum + food.calories, 0);
+    // Create nutrition data object
+    const nutritionData: NutritionData = {
+      protein: totalProtein,
+      carbs: totalCarbs,
+      fats: totalFat,
+      fiber: totalFiber,
+      proteinTarget,
+      carbsTarget,
+      fatsTarget,
+      fiberTarget,
+      averageCalories,
+      calorieTarget,
+    };
     
-    // Calculate BMR and daily calorie target based on user info
-    let bmr = 0;
-    if (userInfo.gender === 'male') {
-      bmr = 10 * userInfo.weight + 6.25 * userInfo.height - 5 * userInfo.age + 5;
-    } else {
-      bmr = 10 * userInfo.weight + 6.25 * userInfo.height - 5 * userInfo.age - 161;
-    }
+    // Calculate budget metrics
+    const weeklyBudget = userInfo.budget || 0;
+    const actualSpend = dailyCost * 7;
+    const savings = weeklyBudget - actualSpend;
     
-    // Apply activity multiplier
-    let calorieTarget = bmr;
-    if (userInfo.activityLevel === 'low') {
-      calorieTarget *= 1.2;
-    } else if (userInfo.activityLevel === 'medium') {
-      calorieTarget *= 1.55;
-    } else if (userInfo.activityLevel === 'high') {
-      calorieTarget *= 1.9;
-    } else {
-      calorieTarget *= 1.2; // Default to sedentary
-    }
+    // Calculate meal cost percentages
+    const totalDailyCost = dailyBreakfastCost + dailyLunchCost + dailyDinnerCost;
+    const breakfastPercentage = totalDailyCost > 0 ? (dailyBreakfastCost / totalDailyCost) * 100 : 0;
+    const lunchPercentage = totalDailyCost > 0 ? (dailyLunchCost / totalDailyCost) * 100 : 0;
+    const dinnerPercentage = totalDailyCost > 0 ? (dailyDinnerCost / totalDailyCost) * 100 : 0;
     
-    // Adjust based on goal
-    if (userInfo.goal === 'weight-loss') {
-      calorieTarget *= 0.8; // 20% deficit
-    } else if (userInfo.goal === 'muscle-gain') {
-      calorieTarget *= 1.1; // 10% surplus
-    }
+    // Create budget data object
+    const budgetData: BudgetData = {
+      weeklyBudget,
+      actualSpend,
+      savings,
+      mealCosts: {
+        breakfast: dailyBreakfastCost,
+        lunch: dailyLunchCost,
+        dinner: dailyDinnerCost,
+      },
+      mealCostPercentages: {
+        breakfast: breakfastPercentage,
+        lunch: lunchPercentage,
+        dinner: dinnerPercentage,
+      },
+    };
     
-    // Set macronutrient targets
-    const proteinTarget = userInfo.weight * (userInfo.goal === 'muscle-gain' ? 2 : 1.5); // g/kg of bodyweight
-    const fatsTarget = (calorieTarget * 0.25) / 9; // 25% of calories from fat, 9 calories per gram
-    const carbsTarget = (calorieTarget * 0.5) / 4; // 50% of calories from carbs, 4 calories per gram
-    const fiberTarget = 25; // General recommendation for fiber
-    
-    // Calculate meal costs
-    const breakfastCost = mealConfig.breakfast.reduce((sum, food) => sum + food.price, 0);
-    const lunchCost = mealConfig.lunch.reduce((sum, food) => sum + food.price, 0);
-    const dinnerCost = mealConfig.dinner.reduce((sum, food) => sum + food.price, 0);
-    
-    const totalCost = breakfastCost + lunchCost + dinnerCost;
-    
-    // Calculate percentages
-    const breakfastPercentage = totalCost > 0 ? (breakfastCost / totalCost) * 100 : 0;
-    const lunchPercentage = totalCost > 0 ? (lunchCost / totalCost) * 100 : 0;
-    const dinnerPercentage = totalCost > 0 ? (dinnerCost / totalCost) * 100 : 0;
-    
-    // Weekly budget calculations
-    const weeklyBudget = userInfo.budget;
-    const weeklyCost = totalCost * 7; // Cost for 7 days
-    const savings = weeklyBudget - weeklyCost;
-    
+    // Update state
     set({
       weeklyPlan,
-      nutritionData: {
-        protein: totalProtein,
-        carbs: totalCarbs,
-        fats: totalFats,
-        fiber: totalFiber,
-        proteinTarget,
-        carbsTarget,
-        fatsTarget,
-        fiberTarget,
-        averageCalories: totalCalories,
-        calorieTarget
-      },
-      budgetData: {
-        weeklyBudget,
-        actualSpend: weeklyCost,
-        savings,
-        mealCosts: {
-          breakfast: breakfastCost,
-          lunch: lunchCost,
-          dinner: dinnerCost
-        },
-        mealCostPercentages: {
-          breakfast: breakfastPercentage,
-          lunch: lunchPercentage,
-          dinner: dinnerPercentage
-        }
-      }
+      nutritionData,
+      budgetData,
     });
   },
   
-  // Export meal plan as formatted text
+  // Export the meal plan as text
   exportMealPlan: () => {
     const { weeklyPlan, nutritionData, budgetData } = get();
     const userInfo = useUserStore.getState().userInfo;
     
+    // Create a string representation of the meal plan
     let exportText = `PERSONALIZED MEAL PLAN\n`;
-    exportText += `===============================\n\n`;
+    exportText += `====================\n\n`;
     
-    exportText += `USER PROFILE:\n`;
-    exportText += `- Gender: ${userInfo.gender === 'male' ? 'Male' : 'Female'}\n`;
-    exportText += `- Age: ${userInfo.age} years\n`;
-    exportText += `- Height: ${userInfo.height} cm\n`;
-    exportText += `- Weight: ${userInfo.weight} kg\n`;
-    exportText += `- Goal: ${userInfo.goal === 'weight-loss' ? 'Weight Loss' : 'Muscle Gain'}\n`;
-    exportText += `- Activity Level: ${userInfo.activityLevel || 'Not specified'}\n\n`;
+    // Add user info
+    exportText += `USER PROFILE\n`;
+    exportText += `-----------\n`;
+    exportText += `Gender: ${userInfo.gender}\n`;
+    exportText += `Age: ${userInfo.age}\n`;
+    exportText += `Height: ${userInfo.height} cm\n`;
+    exportText += `Weight: ${userInfo.weight} kg\n`;
+    exportText += `Goal: ${userInfo.goal}\n`;
+    exportText += `Activity Level: ${userInfo.activityLevel}\n`;
+    exportText += `Weekly Budget: $${userInfo.budget.toFixed(2)}\n\n`;
     
-    exportText += `NUTRITION SUMMARY:\n`;
-    exportText += `- Daily Calorie Target: ${Math.round(nutritionData.calorieTarget)} kcal\n`;
-    exportText += `- Daily Protein Target: ${Math.round(nutritionData.proteinTarget)} g\n`;
-    exportText += `- Daily Carbs Target: ${Math.round(nutritionData.carbsTarget)} g\n`;
-    exportText += `- Daily Fat Target: ${Math.round(nutritionData.fatsTarget)} g\n\n`;
+    // Add nutrition summary
+    exportText += `NUTRITION SUMMARY\n`;
+    exportText += `----------------\n`;
+    exportText += `Daily Calories: ${Math.round(nutritionData.averageCalories)} kcal\n`;
+    exportText += `Protein: ${Math.round(nutritionData.protein)}g\n`;
+    exportText += `Carbohydrates: ${Math.round(nutritionData.carbs)}g\n`;
+    exportText += `Fats: ${Math.round(nutritionData.fats)}g\n\n`;
     
-    exportText += `BUDGET SUMMARY:\n`;
-    exportText += `- Weekly Budget: $${budgetData.weeklyBudget.toFixed(2)}\n`;
-    exportText += `- Estimated Weekly Cost: $${budgetData.actualSpend.toFixed(2)}\n`;
-    exportText += `- Projected Savings: $${budgetData.savings.toFixed(2)}\n\n`;
+    // Add budget summary
+    exportText += `BUDGET SUMMARY\n`;
+    exportText += `--------------\n`;
+    exportText += `Weekly Budget: $${budgetData.weeklyBudget.toFixed(2)}\n`;
+    exportText += `Actual Spend: $${budgetData.actualSpend.toFixed(2)}\n`;
+    exportText += `Savings: $${budgetData.savings.toFixed(2)}\n\n`;
     
-    exportText += `WEEKLY MEAL PLAN:\n`;
-    exportText += `===============================\n\n`;
+    // Add weekly plan
+    exportText += `WEEKLY MEAL PLAN\n`;
+    exportText += `---------------\n\n`;
     
     weeklyPlan.forEach(day => {
-      exportText += `${day.day.toUpperCase()}:\n`;
-      exportText += `- Total Calories: ${Math.round(day.totalCalories)} kcal\n`;
-      exportText += `- Total Cost: $${day.totalCost.toFixed(2)}\n\n`;
+      exportText += `${day.day.toUpperCase()}\n`;
+      exportText += `${'-'.repeat(day.day.length)}\n`;
       
-      exportText += `  Breakfast:\n`;
-      day.meals.breakfast.forEach(food => {
-        exportText += `  - ${food.name} (${food.calories} kcal, $${food.price.toFixed(2)})\n`;
-      });
+      // Breakfast
+      exportText += `Breakfast:\n`;
+      if (day.meals.breakfast.length > 0) {
+        day.meals.breakfast.forEach(food => {
+          exportText += `- ${food.name} (${food.calories || food.kcal || 0} kcal, $${food.price?.toFixed(2) || 0})\n`;
+        });
+      } else {
+        exportText += `- No breakfast items\n`;
+      }
       
-      exportText += `\n  Lunch:\n`;
-      day.meals.lunch.forEach(food => {
-        exportText += `  - ${food.name} (${food.calories} kcal, $${food.price.toFixed(2)})\n`;
-      });
+      // Lunch
+      exportText += `\nLunch:\n`;
+      if (day.meals.lunch.length > 0) {
+        day.meals.lunch.forEach(food => {
+          exportText += `- ${food.name} (${food.calories || food.kcal || 0} kcal, $${food.price?.toFixed(2) || 0})\n`;
+        });
+      } else {
+        exportText += `- No lunch items\n`;
+      }
       
-      exportText += `\n  Dinner:\n`;
-      day.meals.dinner.forEach(food => {
-        exportText += `  - ${food.name} (${food.calories} kcal, $${food.price.toFixed(2)})\n`;
-      });
+      // Dinner
+      exportText += `\nDinner:\n`;
+      if (day.meals.dinner.length > 0) {
+        day.meals.dinner.forEach(food => {
+          exportText += `- ${food.name} (${food.calories || food.kcal || 0} kcal, $${food.price?.toFixed(2) || 0})\n`;
+        });
+      } else {
+        exportText += `- No dinner items\n`;
+      }
       
-      exportText += `\n`;
+      exportText += `\nDaily Totals: ${Math.round(day.totalCalories)} kcal, $${day.totalCost.toFixed(2)}\n\n`;
+      exportText += `${'-'.repeat(40)}\n\n`;
     });
     
-    exportText += `===============================\n`;
-    exportText += `Generated on: ${new Date().toLocaleDateString()}\n`;
-    
     return exportText;
-  }
+  },
 }));
 
 export default useSummaryStore;

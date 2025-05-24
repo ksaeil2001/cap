@@ -1,7 +1,8 @@
 import React, { useState } from 'react';
+import { Card, CardContent } from '@/components/ui/card';
 import { FoodItem } from '@/stores/useRecommendStore';
 import DraggableMeal from './DraggableMeal';
-import { PlusCircle } from 'lucide-react';
+import { UtensilsCrossed } from 'lucide-react';
 
 interface MealSlotProps {
   title: string;
@@ -24,8 +25,7 @@ const MealSlot: React.FC<MealSlotProps> = ({
 }) => {
   const [isDragOver, setIsDragOver] = useState(false);
 
-  // Handle drag events
-  const handleDragOver = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDragOver = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(true);
   };
@@ -34,63 +34,83 @@ const MealSlot: React.FC<MealSlotProps> = ({
     setIsDragOver(false);
   };
 
-  const handleDrop = (e: React.DragEvent<HTMLDivElement>) => {
+  const handleDrop = (e: React.DragEvent) => {
     e.preventDefault();
     setIsDragOver(false);
-
+    
     try {
       const foodData = e.dataTransfer.getData('application/json');
-      if (!foodData) return;
-      
-      const food = JSON.parse(foodData) as FoodItem;
-      onAddFood(food);
-    } catch (err) {
-      console.error('Error parsing dropped food data:', err);
+      if (foodData) {
+        const food = JSON.parse(foodData) as FoodItem;
+        onAddFood(food);
+      }
+    } catch (error) {
+      console.error('Error parsing dropped food data:', error);
+    }
+  };
+
+  // Set styles based on meal type
+  const getBorderClass = () => {
+    if (isDragOver) return 'border-dashed border-2 border-primary bg-primary-50';
+    
+    switch (iconType) {
+      case 'primary':
+        return 'border-2 border-blue-200';
+      case 'secondary':
+        return 'border-2 border-amber-200';
+      case 'accent':
+        return 'border-2 border-purple-200';
+      default:
+        return 'border-2 border-neutral-200';
+    }
+  };
+
+  const getHeaderClass = () => {
+    switch (iconType) {
+      case 'primary':
+        return 'bg-blue-50 border-b border-blue-200';
+      case 'secondary':
+        return 'bg-amber-50 border-b border-amber-200';
+      case 'accent':
+        return 'bg-purple-50 border-b border-purple-200';
+      default:
+        return 'bg-neutral-50 border-b border-neutral-200';
     }
   };
 
   return (
-    <div className="rounded-lg bg-neutral-50 border border-dashed border-neutral-200 p-4">
-      <div className="flex justify-between items-center mb-3">
-        <h3 className="font-medium text-lg">{title}</h3>
-        <div className="text-sm text-neutral-600">
-          <span className="mr-3">{totalCalories.toFixed(0)} kcal</span>
-          <span>${totalCost.toFixed(2)}</span>
+    <Card 
+      className={`overflow-hidden ${getBorderClass()}`}
+      onDragOver={handleDragOver}
+      onDragLeave={handleDragLeave}
+      onDrop={handleDrop}
+    >
+      <div className={`p-3 flex justify-between items-center ${getHeaderClass()}`}>
+        <h3 className="font-medium">{title}</h3>
+        <div className="text-xs text-neutral-600">
+          {totalCalories.toFixed(0)} kcal | ${totalCost.toFixed(2)}
         </div>
       </div>
-
-      {/* Droppable area */}
-      <div 
-        className={`min-h-[200px] rounded-md transition-colors duration-200 ${
-          isDragOver 
-            ? 'bg-primary/10 border-2 border-primary border-dashed' 
-            : 'bg-white border border-neutral-100'
-        }`}
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-      >
+      
+      <CardContent className="p-3">
         {foods.length === 0 ? (
-          <div className="h-full flex flex-col items-center justify-center text-neutral-400 p-4">
-            <PlusCircle className="w-10 h-10 mb-2 stroke-1" />
-            <p className="text-center text-sm">
-              Drag and drop foods here to add to {title.toLowerCase()}
-            </p>
+          <div className="min-h-[150px] flex flex-col items-center justify-center text-neutral-400 border border-dashed border-neutral-200 rounded-md p-4">
+            <span className="text-sm">Drop foods here</span>
           </div>
         ) : (
-          <div className="p-3 space-y-2">
+          <div className="space-y-2 min-h-[150px]">
             {foods.map((food) => (
-              <DraggableMeal
-                key={food.id}
+              <DraggableMeal 
+                key={food.id} 
                 food={food}
-                iconType={iconType}
                 onRemove={() => onRemoveFood(food.id)}
+                iconType={iconType}
               />
             ))}
           </div>
         )}
-      </div>
-    </div>
+      </CardContent>
+    </Card>
   );
 };
 

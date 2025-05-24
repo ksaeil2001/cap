@@ -145,7 +145,7 @@ const MealConfigPage = () => {
           )}
           
           {validationStatus.nutritionMismatch && (
-            <Alert variant="warning" className="bg-amber-50 text-amber-800 border-amber-200">
+            <Alert className="bg-amber-50 text-amber-800 border-amber-200">
               <UtensilsCrossed className="h-4 w-4" />
               <AlertTitle>Nutrition Imbalance</AlertTitle>
               <AlertDescription>

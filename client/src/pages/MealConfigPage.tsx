@@ -136,7 +136,7 @@ const MealConfigPage: React.FC = () => {
           )}
           
           {validationStatus.missingMeals && (
-            <Alert variant="warning">
+            <Alert variant="destructive">
               <AlertTriangle className="h-4 w-4" />
               <AlertTitle>Incomplete Meal Plan</AlertTitle>
               <AlertDescription>
@@ -258,7 +258,7 @@ const MealConfigPage: React.FC = () => {
               <CardContent>
                 <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
                   {filteredFoods.length > 0 ? (
-                    filteredFoods.map((food) => (
+                    filteredFoods.map((food: FoodItem) => (
                       <div
                         key={food.id}
                         className="p-2 border rounded-md hover:bg-gray-50 cursor-pointer flex justify-between items-center"

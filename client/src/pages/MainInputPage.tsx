@@ -56,23 +56,24 @@ const allergiesOptions = [
 const MainInputPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const { userInfo, setUserInfo, resetUserInfo } = useUserStore();
-
+  // Get user store state and actions
+  const userState = useUserStore();
+  
   // Initialize form with existing user info
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
     defaultValues: {
-      gender: userInfo.gender || 'male',
-      age: userInfo.age || 30,
-      height: userInfo.height || 175,
-      weight: userInfo.weight || 70,
-      bodyFatPercent: userInfo.bodyFatPercent || 15,
-      goal: userInfo.goal || 'muscle-gain',
-      activityLevel: userInfo.activityLevel || 'medium',
-      mealCount: userInfo.mealCount || 3,
-      allergies: userInfo.allergies || [],
-      budget: userInfo.budget || 100,
-      isAgreementChecked: userInfo.isAgreementChecked || false,
+      gender: userState.gender,
+      age: userState.age,
+      height: userState.height,
+      weight: userState.weight,
+      bodyFatPercent: userState.bodyFatPercent || 15,
+      goal: userState.goal,
+      activityLevel: userState.activityLevel,
+      mealCount: userState.mealCount,
+      allergies: userState.allergies,
+      budget: userState.budget,
+      isAgreementChecked: true, // 필수 동의 체크
     },
   });
 
@@ -80,7 +81,7 @@ const MainInputPage = () => {
   const onSubmit = async (data: FormValues) => {
     try {
       // Update user info in store
-      setUserInfo(data);
+      userState.updateUserInfo(data);
       
       // Show success toast
       toast({
@@ -102,19 +103,19 @@ const MainInputPage = () => {
 
   // Handle reset form
   const handleReset = () => {
-    resetUserInfo();
+    userState.resetUserInfo();
     form.reset({
       gender: 'male',
       age: 30,
       height: 175,
       weight: 70,
       bodyFatPercent: 15,
-      goal: 'muscle-gain',
+      goal: 'weight-loss',
       activityLevel: 'medium',
       mealCount: 3,
       allergies: [],
       budget: 100,
-      isAgreementChecked: false,
+      isAgreementChecked: true,
     });
     
     toast({

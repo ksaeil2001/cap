@@ -35,7 +35,7 @@ const Header: React.FC = () => {
               const isDisabled = index > currentStepIndex + 1; // Allow one step ahead
               
               return (
-                <React.Fragment key={step.path}>
+                <div key={step.path} className="flex items-center">
                   {/* Step circle */}
                   <Link to={isDisabled ? '#' : step.path}>
                     <div 
@@ -54,7 +54,7 @@ const Header: React.FC = () => {
                   {/* Step label */}
                   <span 
                     className={`
-                      text-sm
+                      text-sm ml-1
                       ${isActive ? 'text-primary font-medium' : 
                         isCompleted ? 'text-neutral-700' : 
                         'text-neutral-400'}
@@ -72,7 +72,7 @@ const Header: React.FC = () => {
                       `}
                     />
                   )}
-                </React.Fragment>
+                </div>
               );
             })}
           </div>

@@ -148,6 +148,8 @@ export class DatabaseStorage implements IStorage {
 
   async getRecommendedFoods(userInfo: UserInfo): Promise<Food[]> {
     try {
+      console.log(`Getting recommendations for: age ${userInfo.age}, activity level ${userInfo.activityLevel || 'not specified'}, meals ${userInfo.mealCount}`);
+      
       // Query the database for foods with their related nutrients
       const foodsWithNutrients = await db.query.foods.findMany({
         with: {
@@ -183,7 +185,8 @@ export class DatabaseStorage implements IStorage {
           .where(
             and(
               eq(foodNutrients.foodId, parseInt(food.id)),
-              eq(foodNutrients.nutrientId, parseInt(food.id.split('').map(c => c.charCodeAt(0)).reduce((a, b) => a + b, 0) % 5 + 1)) // Get a nutrient ID based on the food ID
+              // Generate a consistent nutrient ID for each food
+              eq(foodNutrients.nutrientId, Math.max(1, parseInt(food.id) % 5 + 1))
             )
           );
 
@@ -205,8 +208,32 @@ export class DatabaseStorage implements IStorage {
         );
       }
       
-      // Adjust food selection based on goal
+      // Calculate daily calorie needs based on age, gender, weight, height, and activity level
+      let basalMetabolicRate = 0;
+      // BMR using Mifflin-St Jeor equation
+      if (userInfo.gender === 'male') {
+        basalMetabolicRate = 10 * userInfo.weight + 6.25 * userInfo.height - 5 * userInfo.age + 5;
+      } else {
+        basalMetabolicRate = 10 * userInfo.weight + 6.25 * userInfo.height - 5 * userInfo.age - 161;
+      }
+      
+      // Apply activity multiplier
+      let calorieNeeds = basalMetabolicRate;
+      if (userInfo.activityLevel === 'low') {
+        calorieNeeds *= 1.2;
+      } else if (userInfo.activityLevel === 'medium') {
+        calorieNeeds *= 1.55;
+      } else if (userInfo.activityLevel === 'high') {
+        calorieNeeds *= 1.9;
+      } else {
+        // Default to sedentary if not specified
+        calorieNeeds *= 1.2;
+      }
+      
+      // Adjust based on goal
       if (userInfo.goal === 'weight-loss') {
+        calorieNeeds *= 0.8; // 20% deficit for weight loss
+        
         // For weight loss, prioritize lower calorie, higher protein foods
         recommendedFoods.sort((a, b) => {
           // Prioritize protein foods first
@@ -217,6 +244,8 @@ export class DatabaseStorage implements IStorage {
           return a.calories - b.calories;
         });
       } else if (userInfo.goal === 'muscle-gain') {
+        calorieNeeds *= 1.1; // 10% surplus for muscle gain
+        
         // For muscle gain, prioritize protein-rich foods
         recommendedFoods.sort((a, b) => {
           // Prioritize protein foods first
@@ -232,11 +261,18 @@ export class DatabaseStorage implements IStorage {
         });
       }
       
+      // Calculate per-meal calorie target
+      const caloriesPerMeal = calorieNeeds / userInfo.mealCount;
+      console.log(`Target calories per meal: ${caloriesPerMeal.toFixed(0)}`);
+      
       // Consider budget constraints
       const dailyBudget = userInfo.budget / 7;
-      recommendedFoods = recommendedFoods.filter(food => food.price <= dailyBudget / 3);
+      const budgetPerMeal = dailyBudget / userInfo.mealCount;
+      recommendedFoods = recommendedFoods.filter(food => food.price <= budgetPerMeal);
       
-      return recommendedFoods;
+      // Return more recommendations based on meal count
+      const recommendationCount = Math.min(userInfo.mealCount * 5, recommendedFoods.length);
+      return recommendedFoods.slice(0, recommendationCount);
     } catch (error) {
       console.error("Error fetching recommended foods:", error);
       return [];

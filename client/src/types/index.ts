@@ -1,11 +1,14 @@
 // User Types
 export interface UserInfo {
   gender: 'male' | 'female';
+  age: number;
   height: number;
   weight: number;
   bodyFatPercent?: number;
   goal: 'weight-loss' | 'muscle-gain';
+  activityLevel?: 'low' | 'medium' | 'high';
   budget: number;
+  mealCount: number;
   allergies: string[];
 }
 

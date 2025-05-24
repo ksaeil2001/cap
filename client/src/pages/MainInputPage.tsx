@@ -29,20 +29,25 @@ import { useUserStore } from "@/stores/useUserStore";
 import { useToast } from "@/hooks/use-toast";
 
 const allergyOptions = [
-  { id: "dairy", label: "Dairy" },
-  { id: "gluten", label: "Gluten" },
-  { id: "nuts", label: "Nuts" },
+  { id: "eggs", label: "Eggs" },
+  { id: "milk", label: "Milk" },
+  { id: "peanuts", label: "Peanuts" },
+  { id: "fish", label: "Fish" },
   { id: "shellfish", label: "Shellfish" },
   { id: "soy", label: "Soy" },
+  { id: "wheat", label: "Wheat" },
 ];
 
 const formSchema = z.object({
   gender: z.enum(["male", "female"]),
+  age: z.coerce.number().min(10, "Age must be at least 10 years").max(120, "Age must be less than 120 years"),
   height: z.coerce.number().min(100, "Height must be at least 100 cm").max(250, "Height must be less than 250 cm"),
   weight: z.coerce.number().min(30, "Weight must be at least 30 kg").max(250, "Weight must be less than 250 kg"),
   bodyFatPercent: z.coerce.number().min(5, "Body fat must be at least 5%").max(50, "Body fat must be less than 50%").optional(),
   goal: z.enum(["weight-loss", "muscle-gain"]),
+  activityLevel: z.enum(["low", "medium", "high"]).optional(),
   budget: z.coerce.number().min(20, "Budget must be at least $20"),
+  mealCount: z.enum(["2", "3"]).default("3"),
   allergies: z.array(z.string()).default([]),
   consent: z.boolean().refine(val => val === true, {
     message: "You must consent to data usage for meal recommendations",
@@ -61,11 +66,14 @@ const MainInputPage = () => {
     resolver: zodResolver(formSchema),
     defaultValues: {
       gender: "male",
+      age: undefined,
       height: undefined,
       weight: undefined,
       bodyFatPercent: undefined,
-      goal: undefined,
+      goal: "weight-loss",
+      activityLevel: undefined,
       budget: undefined,
+      mealCount: "3",
       allergies: [],
       consent: false,
     },
@@ -77,11 +85,14 @@ const MainInputPage = () => {
       // Store the user info in Zustand
       setUserInfo({
         gender: data.gender,
+        age: data.age,
         height: data.height,
         weight: data.weight,
         bodyFatPercent: data.bodyFatPercent,
         goal: data.goal,
+        activityLevel: data.activityLevel,
         budget: data.budget,
+        mealCount: parseInt(data.mealCount),
         allergies: data.allergies,
       });
 
@@ -141,17 +152,18 @@ const MainInputPage = () => {
               <div className="w-full md:w-1/2">
                 <FormField
                   control={form.control}
-                  name="bodyFatPercent"
+                  name="age"
                   render={({ field }) => (
                     <FormItem>
-                      <FormLabel htmlFor="bodyFat" className="text-sm font-medium text-neutral-700">Body Fat % (optional)</FormLabel>
+                      <FormLabel htmlFor="age" className="text-sm font-medium text-neutral-700">Age (years)</FormLabel>
                       <FormControl>
                         <Input
                           type="number"
-                          id="bodyFat"
-                          placeholder="e.g. 18"
-                          min={5}
-                          max={50}
+                          id="age"
+                          placeholder="e.g. 30"
+                          min={10}
+                          max={120}
+                          required
                           {...field}
                           value={field.value || ''}
                           className="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
@@ -217,28 +229,104 @@ const MainInputPage = () => {
               </div>
             </div>
 
-            <div className="mb-6">
-              <FormField
-                control={form.control}
-                name="goal"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel htmlFor="goal" className="text-sm font-medium text-neutral-700">Health Goal</FormLabel>
-                    <Select onValueChange={field.onChange} defaultValue={field.value}>
+            <div className="flex flex-col md:flex-row md:space-x-4 mb-6">
+              <div className="mb-4 md:mb-0 w-full md:w-1/2">
+                <FormField
+                  control={form.control}
+                  name="bodyFatPercent"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel htmlFor="bodyFat" className="text-sm font-medium text-neutral-700">Body Fat % (optional)</FormLabel>
                       <FormControl>
-                        <SelectTrigger className="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
-                          <SelectValue placeholder="Select your goal" />
-                        </SelectTrigger>
+                        <Input
+                          type="number"
+                          id="bodyFat"
+                          placeholder="e.g. 18"
+                          min={5}
+                          max={50}
+                          {...field}
+                          value={field.value || ''}
+                          className="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary"
+                        />
                       </FormControl>
-                      <SelectContent>
-                        <SelectItem value="weight-loss">Weight Loss</SelectItem>
-                        <SelectItem value="muscle-gain">Muscle Gain</SelectItem>
-                      </SelectContent>
-                    </Select>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div className="w-full md:w-1/2">
+                <FormField
+                  control={form.control}
+                  name="activityLevel"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel htmlFor="activityLevel" className="text-sm font-medium text-neutral-700">Activity Level</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                            <SelectValue placeholder="Select activity level" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="low">Low</SelectItem>
+                          <SelectItem value="medium">Medium</SelectItem>
+                          <SelectItem value="high">High</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+            </div>
+
+            <div className="flex flex-col md:flex-row md:space-x-4 mb-6">
+              <div className="mb-4 md:mb-0 w-full md:w-1/2">
+                <FormField
+                  control={form.control}
+                  name="goal"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel htmlFor="goal" className="text-sm font-medium text-neutral-700">Health Goal</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                            <SelectValue placeholder="Select your goal" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="weight-loss">Weight Loss</SelectItem>
+                          <SelectItem value="muscle-gain">Muscle Gain</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
+              <div className="w-full md:w-1/2">
+                <FormField
+                  control={form.control}
+                  name="mealCount"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel htmlFor="mealCount" className="text-sm font-medium text-neutral-700">Meals per day</FormLabel>
+                      <Select onValueChange={field.onChange} defaultValue={field.value}>
+                        <FormControl>
+                          <SelectTrigger className="w-full px-3 py-2 border border-neutral-300 rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                            <SelectValue placeholder="Number of meals" />
+                          </SelectTrigger>
+                        </FormControl>
+                        <SelectContent>
+                          <SelectItem value="2">2 meals</SelectItem>
+                          <SelectItem value="3">3 meals</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </div>
             </div>
 
             <div className="mb-6">
@@ -277,7 +365,7 @@ const MainInputPage = () => {
                 name="allergies"
                 render={() => (
                   <FormItem>
-                    <FormLabel className="text-sm font-medium text-neutral-700">Allergies or Restrictions</FormLabel>
+                    <FormLabel className="text-sm font-medium text-neutral-700">Allergies or Restrictions (max 5)</FormLabel>
                     <div className="flex flex-wrap gap-2">
                       {allergyOptions.map((option) => (
                         <FormField
@@ -291,6 +379,14 @@ const MainInputPage = () => {
                                   <Checkbox
                                     checked={field.value?.includes(option.id)}
                                     onCheckedChange={(checked) => {
+                                      if (checked && field.value.length >= 5) {
+                                        toast({
+                                          title: "Maximum allergies reached",
+                                          description: "You can select a maximum of 5 allergies",
+                                          variant: "destructive",
+                                        });
+                                        return;
+                                      }
                                       return checked
                                         ? field.onChange([...field.value, option.id])
                                         : field.onChange(

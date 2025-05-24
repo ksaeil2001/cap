@@ -171,10 +171,17 @@ const RecommendPage: React.FC = () => {
     <div>
       <div className="mb-6 text-center">
         <h2 className="text-3xl font-heading font-bold mb-4">Recommended Foods</h2>
-        <p className="text-neutral-600 max-w-2xl mx-auto">
-          These foods are personalized based on your {userInfo.goal} goal, dietary preferences, and budget of ${userInfo.budget.toFixed(2)} per week.
-          Select items you like to include in your meal plan.
-        </p>
+        {userInfo ? (
+          <p className="text-neutral-600 max-w-2xl mx-auto">
+            These foods are personalized based on your {userInfo?.goal} goal, dietary preferences, and budget of ${userInfo?.budget?.toFixed(2) || '0.00'} per week.
+            Select items you like to include in your meal plan.
+          </p>
+        ) : (
+          <p className="text-neutral-600 max-w-2xl mx-auto">
+            These foods are personalized based on your dietary preferences and budget.
+            Select items you like to include in your meal plan.
+          </p>
+        )}
       </div>
       
       {/* Fallback Warning */}
@@ -231,7 +238,17 @@ const RecommendPage: React.FC = () => {
           <div className="mb-6">
             <FoodCardList 
               foods={getCurrentMealFoods()}
-              userInfo={userInfo}
+              userInfo={userInfo || {
+                gender: 'male',
+                age: 30,
+                height: 175,
+                weight: 70,
+                goal: 'weight-loss',
+                activityLevel: 'medium',
+                mealCount: 3,
+                allergies: [],
+                budget: 100
+              }}
               selectedFoods={selectedFoods}
               onSelectFood={handleSelectFood}
               onViewDetails={handleViewDetails}
@@ -336,7 +353,7 @@ const RecommendPage: React.FC = () => {
       <FoodDetailModal
         food={selectedFood}
         isOpen={isDetailModalOpen}
-        isSelected={selectedFood ? selectedFoods.some(f => f.id === selectedFood.id) : false}
+        isSelected={selectedFood ? selectedFoods.some((f) => f.id === selectedFood.id) : false}
         onClose={() => setIsDetailModalOpen(false)}
         onSelect={handleSelectFood}
       />

@@ -17,6 +17,8 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import DetailedNutritionAnalysis from '@/components/DetailedNutritionAnalysis';
+import AIRecommendations from '@/components/AIRecommendations';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
 
@@ -392,6 +394,75 @@ const SummaryPage = () => {
                     </div>
                   </CardContent>
                 </Card>
+              </div>
+            </div>
+            
+            {/* Advanced Nutrition Analysis Section */}
+            <div className="mt-8">
+              <h2 className="text-2xl font-bold mb-4">Advanced Nutrition Analysis</h2>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                  <DetailedNutritionAnalysis 
+                    foods={[...selectedDayPlan.meals.breakfast, ...selectedDayPlan.meals.lunch, ...selectedDayPlan.meals.dinner]}
+                    nutritionData={{
+                      calories: {
+                        target: nutritionSummary.calories.target,
+                        actual: selectedDayPlan.nutritionSummary.calories
+                      },
+                      protein: {
+                        target: nutritionSummary.protein.target,
+                        actual: selectedDayPlan.nutritionSummary.protein
+                      },
+                      carbs: {
+                        target: nutritionSummary.carbs.target,
+                        actual: selectedDayPlan.nutritionSummary.carbs
+                      },
+                      fat: {
+                        target: nutritionSummary.fat.target,
+                        actual: selectedDayPlan.nutritionSummary.fat
+                      }
+                    }}
+                    userGoal={userStore.goal}
+                    userWeight={userStore.weight}
+                    userHeight={userStore.height}
+                    userGender={userStore.gender}
+                    userAge={userStore.age}
+                    userActivityLevel={userStore.activityLevel}
+                  />
+                </div>
+                <div>
+                  <h3 className="text-xl font-bold mb-4">AI Nutrition Coach</h3>
+                  <AIRecommendations 
+                    userGoal={userStore.goal}
+                    foods={[...selectedDayPlan.meals.breakfast, ...selectedDayPlan.meals.lunch, ...selectedDayPlan.meals.dinner]}
+                    nutritionSummary={{
+                      calories: {
+                        target: nutritionSummary.calories.target,
+                        actual: selectedDayPlan.nutritionSummary.calories
+                      },
+                      protein: {
+                        target: nutritionSummary.protein.target,
+                        actual: selectedDayPlan.nutritionSummary.protein
+                      },
+                      carbs: {
+                        target: nutritionSummary.carbs.target,
+                        actual: selectedDayPlan.nutritionSummary.carbs
+                      },
+                      fat: {
+                        target: nutritionSummary.fat.target,
+                        actual: selectedDayPlan.nutritionSummary.fat
+                      }
+                    }}
+                    userProfile={{
+                      gender: userStore.gender,
+                      age: userStore.age,
+                      height: userStore.height,
+                      weight: userStore.weight,
+                      activityLevel: userStore.activityLevel,
+                      allergies: userStore.allergies
+                    }}
+                  />
+                </div>
               </div>
             </div>
           </TabsContent>

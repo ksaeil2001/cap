@@ -1,0 +1,228 @@
+🚀 Replit GPT Project Initialization and Development Directive
+📌 Project Overview
+Develop a personalized AI-powered meal recommendation web app using:
+
+Frontend: React 18 + TypeScript 5 + Vite
+
+State Management: Zustand
+
+Routing: React Router DOM
+
+API Calls: Axios (for future FastAPI backend integration)
+
+Code Quality: ESLint + Prettier
+
+Auth/Session Management: JWT-based anonymous user sessions
+
+📂 Technical Stack Initialization
+Begin by clearly setting up a fully configured and structured development environment as follows:
+
+Step 1: Project Setup on Replit
+Create a new Node.js based Replit environment.
+
+Initialize with Vite using React + TypeScript template.
+
+npm init vite@latest . -- --template react-ts
+npm install
+Step 2: Install Essential Dependencies
+Execute commands in the Replit Shell:
+
+npm install zustand react-router-dom axios
+npm install -D eslint prettier @typescript-eslint/parser @typescript-eslint/eslint-plugin eslint-plugin-react eslint-config-prettier
+Step 3: Configure ESLint & Prettier
+.eslintrc.json
+
+{
+  "parser": "@typescript-eslint/parser",
+  "plugins": ["@typescript-eslint", "react"],
+  "extends": [
+    "eslint:recommended",
+    "plugin:react/recommended",
+    "plugin:@typescript-eslint/recommended",
+    "prettier"
+  ],
+  "env": {
+    "browser": true,
+    "es2021": true
+  },
+  "rules": {
+    "react/react-in-jsx-scope": "off"
+  },
+  "settings": {
+    "react": { "version": "detect" }
+  }
+}
+.prettierrc
+
+{
+  "semi": true,
+  "singleQuote": true,
+  "trailingComma": "all",
+  "tabWidth": 2
+}
+📁 Project Folder Structure
+Clearly follow this standardized folder organization:
+
+src/
+├── api/                # API request handlers
+├── components/         # Reusable UI components
+├── pages/              # Page-level components
+├── stores/             # Zustand state management stores
+├── utils/              # Utility functions and helpers
+├── App.tsx             # Application router setup
+├── main.tsx            # Application entry point
+🏪 Define Zustand Stores
+Define Zustand clearly with strong typing for state management. Example: useUserStore.ts
+
+src/stores/useUserStore.ts
+
+import { create } from 'zustand';
+
+interface UserInfo {
+  gender: 'male' | 'female';
+  height: number;
+  weight: number;
+  bodyFatPercent?: number;
+  goal: 'weight-loss' | 'muscle-gain';
+  budget: number;
+  allergies: string[];
+}
+
+interface UserStore {
+  userInfo: UserInfo;
+  setUserInfo: (info: UserInfo) => void;
+}
+
+export const useUserStore = create<UserStore>((set) => ({
+  userInfo: {
+    gender: 'male',
+    height: 0,
+    weight: 0,
+    goal: 'weight-loss',
+    budget: 0,
+    allergies: [],
+  },
+  setUserInfo: (info) => set({ userInfo: info }),
+}));
+🔀 Routing Setup (React Router DOM)
+Define routes clearly and logically based on the specified flow:
+
+src/App.tsx
+
+import { Routes, Route } from 'react-router-dom';
+import MainInputPage from './pages/MainInputPage';
+import RecommendPage from './pages/RecommendPage';
+import MealConfigPage from './pages/MealConfigPage';
+import SummaryPage from './pages/SummaryPage';
+
+function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<MainInputPage />} />
+      <Route path="/recommend" element={<RecommendPage />} />
+      <Route path="/meal-config" element={<MealConfigPage />} />
+      <Route path="/summary" element={<SummaryPage />} />
+    </Routes>
+  );
+}
+
+export default App;
+Ensure you wrap BrowserRouter correctly in src/main.tsx:
+
+import React from 'react';
+import ReactDOM from 'react-dom/client';
+import App from './App';
+import { BrowserRouter } from 'react-router-dom';
+
+ReactDOM.createRoot(document.getElementById('root')!).render(
+  <BrowserRouter>
+    <App />
+  </BrowserRouter>,
+);
+📑 Page-by-Page Implementation
+Use this as a precise instruction set to guide Replit GPT development for each page:
+
+📌 1. MainInputPage
+Components: Form inputs for gender, height, weight, body fat, health goal, budget, allergies, and a consent checkbox.
+
+State: Store user data using useUserStore.
+
+API: On valid submission, POST data to /api/recommend and transition to RecommendPage.
+
+Validation: All inputs validated before submission.
+
+📌 2. RecommendPage
+Components: Display recommended food items as cards. Each card shows basic nutrition info and price.
+
+Interaction: Clicking a card opens detailed modal view. Users select foods to confirm their choices.
+
+State: Track selections using useRecommendStore.
+
+API: Data received from previous call to /api/recommend. If user changes inputs, re-call API with updated data.
+
+Transition: Proceed to MealConfigPage after selection.
+
+📌 3. MealConfigPage
+Components: Drag-and-drop meal configuration per mealtime (breakfast, lunch, dinner).
+
+Interaction: Allow users to edit, add, remove foods. Real-time validation of nutrition and budget constraints.
+
+State: Manage selections and configuration state in useMealConfigStore.
+
+Transition: Proceed to SummaryPage once constraints are validated.
+
+📌 4. SummaryPage
+Components: Present visual summaries (charts, bars) of nutritional breakdown and budget analysis.
+
+Interaction: Provide clear visual and textual feedback. Allow exporting or sharing meal plans.
+
+State: Utilize useSummaryStore for final meal plan management.
+
+🚧 Development Guidelines
+Use strongly typed Zustand stores.
+
+Componentize UI elements clearly with reusability.
+
+Always validate data before state updates and API interactions.
+
+Use Axios consistently for all API calls.
+
+Implement JWT for anonymous sessions in future integration.
+
+🧪 Development Workflow and Scripts
+Use these scripts consistently in your workflow:
+
+package.json scripts:
+
+"scripts": {
+  "dev": "vite",
+  "build": "vite build",
+  "preview": "vite preview",
+  "lint": "eslint 'src/**/*.{ts,tsx}' --fix",
+  "format": "prettier --write 'src/**/*.{ts,tsx,css,json}'",
+  "check-types": "tsc --noEmit"
+}
+Regularly run:
+
+npm run dev       # Development server
+npm run lint      # Fix lint issues
+npm run format    # Format code
+npm run check-types  # Type checking
+🚀 Testing and Deployment
+Regularly test locally and on Replit environment.
+
+Deploy using Replit's built-in hosting mechanism.
+
+Ensure environmental variables (Secrets) for JWT and API URLs are properly configured within Replit.
+
+✅ Final Directive
+Replit GPT:
+Your task now is to fully implement and develop this frontend web app following the structured directives clearly outlined above:
+
+Initialize the entire frontend environment using the specified technology stack.
+
+Develop each specified page, strictly adhering to the defined component structure, state management, API interaction, and routing logic.
+
+Ensure comprehensive validation, usability, and professional-grade frontend practices throughout development.
+
+You are now ready to begin step-by-step development of this personalized meal recommendation frontend project.

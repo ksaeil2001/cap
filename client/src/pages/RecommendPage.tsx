@@ -111,7 +111,8 @@ const RecommendPage: React.FC = () => {
   
   // Handle continuing to meal configuration
   const handleContinue = () => {
-    if (selectedFoods.length === 0) {
+    // Defensive check to ensure selectedFoods is an array and has items
+    if (!Array.isArray(selectedFoods) || selectedFoods.length === 0) {
       toast({
         title: "No foods selected",
         description: "Please select at least one food item before continuing.",
@@ -125,10 +126,14 @@ const RecommendPage: React.FC = () => {
   
   // Get current meal foods
   const getCurrentMealFoods = (): FoodItem[] => {
+    if (!Array.isArray(meals)) {
+      return [];
+    }
+    
     const mealIndex = currentMealType === 'breakfast' ? 0 : 
                      currentMealType === 'lunch' ? 1 : 2;
     
-    return meals[mealIndex] || [];
+    return Array.isArray(meals[mealIndex]) ? meals[mealIndex] : [];
   };
   
   // Render loading state
@@ -211,7 +216,7 @@ const RecommendPage: React.FC = () => {
           />
           
           {/* Selected Foods Summary */}
-          {selectedFoods.length > 0 && (
+          {Array.isArray(selectedFoods) && selectedFoods.length > 0 && (
             <div className="mb-6 p-4 bg-primary-50 rounded-lg border border-primary-200">
               <h3 className="text-lg font-medium mb-2 text-primary-700">Selected Foods ({selectedFoods.length})</h3>
               <div className="flex flex-wrap gap-2">
@@ -343,7 +348,7 @@ const RecommendPage: React.FC = () => {
         </Button>
         <Button 
           onClick={handleContinue}
-          disabled={selectedFoods.length === 0}
+          disabled={!Array.isArray(selectedFoods) || selectedFoods.length === 0}
         >
           Continue to Meal Configuration
         </Button>
@@ -353,7 +358,7 @@ const RecommendPage: React.FC = () => {
       <FoodDetailModal
         food={selectedFood}
         isOpen={isDetailModalOpen}
-        isSelected={selectedFood ? selectedFoods.some((f) => f.id === selectedFood.id) : false}
+        isSelected={selectedFood && Array.isArray(selectedFoods) ? selectedFoods.some((f) => f.id === selectedFood.id) : false}
         onClose={() => setIsDetailModalOpen(false)}
         onSelect={handleSelectFood}
       />

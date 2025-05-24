@@ -3,7 +3,7 @@ import os
 import random
 from typing import List, Dict, Any
 import numpy as np
-from api.models import FoodItem
+from .models import FoodItem
 
 # Sample food database for development
 SAMPLE_FOODS = [

@@ -1,8 +1,8 @@
 import random
 from typing import List, Dict, Any
 import numpy as np
-from api.models import UserInfo, FoodItem, NutritionSummary, RecommendResponse
-from api.utils import calculate_bmr, calculate_tdee, calculate_macro_targets
+from .models import UserInfo, FoodItem, NutritionSummary, RecommendResponse
+from .utils import calculate_bmr, calculate_tdee, calculate_macro_targets
 
 def recommend_meals(user_info: UserInfo, food_database: List[FoodItem]) -> RecommendResponse:
     """

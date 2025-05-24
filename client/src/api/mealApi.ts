@@ -1,6 +1,7 @@
 import { UserInfo } from "@/types";
 import { FoodItem, NutritionSummary } from "@/stores/useRecommendStore";
 import { mockRecommend } from "./mockRecommend";
+import { apiRequest } from "@/lib/queryClient";
 
 interface RecommendResponse {
   meals: FoodItem[][];
@@ -13,10 +14,25 @@ interface RecommendResponse {
  * This is the main API function that will be called from the UI
  */
 export async function getRecommendedFoods(userInfo: UserInfo): Promise<RecommendResponse> {
-  // For development, we'll use the mock implementation
-  // In a production environment, this would call an actual API endpoint
   try {
-    return await mockRecommend(userInfo);
+    // Try to use the real API endpoint
+    console.log("Using FastAPI backend for recommendations...");
+    
+    try {
+      const apiResponse = await apiRequest("/api/recommend", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(userInfo),
+      });
+      
+      return await apiResponse.json();
+    } catch (apiError) {
+      // If the FastAPI endpoint fails, fallback to mock implementation
+      console.log("FastAPI endpoint not available, using mock API for development");
+      return await mockRecommend(userInfo);
+    }
   } catch (error) {
     console.error("Error getting recommendations:", error);
     return getFallbackResponse();

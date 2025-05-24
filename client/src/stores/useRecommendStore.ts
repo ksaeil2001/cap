@@ -1,129 +1,124 @@
 import { create } from 'zustand';
-import { Food } from '@/types';
+import { FoodItem } from '@/api/mockRecommend';
+import { MealTime } from './useMealConfigStore';
 
-// Food item type with detailed nutritional information
-export interface FoodItem extends Food {
-  tags?: string[];
-  protein?: number;
-  fat?: number;
-  carbs?: number;
-  kcal?: number;
-}
-
-// Nutrition summary type definition
-export interface NutritionSummary {
-  calories: {
-    target: number;
-    actual: number;
-  };
-  protein: {
-    target: number;
-    actual: number;
-  };
-  fat: {
-    target: number;
-    actual: number;
-  };
-  carbs: {
-    target: number;
-    actual: number;
-  };
-  budget: {
-    target: number;
-    actual: number;
-  };
-  allergy: boolean;
-}
-
-// RecommendStore state interface
-interface RecommendStore {
-  // State
+export interface RecommendResponse {
   meals: FoodItem[][];
-  summary: NutritionSummary | null;
+  summary: {
+    calories: { target: number; actual: number };
+    protein: { target: number; actual: number };
+    fat: { target: number; actual: number };
+    carbs: { target: number; actual: number };
+    budget: { target: number; actual: number };
+    allergy: boolean;
+  };
   fallback: boolean;
-  selectedFoods: FoodItem[];
-  currentMealType: 'breakfast' | 'lunch' | 'dinner';
+}
+
+export interface RecommendStore {
+  // State
+  isLoading: boolean;
+  recommendedFoods: FoodItem[];
+  filteredFoods: FoodItem[];
+  summary: RecommendResponse['summary'] | null;
+  fallback: boolean;
   
   // Actions
-  setRecommendations: (meals: FoodItem[][], summary: NutritionSummary, fallback: boolean) => void;
-  selectFood: (food: FoodItem) => void;
-  removeFood: (foodId: string) => void;
-  setMealType: (mealType: 'breakfast' | 'lunch' | 'dinner') => void;
-  reset: () => void;
-  
-  // Legacy actions (for backward compatibility)
-  addFood: (food: FoodItem) => void;
-  clearFoods: () => void;
-  setRecommendationData: (data: { 
-    meals: FoodItem[][];
-    summary: NutritionSummary;
-    fallback: boolean;
-  }) => void;
+  setRecommendedFoods: (foods: FoodItem[][]) => void;
+  setSummary: (summary: RecommendResponse['summary']) => void;
+  setFallback: (fallback: boolean) => void;
+  filterByMealType: (mealType: MealTime) => void;
+  filterByCalories: (min: number, max: number) => void;
+  filterByPrice: (min: number, max: number) => void;
+  clearFilters: () => void;
 }
 
-// Initial state
-const initialState = {
-  meals: [],
+export const useRecommendStore = create<RecommendStore>((set, get) => ({
+  isLoading: false,
+  recommendedFoods: [],
+  filteredFoods: [],
   summary: null,
   fallback: false,
-  selectedFoods: [],
-  currentMealType: 'breakfast' as const,
-};
-
-// Create Zustand store
-export const useRecommendStore = create<RecommendStore>((set) => ({
-  ...initialState,
-
-  // Set recommendations from API response
-  setRecommendations: (meals, summary, fallback) =>
-    set(() => ({
-      meals,
-      summary,
-      fallback,
-      selectedFoods: [], // Reset selections when new recommendations arrive
-    })),
-
-  // Select a food item
-  selectFood: (food) =>
-    set((state) => {
-      // Prevent duplicate selections
-      if (state.selectedFoods.some(f => f.id === food.id)) {
-        return state;
+  
+  // Set recommended foods from API response
+  setRecommendedFoods: (foodsByMeal: FoodItem[][]) => {
+    // Flatten all meal foods into a single array
+    const allFoods = foodsByMeal.flat();
+    
+    set({
+      recommendedFoods: allFoods,
+      filteredFoods: allFoods
+    });
+  },
+  
+  // Set nutrition summary
+  setSummary: (summary) => {
+    set({ summary });
+  },
+  
+  // Set fallback flag
+  setFallback: (fallback) => {
+    set({ fallback });
+  },
+  
+  // Filter foods by meal type (breakfast, lunch, dinner)
+  filterByMealType: (mealType: MealTime) => {
+    const { recommendedFoods } = get();
+    
+    // Map meal types to appropriate categories
+    const categoryMap: Record<MealTime, string[]> = {
+      breakfast: ['breakfast', 'cereal', 'dairy', 'fruit'],
+      lunch: ['sandwich', 'salad', 'soup', 'protein', 'vegetable'],
+      dinner: ['main', 'protein', 'pasta', 'rice', 'vegetable', 'meat']
+    };
+    
+    const targetCategories = categoryMap[mealType];
+    
+    const filtered = recommendedFoods.filter(food => {
+      // If food has a category and it's in the target categories for this meal type
+      if (food.category && targetCategories.includes(food.category.toLowerCase())) {
+        return true;
       }
-      return { selectedFoods: [...state.selectedFoods, food] };
-    }),
-
-  // Remove a food item
-  removeFood: (foodId) =>
-    set((state) => ({
-      selectedFoods: state.selectedFoods.filter((food) => food.id !== foodId),
-    })),
-
-  // Change current meal type tab
-  setMealType: (mealType) =>
-    set(() => ({
-      currentMealType: mealType,
-    })),
-
-  // Reset store to initial state
-  reset: () => 
-    set(() => ({ ...initialState })),
-
-  // Legacy actions (for backward compatibility)
-  addFood: (food) => set((state) => {
-    if (state.selectedFoods.some(f => f.id === food.id)) {
-      return state;
-    }
-    return { selectedFoods: [...state.selectedFoods, food] };
-  }),
+      
+      // If food has tags that match the meal type
+      if (food.tags && food.tags.some(tag => 
+        tag.toLowerCase().includes(mealType) || 
+        targetCategories.some(cat => tag.toLowerCase().includes(cat))
+      )) {
+        return true;
+      }
+      
+      return false;
+    });
+    
+    set({ filteredFoods: filtered });
+  },
   
-  clearFoods: () => set({ selectedFoods: [] }),
+  // Filter foods by calorie range
+  filterByCalories: (min: number, max: number) => {
+    const { recommendedFoods } = get();
+    
+    const filtered = recommendedFoods.filter(food => 
+      food.kcal >= min && food.kcal <= max
+    );
+    
+    set({ filteredFoods: filtered });
+  },
   
-  setRecommendationData: (data) => set({
-    meals: data.meals,
-    summary: data.summary,
-    fallback: data.fallback
-  })
+  // Filter foods by price range
+  filterByPrice: (min: number, max: number) => {
+    const { recommendedFoods } = get();
+    
+    const filtered = recommendedFoods.filter(food => 
+      food.price >= min && food.price <= max
+    );
+    
+    set({ filteredFoods: filtered });
+  },
+  
+  // Clear all filters and show all foods
+  clearFilters: () => {
+    const { recommendedFoods } = get();
+    set({ filteredFoods: recommendedFoods });
+  }
 }));
-
-export default useRecommendStore;

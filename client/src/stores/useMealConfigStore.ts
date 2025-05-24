@@ -1,16 +1,17 @@
 import { create } from 'zustand';
-import { FoodItem, NutritionSummary } from '@/stores/useRecommendStore';
-import { useUserStore } from '@/stores/useUserStore';
-import { MealTime } from '@/types';
+import { FoodItem } from '@/api/mockRecommend';
+import { useUserStore } from './useUserStore';
+import { useRecommendStore } from './useRecommendStore';
 
-// Validation status for meal configuration
+export type MealTime = 'breakfast' | 'lunch' | 'dinner';
+
 interface ValidationStatus {
   budgetExceeded: boolean;
   nutritionMismatch: boolean;
   hasAllergies: boolean;
+  missingMeals: boolean;
 }
 
-// Meal configuration for all meal types
 interface MealConfig {
   breakfast: FoodItem[];
   lunch: FoodItem[];
@@ -18,7 +19,30 @@ interface MealConfig {
   [key: string]: FoodItem[];
 }
 
-// Meal configuration store interface
+interface NutritionSummary {
+  calories: {
+    target: number;
+    actual: number;
+  };
+  protein: {
+    target: number;
+    actual: number;
+  };
+  fat: {
+    target: number;
+    actual: number;
+  };
+  carbs: {
+    target: number;
+    actual: number;
+  };
+  budget: {
+    target: number;
+    actual: number;
+  };
+  allergy: boolean;
+}
+
 interface MealConfigStore {
   meals: MealConfig;
   nutritionSummary: NutritionSummary;
@@ -34,21 +58,19 @@ interface MealConfigStore {
   // Helper methods
   getMealTotalCalories: (mealType: MealTime) => number;
   getMealTotalCost: (mealType: MealTime) => number;
+  isReadyForSummary: () => boolean;
 }
 
-// Initial nutrition summary
 const initialNutritionSummary: NutritionSummary = {
-  calories: { target: 0, actual: 0 },
-  protein: { target: 0, actual: 0 },
-  fat: { target: 0, actual: 0 },
-  carbs: { target: 0, actual: 0 },
-  budget: { target: 0, actual: 0 },
+  calories: { target: 2000, actual: 0 },
+  protein: { target: 150, actual: 0 },
+  fat: { target: 70, actual: 0 },
+  carbs: { target: 250, actual: 0 },
+  budget: { target: 100, actual: 0 },
   allergy: false
 };
 
-// Create the meal configuration store
 export const useMealConfigStore = create<MealConfigStore>((set, get) => ({
-  // Initial state
   meals: {
     breakfast: [],
     lunch: [],
@@ -59,44 +81,42 @@ export const useMealConfigStore = create<MealConfigStore>((set, get) => ({
   validationStatus: {
     budgetExceeded: false,
     nutritionMismatch: false,
-    hasAllergies: false
+    hasAllergies: false,
+    missingMeals: true
   },
-  
-  // Add a food to a specific meal type
-  addFoodToMeal: (mealType, food) => {
-    set(state => {
-      // Create a new meals object with the food added to the specified meal type
+
+  // Add a food item to a specific meal
+  addFoodToMeal: (mealType: MealTime, food: FoodItem) => {
+    set((state) => {
+      // Check if food already exists in this meal
+      const exists = state.meals[mealType].some(item => item.id === food.id);
+      if (exists) return state; // Don't add duplicates
+      
+      // Create new meals object with the added food
       const updatedMeals = {
         ...state.meals,
         [mealType]: [...state.meals[mealType], food]
       };
       
-      // Return the updated state
-      return {
-        meals: updatedMeals
-      };
+      return { meals: updatedMeals };
     });
     
-    // Update nutrition summary and validation status after adding food
+    // Update nutrition summary after adding food
     get().updateNutritionSummary();
   },
   
-  // Remove a food from a specific meal type
-  removeFoodFromMeal: (mealType, foodId) => {
-    set(state => {
-      // Create a new meals object with the food removed from the specified meal type
+  // Remove a food item from a specific meal
+  removeFoodFromMeal: (mealType: MealTime, foodId: string) => {
+    set((state) => {
       const updatedMeals = {
         ...state.meals,
         [mealType]: state.meals[mealType].filter(food => food.id !== foodId)
       };
       
-      // Return the updated state
-      return {
-        meals: updatedMeals
-      };
+      return { meals: updatedMeals };
     });
     
-    // Update nutrition summary and validation status after removing food
+    // Update nutrition summary after removing food
     get().updateNutritionSummary();
   },
   
@@ -110,51 +130,52 @@ export const useMealConfigStore = create<MealConfigStore>((set, get) => ({
       }
     });
     
-    // Update nutrition summary and validation status after clearing meals
+    // Update nutrition summary after clearing meals
     get().updateNutritionSummary();
   },
   
   // Update nutrition summary based on current meals
   updateNutritionSummary: () => {
     const state = get();
-    const userInfo = useUserStore.getState().userInfo;
+    const userInfo = useUserStore.getState();
+    const recommendStore = useRecommendStore.getState();
     
-    // Calculate total nutrition values from all meals
-    let totalCalories = 0;
-    let totalProtein = 0;
-    let totalFat = 0;
-    let totalCarbs = 0;
-    let totalCost = 0;
-    let hasAllergies = false;
+    // Get all food items across all meals
+    const allFoods: FoodItem[] = [
+      ...state.meals.breakfast,
+      ...state.meals.lunch,
+      ...state.meals.dinner
+    ];
     
-    // Process all meal types
-    Object.values(state.meals).forEach(foods => {
-      foods.forEach(food => {
-        totalCalories += food.calories || food.kcal || 0;
-        totalProtein += food.protein || 0;
-        totalFat += food.fat || 0;
-        totalCarbs += food.carbs || 0;
-        totalCost += food.price || 0;
-        
-        // Check for allergies
-        if (userInfo.allergies && userInfo.allergies.length > 0 && food.tags) {
-          const allergensPresent = userInfo.allergies.some(allergy => 
-            food.tags?.includes(allergy.toLowerCase())
-          );
-          if (allergensPresent) {
-            hasAllergies = true;
-          }
-        }
-      });
-    });
+    // Calculate total nutrition values
+    const totalCalories = allFoods.reduce((sum, food) => sum + (food.kcal || 0), 0);
+    const totalProtein = allFoods.reduce((sum, food) => sum + (food.protein || 0), 0);
+    const totalFat = allFoods.reduce((sum, food) => sum + (food.fat || 0), 0);
+    const totalCarbs = allFoods.reduce((sum, food) => sum + (food.carbs || 0), 0);
+    const totalCost = allFoods.reduce((sum, food) => sum + (food.price || 0), 0);
     
-    // Calculate target values based on user info
-    // Note: These are simplified calculations; real-world applications would use more sophisticated formulas
-    const calorieTarget = userInfo.goal === 'weight-loss' ? 2000 : 2500; // Simplified target
-    const proteinTarget = userInfo.weight * 2; // 2g per kg of body weight
-    const fatTarget = calorieTarget * 0.3 / 9; // 30% of calories from fat (9 cal/g)
-    const carbsTarget = calorieTarget * 0.5 / 4; // 50% of calories from carbs (4 cal/g)
-    const budgetTarget = userInfo.budget || 0;
+    // Check for allergies
+    const hasAllergies = userInfo.allergies.length > 0 && 
+      allFoods.some(food => 
+        userInfo.allergies.some(allergen => 
+          food.tags?.some(tag => tag.toLowerCase().includes(allergen.toLowerCase()))
+        )
+      );
+    
+    // Get targets from recommendation store if available
+    let calorieTarget = 2000;
+    let proteinTarget = 150;
+    let fatTarget = 70;
+    let carbsTarget = 250;
+    let budgetTarget = userInfo.budget / 7; // Daily budget (weekly/7)
+    
+    if (recommendStore.summary) {
+      calorieTarget = recommendStore.summary.calories.target;
+      proteinTarget = recommendStore.summary.protein.target;
+      fatTarget = recommendStore.summary.fat.target;
+      carbsTarget = recommendStore.summary.carbs.target;
+      budgetTarget = recommendStore.summary.budget.target;
+    }
     
     // Create updated nutrition summary
     const updatedSummary: NutritionSummary = {
@@ -181,45 +202,40 @@ export const useMealConfigStore = create<MealConfigStore>((set, get) => ({
       allergy: hasAllergies
     };
     
-    // Determine validation status
+    // Check validation status
     const validationStatus: ValidationStatus = {
-      budgetExceeded: totalCost > budgetTarget / 7, // Daily budget exceeded
-      nutritionMismatch: (
-        totalProtein < proteinTarget * 0.8 || 
-        totalProtein > proteinTarget * 1.2 ||
-        totalFat < fatTarget * 0.8 || 
-        totalFat > fatTarget * 1.2 ||
-        totalCarbs < carbsTarget * 0.8 || 
-        totalCarbs > carbsTarget * 1.2
-      ),
-      hasAllergies
+      budgetExceeded: totalCost > budgetTarget,
+      nutritionMismatch: Math.abs(totalCalories - calorieTarget) > calorieTarget * 0.2, // Allow 20% variance
+      hasAllergies: hasAllergies,
+      missingMeals: state.meals.breakfast.length === 0 || 
+                   state.meals.lunch.length === 0 || 
+                   state.meals.dinner.length === 0
     };
     
-    // Update state with new nutrition summary and validation status
-    set({
-      nutritionSummary: updatedSummary,
+    set({ 
+      nutritionSummary: updatedSummary, 
       budgetUsed: totalCost,
       validationStatus
     });
   },
   
-  // Calculate total calories for a specific meal type
-  getMealTotalCalories: (mealType) => {
+  // Calculate total calories for a specific meal
+  getMealTotalCalories: (mealType: MealTime) => {
     const state = get();
-    return state.meals[mealType].reduce(
-      (total, food) => total + (food.calories || food.kcal || 0), 
-      0
-    );
+    return state.meals[mealType].reduce((sum, food) => sum + (food.kcal || 0), 0);
   },
   
-  // Calculate total cost for a specific meal type
-  getMealTotalCost: (mealType) => {
+  // Calculate total cost for a specific meal
+  getMealTotalCost: (mealType: MealTime) => {
     const state = get();
-    return state.meals[mealType].reduce(
-      (total, food) => total + (food.price || 0), 
-      0
-    );
+    return state.meals[mealType].reduce((sum, food) => sum + (food.price || 0), 0);
+  },
+  
+  // Check if configuration is valid for moving to summary
+  isReadyForSummary: () => {
+    const { validationStatus } = get();
+    return !validationStatus.budgetExceeded && 
+           !validationStatus.hasAllergies && 
+           !validationStatus.missingMeals;
   }
 }));
-
-export default useMealConfigStore;

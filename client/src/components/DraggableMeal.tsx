@@ -1,8 +1,7 @@
 import React from 'react';
-import { Card, CardContent } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { X } from 'lucide-react';
-import { FoodItem } from '@/stores/useRecommendStore';
+import { FoodItem } from '@/api/mockRecommend';
+import { formatCurrency } from '@/lib/utils';
+import { X, Coffee, Utensils, UtensilsCrossed } from 'lucide-react';
 
 interface DraggableMealProps {
   food: FoodItem;
@@ -11,60 +10,57 @@ interface DraggableMealProps {
   iconType?: 'primary' | 'secondary' | 'accent';
 }
 
-const DraggableMeal: React.FC<DraggableMealProps> = ({
-  food,
+const DraggableMeal: React.FC<DraggableMealProps> = ({ 
+  food, 
   onRemove,
   className = '',
-  iconType
+  iconType = 'primary'
 }) => {
-  const handleDragStart = (e: React.DragEvent) => {
-    // Transfer the food data as JSON string
-    e.dataTransfer.setData('application/json', JSON.stringify(food));
-    e.dataTransfer.effectAllowed = 'move';
-  };
-
-  // Get background color based on meal type
-  const getBgColor = () => {
-    if (!iconType) return '';
-    
-    switch (iconType) {
+  // Choose icon based on meal type
+  const renderIcon = () => {
+    switch(iconType) {
       case 'primary':
-        return 'bg-blue-50';
+        return <Coffee className="h-4 w-4 text-blue-500" />;
       case 'secondary':
-        return 'bg-amber-50';
+        return <Utensils className="h-4 w-4 text-orange-500" />;
       case 'accent':
-        return 'bg-purple-50';
+        return <UtensilsCrossed className="h-4 w-4 text-purple-500" />;
       default:
-        return '';
+        return <Coffee className="h-4 w-4 text-blue-500" />;
     }
   };
 
   return (
-    <Card 
-      className={`cursor-grab active:cursor-grabbing ${getBgColor()} ${className}`}
-      draggable
-      onDragStart={handleDragStart}
+    <div 
+      className={`
+        flex items-center justify-between p-2 rounded-md bg-white border 
+        ${iconType === 'primary' ? 'border-blue-100' : 
+          iconType === 'secondary' ? 'border-orange-100' : 
+          'border-purple-100'}
+        shadow-sm hover:shadow transition-all ${className}
+      `}
     >
-      <CardContent className="p-3 flex justify-between items-center">
+      <div className="flex items-center space-x-2">
+        {renderIcon()}
         <div>
-          <div className="font-medium text-sm">{food.name}</div>
-          <div className="text-xs text-neutral-600">
-            {food.calories || food.kcal || 0} kcal | ${food.price?.toFixed(2)}
+          <p className="text-sm font-medium line-clamp-1">{food.name}</p>
+          <div className="flex space-x-3 text-xs text-gray-500">
+            <span>{food.kcal} kcal</span>
+            <span>{formatCurrency(food.price)}</span>
           </div>
         </div>
-        
-        {onRemove && (
-          <Button 
-            size="sm" 
-            variant="ghost" 
-            onClick={onRemove}
-            className="h-7 w-7 p-0"
-          >
-            <X className="h-4 w-4" />
-          </Button>
-        )}
-      </CardContent>
-    </Card>
+      </div>
+      
+      {onRemove && (
+        <button 
+          onClick={onRemove}
+          className="p-1 rounded-full hover:bg-gray-100 transition-colors"
+          aria-label="Remove food"
+        >
+          <X className="h-4 w-4 text-gray-400" />
+        </button>
+      )}
+    </div>
   );
 };
 

@@ -1,50 +1,47 @@
 import { create } from 'zustand';
 
-// UserInfo interface definition
 export interface UserInfo {
   gender: 'male' | 'female';
   age: number;
-  height: number;
-  weight: number;
+  height: number; // in cm
+  weight: number; // in kg
   bodyFatPercent?: number;
   goal: 'weight-loss' | 'muscle-gain';
-  activityLevel?: 'low' | 'medium' | 'high';
+  activityLevel: 'low' | 'medium' | 'high';
   mealCount: number;
   allergies: string[];
-  budget: number;
-  isAgreementChecked: boolean;
+  budget: number; // Weekly budget
 }
 
-// Zustand store state interface
-interface UserStore {
-  userInfo: UserInfo;
-  setUserInfo: (info: Partial<UserInfo>) => void;
+export interface UserStore extends UserInfo {
+  // Actions
+  updateUserInfo: (info: Partial<UserInfo>) => void;
   resetUserInfo: () => void;
 }
 
-// Initial state values
 const initialUserInfo: UserInfo = {
   gender: 'male',
   age: 30,
-  height: 170,
-  weight: 70,
+  height: 175,
+  weight: 75,
+  bodyFatPercent: undefined,
   goal: 'weight-loss',
+  activityLevel: 'medium',
   mealCount: 3,
   allergies: [],
-  budget: 100,
-  isAgreementChecked: false,
+  budget: 100
 };
 
-// Create Zustand store
 export const useUserStore = create<UserStore>((set) => ({
-  userInfo: initialUserInfo,
-
-  // Allows partial updates to the state
-  setUserInfo: (info) =>
-    set((state) => ({
-      userInfo: { ...state.userInfo, ...info },
-    })),
-
-  // Reset state to initial values
-  resetUserInfo: () => set({ userInfo: initialUserInfo }),
+  ...initialUserInfo,
+  
+  // Update user info with partial data
+  updateUserInfo: (info) => {
+    set((state) => ({ ...state, ...info }));
+  },
+  
+  // Reset to initial state
+  resetUserInfo: () => {
+    set(initialUserInfo);
+  }
 }));

@@ -1,5 +1,4 @@
 import React from 'react';
-import { Progress } from '@/components/ui/progress';
 import { getPercentage } from '@/lib/utils';
 
 interface NutritionProgressBarProps {
@@ -15,49 +14,47 @@ const NutritionProgressBar: React.FC<NutritionProgressBarProps> = ({
   label,
   current,
   target,
-  unit = 'g',
-  color = 'bg-primary',
-  className = '',
+  unit = '',
+  color = 'blue',
+  className = ''
 }) => {
-  // Calculate percentage of target reached
   const percentage = getPercentage(current, target);
+  const isExceeded = current > target;
+  const isNearTarget = percentage >= 90 && percentage <= 110;
   
-  // Status indicator: under, optimal, or over
-  let status = 'text-neutral-600';
-  let statusText = 'Optimal';
+  // Get color class based on status
+  const getColorClass = () => {
+    if (isExceeded) return 'bg-red-500';
+    
+    if (isNearTarget) return 'bg-green-500';
+    
+    switch (color) {
+      case 'blue': return 'bg-blue-500';
+      case 'green': return 'bg-green-500';
+      case 'red': return 'bg-red-500';
+      case 'yellow': return 'bg-yellow-500';
+      case 'purple': return 'bg-purple-500';
+      case 'orange': return 'bg-orange-500';
+      default: return 'bg-blue-500';
+    }
+  };
   
-  if (percentage < 80) {
-    status = 'text-amber-600';
-    statusText = 'Under';
-  } else if (percentage > 120) {
-    status = 'text-red-600';
-    statusText = 'Over';
-  } else {
-    status = 'text-green-600';
-    statusText = 'Optimal';
-  }
-
   return (
-    <div className={`space-y-1.5 ${className}`}>
-      <div className="flex justify-between items-center">
-        <div className="text-sm font-medium text-neutral-700">{label}</div>
-        <div className={`text-xs font-medium ${status}`}>
-          {statusText}
+    <div className={`w-full ${className}`}>
+      <div className="flex items-center justify-between mb-1">
+        <div className="text-sm font-medium">{label}</div>
+        <div className="text-sm text-gray-500">
+          {current.toFixed(0)}{unit} / {target.toFixed(0)}{unit}
         </div>
       </div>
-      
-      <Progress 
-        value={Math.min(percentage, 100)} 
-        className={`h-2 ${color}`} 
-      />
-      
-      <div className="flex justify-between items-center text-xs text-neutral-500">
-        <div>
-          {Math.round(current)}{unit} / {Math.round(target)}{unit}
-        </div>
-        <div>
-          {Math.round(percentage)}%
-        </div>
+      <div className="w-full h-2 bg-gray-200 rounded-full overflow-hidden">
+        <div 
+          className={`h-2 rounded-full ${getColorClass()}`}
+          style={{ width: `${Math.min(percentage, 100)}%` }}
+        />
+      </div>
+      <div className="text-xs text-gray-500 mt-1 text-right">
+        {percentage.toFixed(0)}%
       </div>
     </div>
   );

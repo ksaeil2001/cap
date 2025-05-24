@@ -1,0 +1,157 @@
+아래는 React + TypeScript + Zustand 식단 추천 웹앱에 어울리는 공통 디자인 개선 및 경고(Alert) 메시지 UI 고도화 설계입니다.
+
+프레임워크/스타일:
+아래 예시는 Tailwind CSS 기준으로 작성했으나, CSS Modules/Styled Components로도 구조적으로 쉽게 적용할 수 있습니다.
+Alert는 재사용 가능한 Alert.tsx 컴포넌트로 분리하여 역할, 시각적 스타일, 접근성을 모두 고려했습니다.
+
+1. 공통 Alert 컴포넌트 (src/components/Alert.tsx)
+import React from "react";
+
+interface AlertProps {
+  type?: "info" | "warning" | "danger";
+  children: React.ReactNode;
+  className?: string;
+}
+
+const typeStyles = {
+  info: "bg-blue-100 text-blue-800 border-blue-300",
+  warning: "bg-yellow-100 text-yellow-900 border-yellow-300",
+  danger: "bg-red-100 text-red-900 border-red-400",
+};
+
+const typeIcons = {
+  info: "ℹ️",
+  warning: "⚠️",
+  danger: "🔺",
+};
+
+export const Alert: React.FC<AlertProps> = ({
+  type = "info",
+  children,
+  className = "",
+}) => (
+  <div
+    role="alert"
+    aria-live="assertive"
+    className={`border-l-4 px-4 py-3 my-2 rounded-md flex items-center gap-2 shadow-sm ${typeStyles[type]} ${className}`}
+  >
+    <span role="img" aria-label={type}>
+      {typeIcons[type]}
+    </span>
+    <span className="font-medium">{children}</span>
+  </div>
+);
+2. 페이지/섹션 UI 통일 (Tailwind 예시, 구조적 포인트)
+공통 레이아웃:
+
+max-w-xl mx-auto p-4 bg-white min-h-screen
+
+타이틀: text-2xl font-bold text-center mb-6
+
+섹션: mb-8 border-b pb-6
+
+버튼: rounded-md px-4 py-2 text-base font-semibold transition focus:outline-none
+
+Primary: bg-blue-600 text-white hover:bg-blue-700
+
+Secondary: bg-gray-100 text-gray-700 hover:bg-gray-200
+
+Disabled: opacity-60 cursor-not-allowed
+
+섹션별 시각 구분:
+
+각 단계별 주요 영역을 section 태그 + 구분선 or 배경 변화로 강조
+
+3. 경고 메시지 적용 예시 (주요 페이지)
+MainInputPage.tsx
+{!form.agreement && (
+  <Alert type="warning">
+    동의가 필요합니다. 개인정보 수집 및 이용에 동의해 주세요.
+  </Alert>
+)}
+{formError && (
+  <Alert type="danger">{formError}</Alert>
+)}
+RecommendPage.tsx
+{fallback && (
+  <Alert type="warning">
+    현재 조건에서는 최적 식단 추천이 어려워 대체 식단을 제안합니다.
+  </Alert>
+)}
+
+{allergyConflict && (
+  <Alert type="danger">
+    선택한 식단에 포함된 알레르기 성분: <strong>{allergies.join(", ")}</strong>
+  </Alert>
+)}
+MealConfigPage.tsx
+{!isMealComplete && (
+  <Alert type="warning">
+    모든 끼니를 완성해야 다음 단계로 이동할 수 있습니다.
+  </Alert>
+)}
+{!isBudgetOk && (
+  <Alert type="danger">
+    ⚠️ 선택한 식단이 예산 ₩{budget}을 초과했습니다. ({budgetUsed} / {budget})
+  </Alert>
+)}
+{hasAllergy && (
+  <Alert type="danger">
+    🔺 주의: 선택한 식단에 <strong>{allergies.join(", ")}</strong> 성분이 포함되어 있습니다.
+  </Alert>
+)}
+SummaryPage.tsx
+{allergyWarning && (
+  <Alert type="danger">
+    최종 식단에 알레르기 유발 성분 <strong>{allergies.join(", ")}</strong>이 포함되어 있습니다.
+    식단을 다시 확인해 주세요.
+  </Alert>
+)}
+{budgetUsed > budget && (
+  <Alert type="danger">
+    ⚠️ 최종 식단 예산이 한도를 초과했습니다. (사용: ₩{budgetUsed} / 한도: ₩{budget})
+  </Alert>
+)}
+4. 반응형 & 접근성 보완 포인트
+max-w-xl mx-auto로 모바일/PC에서 양옆 패딩 및 중앙 정렬 유지
+
+Alert에서 role="alert" aria-live="assertive" 속성 사용
+
+아이콘에 aria-label 추가
+
+컬러 대비 충분, 텍스트 강조 <strong> 등 추가
+
+5. 전체 스타일 적용 예시 (메인 레이아웃 및 버튼)
+<div className="max-w-xl mx-auto p-4 bg-white min-h-screen">
+  <h1 className="text-2xl font-bold text-center mb-6">AI 맞춤 식단 추천</h1>
+  {/* ...섹션별 Alert 및 내용 ... */}
+  <section className="mb-8 border-b pb-6">
+    {/* 입력 폼/리스트/차트 등 */}
+  </section>
+  <div className="flex gap-4 justify-end mt-8">
+    <button className="bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700">
+      Primary Button
+    </button>
+    <button className="bg-gray-100 text-gray-700 px-4 py-2 rounded-md hover:bg-gray-200">
+      Secondary Button
+    </button>
+  </div>
+</div>
+6. Alert 컴포넌트 재사용 예시 (접근성까지 적용)
+import { Alert } from '../components/Alert';
+
+<Alert type="danger" className="mb-4">
+  🔺 주의: 선택한 식단에 <strong>Egg, Milk</strong> 성분이 포함되어 있습니다.
+</Alert>
+🧩 요약
+Alert 컴포넌트로 모든 경고 메시지 스타일/접근성을 표준화
+
+Tailwind CSS로 빠르고 일관된 UI/버튼/레이아웃 통일
+
+각 페이지에서 상황별 경고 메시지 예시 적용
+
+ARIA/반응형을 항상 고려
+
+코드 구조상 Alert는 어디서나 쉽게 재사용 가능
+
+(적용 예시 전체 코드는 각 페이지별 실제 상황에 맞게 Alert import 및 props만 바꿔 사용하면 됩니다.)

@@ -15,6 +15,7 @@ const userInfoSchema = z.object({
   budget: z.number().min(20),
   mealCount: z.number().min(2).max(3),
   allergies: z.array(z.string()).default([]),
+  isAgreementChecked: z.boolean().optional().default(true), // Make optional for API calls
 });
 
 export async function registerRoutes(app: Express): Promise<Server> {
@@ -22,7 +23,21 @@ export async function registerRoutes(app: Express): Promise<Server> {
   app.post("/api/recommend", async (req, res) => {
     try {
       // Validate user info
-      const userInfo = userInfoSchema.parse(req.body);
+      const validatedUserInfo = userInfoSchema.parse(req.body);
+      
+      // Add isAgreementChecked if not provided (for backward compatibility)
+      const userInfo = {
+        ...validatedUserInfo,
+        isAgreementChecked: validatedUserInfo.isAgreementChecked ?? true
+      };
+      
+      console.log("Generating recommendations for user:", {
+        gender: userInfo.gender,
+        age: userInfo.age,
+        goal: userInfo.goal,
+        activityLevel: userInfo.activityLevel || 'not specified',
+        mealCount: userInfo.mealCount
+      });
       
       // Get food recommendations based on user info
       const foods = await storage.getRecommendedFoods(userInfo);

@@ -1,0 +1,92 @@
+다음은 요청한 사양을 완벽하게 충족하는 Zustand 상태 관리 스토어 코드입니다.
+
+✅ 스토어 코드 (useUserInfoStore.ts)
+경로: src/stores/useUserInfoStore.ts
+
+import { create } from 'zustand';
+
+// UserInfo 상태의 인터페이스 정의
+export interface UserInfo {
+  gender: 'male' | 'female';
+  age: number;
+  height: number;
+  weight: number;
+  bodyFatPercent?: number;
+  goal: 'weight-loss' | 'muscle-gain';
+  activityLevel?: 'low' | 'medium' | 'high';
+  mealCount: 2 | 3;
+  allergies: string[];
+  budget: number;
+  isAgreementChecked: boolean;
+}
+
+// Zustand 스토어 상태 인터페이스 정의
+interface UserInfoStore {
+  userInfo: UserInfo;
+  setUserInfo: (info: Partial<UserInfo>) => void;
+  resetUserInfo: () => void;
+}
+
+// 초기 상태값 정의
+const initialUserInfo: UserInfo = {
+  gender: 'male',
+  age: 0,
+  height: 0,
+  weight: 0,
+  goal: 'weight-loss',
+  mealCount: 3,
+  allergies: [],
+  budget: 0,
+  isAgreementChecked: false,
+};
+
+// Zustand store 생성
+export const useUserInfoStore = create<UserInfoStore>((set) => ({
+  userInfo: initialUserInfo,
+
+  // 부분 업데이트를 허용하는 setter 함수
+  setUserInfo: (info) =>
+    set((state) => ({
+      userInfo: { ...state.userInfo, ...info },
+    })),
+
+  // 상태 초기화 함수
+  resetUserInfo: () => set({ userInfo: initialUserInfo }),
+}));
+📌 사용법 예시 (컴포넌트에서 상태 활용)
+import React from 'react';
+import { useUserInfoStore } from '../stores/useUserInfoStore';
+
+const UserProfile: React.FC = () => {
+  const { userInfo, setUserInfo, resetUserInfo } = useUserInfoStore();
+
+  const handleUpdate = () => {
+    setUserInfo({
+      age: 28,
+      height: 175,
+      weight: 70,
+      goal: 'muscle-gain',
+    });
+  };
+
+  return (
+    <div>
+      <h2>User Profile</h2>
+      <p>Gender: {userInfo.gender}</p>
+      <p>Age: {userInfo.age}</p>
+      <p>Height: {userInfo.height}</p>
+      <p>Goal: {userInfo.goal}</p>
+
+      <button onClick={handleUpdate}>Update Profile</button>
+      <button onClick={resetUserInfo}>Reset Profile</button>
+    </div>
+  );
+};
+
+export default UserProfile;
+🧑‍💻 코드 특징 및 모범 사례
+Partial 업데이트를 허용하여 한 번에 여러 필드를 업데이트하거나 특정 필드만 변경 가능합니다.
+
+명확한 타입 정의 및 초기값 설정으로 타입 안정성을 제공합니다.
+
+재사용 가능하고 간결한 인터페이스 정의로 관리가 쉽습니다.

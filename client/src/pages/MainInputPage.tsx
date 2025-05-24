@@ -82,7 +82,7 @@ const MainInputPage = () => {
   const onSubmit = async (data: FormValues) => {
     setLoading(true);
     try {
-      // Store the user info in Zustand
+      // Store the user info in Zustand with partial update
       setUserInfo({
         gender: data.gender,
         age: data.age,
@@ -94,7 +94,11 @@ const MainInputPage = () => {
         budget: data.budget,
         mealCount: parseInt(data.mealCount),
         allergies: data.allergies,
+        isAgreementChecked: data.consent,
       });
+
+      // Log the updated user info
+      console.log("User info updated:", data);
 
       // Navigate to the recommend page
       navigate("/recommend");
@@ -435,13 +439,27 @@ const MainInputPage = () => {
               />
             </div>
 
-            <Button
-              type="submit"
-              disabled={loading}
-              className="w-full bg-primary hover:bg-primary-600 text-white font-medium py-3 px-4 rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-            >
-              {loading ? "Processing..." : "Get Recommendations"}
-            </Button>
+            <div className="flex flex-col md:flex-row space-y-4 md:space-y-0 md:space-x-4">
+              <Button
+                type="submit"
+                disabled={loading}
+                className="w-full bg-primary hover:bg-primary-600 text-white font-medium py-3 px-4 rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+              >
+                {loading ? "Processing..." : "Get Recommendations"}
+              </Button>
+              
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => {
+                  form.reset();
+                  useUserStore.getState().resetUserInfo();
+                }}
+                className="w-full border-neutral-300 text-neutral-700 hover:bg-neutral-100 font-medium py-3 px-4 rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+              >
+                Reset Form
+              </Button>
+            </div>
           </form>
         </Form>
       </div>

@@ -10,6 +10,7 @@ export interface UserInfo {
   budget: number;
   mealCount: number;
   allergies: string[];
+  isAgreementChecked: boolean;
 }
 
 // Food Types

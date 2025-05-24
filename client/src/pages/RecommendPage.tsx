@@ -1,32 +1,49 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useUserStore } from "@/stores/useUserStore";
-import { useRecommendStore } from "@/stores/useRecommendStore";
+import { useRecommendStore, FoodItem } from "@/stores/useRecommendStore";
 import { Button } from "@/components/ui/button";
-import FoodCard from "@/components/FoodCard";
-import { Food } from "@/types";
+import { MealTime } from "@/types";
 import { getRecommendedFoods } from "@/api/mealApi";
 import { useToast } from "@/hooks/use-toast";
 
-const foodCategories = [
-  { id: "all", label: "All Foods" },
-  { id: "protein", label: "Proteins" },
-  { id: "carb", label: "Carbs" },
-  { id: "vegetable", label: "Vegetables" },
-  { id: "fruit", label: "Fruits" },
-];
+// Import our new components
+import MealTypeTabs from "@/components/MealTypeTabs";
+import FoodCardList from "@/components/FoodCardList";
+import FoodDetailModal from "@/components/FoodDetailModal";
 
 const RecommendPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
   const userInfo = useUserStore(state => state.userInfo);
-  const { selectedFoods, addFood, removeFood, clearFoods } = useRecommendStore();
+  const { 
+    selectedFoods, 
+    addFood, 
+    removeFood, 
+    clearFoods, 
+    setRecommendationData,
+    fallback
+  } = useRecommendStore();
   
+  // Local state
   const [loading, setLoading] = useState(true);
-  const [foods, setFoods] = useState<Food[]>([]);
-  const [activeCategory, setActiveCategory] = useState("all");
-  const [filteredFoods, setFilteredFoods] = useState<Food[]>([]);
+  const [foods, setFoods] = useState<FoodItem[]>([]);
+  const [activeMealType, setActiveMealType] = useState<MealTime>('breakfast');
+  const [selectedFood, setSelectedFood] = useState<FoodItem | null>(null);
+  const [isDetailModalOpen, setIsDetailModalOpen] = useState(false);
+  
+  // Group foods by meal type
+  const [mealTypeFoods, setMealTypeFoods] = useState<{
+    breakfast: FoodItem[];
+    lunch: FoodItem[];
+    dinner: FoodItem[];
+  }>({
+    breakfast: [],
+    lunch: [],
+    dinner: []
+  });
 
+  // Fetch recommended foods on component mount
   useEffect(() => {
     const fetchRecommendedFoods = async () => {
       setLoading(true);
@@ -45,7 +62,36 @@ const RecommendPage = () => {
         // Fetch recommended foods
         const data = await getRecommendedFoods(userInfo);
         setFoods(data);
-        setFilteredFoods(data);
+        
+        // Generate meal type groupings - in a real app this would likely come from the API
+        // Here we're just distributing the foods evenly for demonstration
+        const breakfastFoods = data.filter((_, i) => i % 3 === 0);
+        const lunchFoods = data.filter((_, i) => i % 3 === 1);
+        const dinnerFoods = data.filter((_, i) => i % 3 === 2);
+        
+        setMealTypeFoods({
+          breakfast: breakfastFoods,
+          lunch: lunchFoods,
+          dinner: dinnerFoods
+        });
+        
+        // Create summary data for the recommendation store
+        // In a real app, this would come from the API
+        const mockSummary = {
+          calories: { target: 2000, actual: 1800 },
+          protein: { target: 150, actual: 120 },
+          fat: { target: 65, actual: 55 },
+          carbs: { target: 250, actual: 220 },
+          budget: { target: userInfo.budget, actual: data.reduce((sum, food) => sum + food.price, 0) },
+          allergy: false
+        };
+        
+        // Store in the global recommendation store
+        setRecommendationData({
+          meals: [breakfastFoods, lunchFoods, dinnerFoods],
+          summary: mockSummary,
+          fallback: false
+        });
       } catch (error) {
         console.error("Error fetching recommended foods:", error);
         toast({
@@ -62,19 +108,15 @@ const RecommendPage = () => {
     
     // Clear selected foods when component mounts
     clearFoods();
-  }, [userInfo, navigate, toast, clearFoods]);
+  }, [userInfo, navigate, toast, clearFoods, setRecommendationData]);
 
-  useEffect(() => {
-    if (activeCategory === "all") {
-      setFilteredFoods(foods);
-    } else {
-      setFilteredFoods(foods.filter(food => 
-        food.category.toLowerCase() === activeCategory.toLowerCase()
-      ));
-    }
-  }, [activeCategory, foods]);
+  // Handle meal type tab change
+  const handleMealTypeChange = (mealType: MealTime) => {
+    setActiveMealType(mealType);
+  };
 
-  const handleSelectFood = (food: Food) => {
+  // Handle food selection
+  const handleSelectFood = (food: FoodItem) => {
     if (selectedFoods.some(f => f.id === food.id)) {
       removeFood(food.id);
     } else {
@@ -82,6 +124,41 @@ const RecommendPage = () => {
     }
   };
 
+  // Open food detail modal
+  const handleViewDetails = (food: FoodItem) => {
+    setSelectedFood(food);
+    setIsDetailModalOpen(true);
+  };
+
+  // Close food detail modal
+  const handleCloseDetailModal = () => {
+    setIsDetailModalOpen(false);
+    setSelectedFood(null);
+  };
+
+  // Handle retry when in fallback mode
+  const handleRetry = async () => {
+    setLoading(true);
+    try {
+      const data = await getRecommendedFoods(userInfo);
+      setFoods(data);
+      toast({
+        title: "Recommendations updated",
+        description: "We've refreshed your food recommendations.",
+      });
+    } catch (error) {
+      console.error("Error retrying recommendations:", error);
+      toast({
+        title: "Error",
+        description: "Failed to refresh recommendations. Please try again.",
+        variant: "destructive",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Continue to meal configuration
   const handleContinue = () => {
     if (selectedFoods.length === 0) {
       toast({
@@ -99,30 +176,16 @@ const RecommendPage = () => {
       <div className="mb-8 text-center">
         <h2 className="text-3xl font-heading font-bold mb-4">Your Recommended Foods</h2>
         <p className="text-neutral-600 max-w-2xl mx-auto">
-          Based on your profile, we've selected these foods that match your nutritional needs and budget. Select items to add to your meal plan.
+          Based on your profile, we've selected these foods that match your nutritional needs and budget. 
+          Select items to add to your meal plan.
         </p>
       </div>
 
-      {/* Food Category Tabs */}
-      <div className="mb-8">
-        <div className="border-b border-neutral-200">
-          <nav className="-mb-px flex space-x-8 overflow-x-auto">
-            {foodCategories.map(category => (
-              <button
-                key={category.id}
-                className={`py-4 px-1 font-medium ${
-                  activeCategory === category.id
-                    ? "text-primary border-b-2 border-primary"
-                    : "text-neutral-500 hover:text-neutral-700"
-                }`}
-                onClick={() => setActiveCategory(category.id)}
-              >
-                {category.label}
-              </button>
-            ))}
-          </nav>
-        </div>
-      </div>
+      {/* Meal Type Tabs */}
+      <MealTypeTabs 
+        activeMealType={activeMealType} 
+        onTabChange={handleMealTypeChange} 
+      />
 
       {/* Food Recommendations */}
       {loading ? (
@@ -132,24 +195,41 @@ const RecommendPage = () => {
         </div>
       ) : (
         <>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {filteredFoods.map(food => (
-              <FoodCard 
-                key={food.id}
-                food={food}
-                isSelected={selectedFoods.some(f => f.id === food.id)}
-                onSelect={handleSelectFood}
-              />
-            ))}
-          </div>
-
-          {filteredFoods.length === 0 && (
-            <div className="text-center py-10">
-              <p className="text-neutral-600">No foods found in this category.</p>
+          {/* Show alert if in fallback mode */}
+          {fallback && (
+            <div className="bg-amber-50 border border-amber-200 p-4 rounded-md mb-6">
+              <h3 className="text-amber-800 font-medium">Using Fallback Recommendations</h3>
+              <p className="text-amber-700 text-sm mt-1">
+                We couldn't generate personalized recommendations based on your profile. 
+                We're showing alternative options instead.
+              </p>
+              <Button 
+                variant="outline" 
+                className="mt-3 text-amber-700 border-amber-300"
+                onClick={handleRetry}
+              >
+                Try Again
+              </Button>
             </div>
           )}
 
-          <div className="mt-8 text-center">
+          <FoodCardList
+            foods={mealTypeFoods[activeMealType]}
+            userInfo={userInfo}
+            selectedFoods={selectedFoods}
+            onSelectFood={handleSelectFood}
+            onViewDetails={handleViewDetails}
+          />
+
+          {/* Selected Food Count and Continue Button */}
+          <div className="mt-8 flex flex-col md:flex-row items-center justify-between gap-4">
+            <div className="text-neutral-600">
+              {selectedFoods.length > 0 ? (
+                <span>You've selected {selectedFoods.length} foods for your meal plan.</span>
+              ) : (
+                <span>Select foods to add to your meal plan.</span>
+              )}
+            </div>
             <Button 
               onClick={handleContinue}
               className="bg-primary hover:bg-primary-600 text-white font-medium py-3 px-6 rounded-md transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
@@ -159,6 +239,15 @@ const RecommendPage = () => {
           </div>
         </>
       )}
+
+      {/* Food Detail Modal */}
+      <FoodDetailModal
+        food={selectedFood}
+        isOpen={isDetailModalOpen}
+        isSelected={selectedFood ? selectedFoods.some(f => f.id === selectedFood.id) : false}
+        onClose={handleCloseDetailModal}
+        onSelect={handleSelectFood}
+      />
     </div>
   );
 };

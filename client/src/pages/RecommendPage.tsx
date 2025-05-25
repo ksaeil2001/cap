@@ -288,6 +288,7 @@ const RecommendPage: React.FC = () => {
                 activityLevel: 'medium',
                 mealCount: 3,
                 allergies: [],
+                isAgreementChecked: true,
                 budget: 100,
                 isAgreementChecked: true
               }}

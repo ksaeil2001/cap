@@ -90,9 +90,9 @@ const createFoodObject = (foodItem: FoodItem) => {
 
 // Calculate BMR (Basal Metabolic Rate) based on user info
 const calculateBMR = (userInfo: Partial<UserInfo>): number => {
-  const { gender, weight, height, age } = userInfo;
+  const { gender, weight = 70, height = 170, age = 30 } = userInfo;
   
-  // Mifflin-St Jeor Equation
+  // Mifflin-St Jeor Equation with default values if missing
   if (gender === 'male') {
     return (10 * weight) + (6.25 * height) - (5 * age) + 5;
   } else {
@@ -127,7 +127,7 @@ export const mockRecommend = async (userInfo: Partial<UserInfo>): Promise<Recomm
   }
   
   // Calculate macronutrient targets
-  const proteinTarget = userInfo.weight * 2; // 2g per kg of body weight
+  const proteinTarget = (userInfo.weight || 70) * 2; // 2g per kg of body weight
   const fatTarget = (targetCalories * 0.3) / 9; // 30% of calories from fat (9 cal/g)
   const carbsTarget = (targetCalories * 0.5) / 4; // 50% of calories from carbs (4 cal/g)
   
@@ -138,7 +138,7 @@ export const mockRecommend = async (userInfo: Partial<UserInfo>): Promise<Recomm
   
   if (userInfo.allergies && userInfo.allergies.length > 0) {
     const allergyFilter = (food: FoodItem) => {
-      return !userInfo.allergies.some(allergy => 
+      return !userInfo.allergies?.some(allergy => 
         food.tags.includes(allergy.toLowerCase())
       );
     };
@@ -204,10 +204,10 @@ export const mockRecommend = async (userInfo: Partial<UserInfo>): Promise<Recomm
       actual: actualCarbs
     },
     budget: {
-      target: userInfo.budget,
+      target: Number(userInfo.budget || 100),
       actual: actualCost
     },
-    allergy: hasAllergies
+    allergy: hasAllergies || false
   };
   
   // Simulate API delay

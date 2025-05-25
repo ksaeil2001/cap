@@ -30,9 +30,9 @@ import NutritionProgressBar from '@/components/NutritionProgressBar';
 import { MealTime } from '@/stores/useMealConfigStore';
 
 const mealTypes: { id: MealTime; label: string; iconType: 'primary' | 'secondary' | 'accent' }[] = [
-  { id: 'breakfast', label: 'Breakfast', iconType: 'primary' },
-  { id: 'lunch', label: 'Lunch', iconType: 'secondary' },
-  { id: 'dinner', label: 'Dinner', iconType: 'accent' }
+  { id: 'breakfast', label: '아침', iconType: 'primary' },
+  { id: 'lunch', label: '점심', iconType: 'secondary' },
+  { id: 'dinner', label: '저녁', iconType: 'accent' }
 ];
 
 const MealConfigPage: React.FC = () => {
@@ -52,7 +52,7 @@ const MealConfigPage: React.FC = () => {
     isReadyForSummary
   } = useMealConfigStore();
   
-  const { recommendedFoods, filteredFoods, filterByMealType, clearFilters } = useRecommendStore();
+  const { allFoods, filteredFoods, filterByMealType, clearFilters } = useRecommendStore();
   const userInfo = useUserStore();
   
   // Initialize nutrition summary when component mounts
@@ -95,19 +95,19 @@ const MealConfigPage: React.FC = () => {
   return (
     <div className="container max-w-7xl mx-auto p-4">
       <div className="flex flex-col gap-6">
-        {/* Page Header */}
+        {/* 페이지 헤더 */}
         <div className="flex justify-between items-center">
-          <h1 className="text-2xl font-bold">Configure Your Meals</h1>
+          <h1 className="text-2xl font-bold">끼니 구성하기</h1>
           <div className="flex gap-2">
             <Button variant="outline" onClick={goBack}>
               <ArrowLeft className="mr-2 h-4 w-4" />
-              Back to Recommendations
+              추천 페이지로 돌아가기
             </Button>
             <Button 
               onClick={goToSummary}
               disabled={!isReadyForSummary()}
             >
-              View Summary
+              요약 보기
               <ArrowRight className="ml-2 h-4 w-4" />
             </Button>
           </div>
@@ -138,9 +138,9 @@ const MealConfigPage: React.FC = () => {
           {isReadyForSummary() && (
             <Alert variant="default" className="bg-green-50 border-green-200">
               <CheckCircle2 className="h-4 w-4 text-green-600" />
-              <AlertTitle>Meal Plan Ready</AlertTitle>
+              <AlertTitle>식단 준비 완료</AlertTitle>
               <AlertDescription>
-                Your meal plan is complete and meets all requirements. You can proceed to the summary.
+                식단이 완성되었으며 모든 요구사항을 충족합니다. 요약 페이지로 진행할 수 있습니다.
               </AlertDescription>
             </Alert>
           )}
@@ -151,9 +151,9 @@ const MealConfigPage: React.FC = () => {
           <div className="col-span-1 lg:col-span-2">
             <Card>
               <CardHeader>
-                <CardTitle>Your Meal Plan</CardTitle>
+                <CardTitle>내 식단 계획</CardTitle>
                 <CardDescription>
-                  Configure your daily meals by adding or removing food items
+                  음식 항목을 추가하거나 제거하여 일일 식단을 구성하세요
                 </CardDescription>
               </CardHeader>
               <CardContent>
@@ -179,14 +179,14 @@ const MealConfigPage: React.FC = () => {
           <div className="col-span-1">
             <Card>
               <CardHeader>
-                <CardTitle>Nutrition Summary</CardTitle>
+                <CardTitle>영양 요약</CardTitle>
                 <CardDescription>
-                  Track your nutritional goals and budget
+                  영양 목표와 예산 현황을 확인하세요
                 </CardDescription>
               </CardHeader>
               <CardContent className="space-y-4">
                 <NutritionProgressBar
-                  label="Calories"
+                  label="칼로리"
                   current={nutritionSummary.calories.actual}
                   target={nutritionSummary.calories.target}
                   unit="kcal"
@@ -194,7 +194,7 @@ const MealConfigPage: React.FC = () => {
                 />
                 
                 <NutritionProgressBar
-                  label="Protein"
+                  label="단백질"
                   current={nutritionSummary.protein.actual}
                   target={nutritionSummary.protein.target}
                   unit="g"
@@ -202,7 +202,7 @@ const MealConfigPage: React.FC = () => {
                 />
                 
                 <NutritionProgressBar
-                  label="Carbs"
+                  label="탄수화물"
                   current={nutritionSummary.carbs.actual}
                   target={nutritionSummary.carbs.target}
                   unit="g"
@@ -210,7 +210,7 @@ const MealConfigPage: React.FC = () => {
                 />
                 
                 <NutritionProgressBar
-                  label="Fat"
+                  label="지방"
                   current={nutritionSummary.fat.actual}
                   target={nutritionSummary.fat.target}
                   unit="g"
@@ -219,7 +219,7 @@ const MealConfigPage: React.FC = () => {
                 
                 <div className="mt-6 pt-4 border-t border-gray-200">
                   <div className="flex justify-between items-center">
-                    <h3 className="font-medium">Daily Budget</h3>
+                    <h3 className="font-medium">일일 예산</h3>
                     <div className={`flex items-center ${nutritionSummary.budget.actual > nutritionSummary.budget.target ? 'text-red-500' : 'text-green-500'}`}>
                       <DollarSign className="h-4 w-4 mr-1" />
                       <span>
@@ -231,10 +231,10 @@ const MealConfigPage: React.FC = () => {
               </CardContent>
             </Card>
             
-            {/* Recommendations for Current Meal */}
+            {/* 현재 끼니에 대한 추천 음식 */}
             <Card className="mt-4">
               <CardHeader className="pb-2">
-                <CardTitle>Add Food to {activeTab.charAt(0).toUpperCase() + activeTab.slice(1)}</CardTitle>
+                <CardTitle>{activeTab === 'breakfast' ? '아침' : activeTab === 'lunch' ? '점심' : '저녁'}에 음식 추가하기</CardTitle>
                 <Tabs value={activeTab} onValueChange={(value) => handleTabChange(value as MealTime)}>
                   <TabsList className="grid grid-cols-3">
                     {mealTypes.map((mealType) => (
@@ -261,25 +261,25 @@ const MealConfigPage: React.FC = () => {
                             <span>{formatCurrency(food.price)}</span>
                           </div>
                         </div>
-                        <Button variant="ghost" size="sm">Add</Button>
+                        <Button variant="ghost" size="sm">추가</Button>
                       </div>
                     ))
                   ) : (
                     <p className="text-center text-gray-500 py-4">
-                      No recommendations available. Please go back to the recommendation page to get suggestions.
+                      사용 가능한 추천 음식이 없습니다. 추천 페이지로 돌아가서 제안을 받아보세요.
                     </p>
                   )}
                 </div>
               </CardContent>
               <CardFooter className="flex justify-between">
                 <Button variant="outline" onClick={() => navigate('/recommend')}>
-                  Back to Recommendations
+                  추천 페이지로 돌아가기
                 </Button>
                 <Button 
                   onClick={() => navigate('/summary')}
                   disabled={!isReadyForSummary()}
                 >
-                  View Summary
+                  요약 보기
                 </Button>
               </CardFooter>
             </Card>

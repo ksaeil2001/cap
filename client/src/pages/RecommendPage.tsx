@@ -84,7 +84,7 @@ const RecommendPage: React.FC = () => {
         try {
           // 사용자 mealCount 전달하여 올바른 끼니 배열 설정
           const userMealCount = userInfo?.mealCount || 3;
-          setRecommendedFoods(validMeals, userMealCount);
+          setRecommendedFoods(validMeals);
           setSummary(response.summary || {
             calories: { target: 2000, actual: 0 },
             protein: { target: 150, actual: 0 },

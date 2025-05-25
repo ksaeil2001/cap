@@ -49,9 +49,9 @@ const formSchema = z.object({
     message: '식사 횟수는 2 또는 3이어야 합니다',
   })),
   allergies: z.array(z.string()).default([]),
-  budget: z.coerce.number().min(1).max(50000).int()
-    .refine(val => val >= 1 && val <= 50000, {
-      message: '예산은 1원에서 50,000원 사이여야 합니다',
+  budget: z.coerce.number().min(1).max(60000).int()
+    .refine(val => val >= 1 && val <= 60000, {
+      message: '일일 예산은 1원에서 60,000원 사이여야 합니다',
     }),
   isAgreementChecked: z.literal(true, {
     invalid_type_error: '이용 약관에 동의해주세요',
@@ -153,7 +153,7 @@ const MainInputPage = () => {
       activityLevel: 'medium',
       mealCount: 3,
       allergies: [],
-      budget: 30000,
+      budget: 15000, // 일일 예산 기본값 변경
       isAgreementChecked: true,
     });
     
@@ -635,9 +635,9 @@ const MainInputPage = () => {
           {/* Budget Card */}
           <Card>
             <CardHeader>
-              <CardTitle>주간 예산</CardTitle>
+              <CardTitle>일일 예산</CardTitle>
               <CardDescription>
-                식단 계획을 위한 주간 식료품 예산을 설정하세요.
+                식단 계획을 위한 일일 식료품 예산을 설정하세요.
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
@@ -647,7 +647,7 @@ const MainInputPage = () => {
                 name="budget"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>식단 예산 (원)</FormLabel>
+                    <FormLabel>일일 예산 (원)</FormLabel>
                     <FormControl>
                       <div className="pt-2">
                         <Input 
@@ -655,18 +655,19 @@ const MainInputPage = () => {
                           {...field} 
                           onChange={(e) => field.onChange(parseInt(e.target.value || "0"))}
                           min={1}
-                          max={50000}
+                          max={60000}
                           step={1000}
+                          placeholder="일일 식단 예산을 입력하세요"
                         />
                         <div className="flex justify-between mt-2">
                           <span className="text-xs text-neutral-500">최소: ₩1</span>
                           <span className="text-xs font-medium">₩{field.value.toLocaleString()}</span>
-                          <span className="text-xs text-neutral-500">최대: ₩50,000</span>
+                          <span className="text-xs text-neutral-500">최대: ₩60,000</span>
                         </div>
                       </div>
                     </FormControl>
                     <FormDescription>
-                      이 예산 범위 내에서 식단을 최적화합니다.
+                      이 예산 범위 내에서 하루 식단을 최적화합니다.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>

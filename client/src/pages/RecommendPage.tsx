@@ -240,7 +240,7 @@ const RecommendPage: React.FC = () => {
         <h2 className="text-3xl font-heading font-bold mb-4">추천 식품</h2>
         {userInfo ? (
           <p className="text-neutral-600 max-w-2xl mx-auto">
-            이 식품들은 {userInfo?.goal === 'weight-loss' ? '체중 감량' : '근육 증가'} 목표, 식이 선호도, 주간 예산 ₩{(userInfo?.budget * 1000)?.toFixed(0) || '0'}원에 맞춰 개인화되었습니다.
+            이 식품들은 {userInfo?.goal === 'weight-loss' ? '체중 감량' : '근육 증가'} 목표, 식이 선호도, 일일 예산 ₩{userInfo?.budget?.toLocaleString() || '0'}원에 맞춰 개인화되었습니다.
             식단에 포함하고 싶은 항목을 선택하세요.
           </p>
         ) : (
@@ -369,28 +369,28 @@ const RecommendPage: React.FC = () => {
                   <NutritionProgressBar
                     label="일일 예산"
                     current={summary.budget.actual}
-                    target={summary.budget.target / 7} // Daily budget
+                    target={summary.budget.target} // 일일 예산으로 변경
                     unit="₩"
                     color="bg-green-500"
                   />
                   
                   <div className="mt-8 space-y-4">
                     <div className="flex justify-between items-center">
-                      <span className="text-neutral-600">주간 예산:</span>
-                      <span className="font-medium">₩{(summary.budget.target * 1000).toFixed(0)}</span>
+                      <span className="text-neutral-600">설정 예산:</span>
+                      <span className="font-medium">₩{summary.budget.target.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between items-center">
-                      <span className="text-neutral-600">일일 비용:</span>
-                      <span className="font-medium">₩{(summary.budget.actual * 1000).toFixed(0)}</span>
+                      <span className="text-neutral-600">현재 사용:</span>
+                      <span className="font-medium">₩{summary.budget.actual.toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-neutral-600">주간 비용 (예상):</span>
-                      <span className="font-medium">₩{(summary.budget.actual * 7 * 1000).toFixed(0)}</span>
+                      <span className="font-medium">₩{(summary.budget.actual * 7).toLocaleString()}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-neutral-600">남은 예산:</span>
                       <span className="font-medium text-green-600">
-                        ₩{((summary.budget.target - summary.budget.actual * 7) * 1000).toFixed(0)}
+                        ₩{(summary.budget.target - summary.budget.actual).toLocaleString()}
                       </span>
                     </div>
                   </div>

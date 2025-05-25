@@ -5,6 +5,10 @@ import { pool, db } from '../server/db.js';
 import { foods } from '../shared/schema.js';
 import { eq } from 'drizzle-orm';
 
+// ESM에서는 __dirname이 없으므로 현재 파일 경로를 기준으로 계산
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 // 한국어 음식 데이터 파일 경로
 const foodDataPath = path.join(__dirname, '../attached_assets/food_items_part_1.json');
 

@@ -13,6 +13,7 @@ import { getRecommendedFoods } from '@/api/mealApi';
 import NutritionProgressBar from '@/components/NutritionProgressBar';
 import FoodCardList from '@/components/FoodCardList';
 import FoodDetailModal from '@/components/FoodDetailModal';
+import MealTypeTabs from '@/components/MealTypeTabs';
 import { MealTime } from '@/stores/useMealConfigStore';
 import { useToast } from '@/hooks/use-toast';
 
@@ -81,20 +82,16 @@ const RecommendPage: React.FC = () => {
         const validMeals = Array.isArray(response.meals) ? response.meals : [[], [], []];
         
         // 스토어 상태 업데이트
-        try {
-          setRecommendedFoods(validMeals);
-          setSummary(response.summary || {
-            calories: { target: 2000, actual: 0 },
-            protein: { target: 150, actual: 0 },
-            fat: { target: 70, actual: 0 },
-            carbs: { target: 250, actual: 0 },
-            budget: { target: 15000, actual: 0 },
-            allergy: false
-          });
-          setFallback(response.fallback || false);
-        } catch (e) {
-          console.error("스토어 상태 업데이트 실패:", e);
-        }
+        setRecommendedFoods(validMeals);
+        setSummary(response.summary || {
+          calories: { target: 2000, actual: 0 },
+          protein: { target: 150, actual: 0 },
+          fat: { target: 70, actual: 0 },
+          carbs: { target: 250, actual: 0 },
+          budget: { target: 15000, actual: 0 },
+          allergy: false
+        });
+        setFallback(response.fallback || false);
         
         // 대체 응답 안내
         if (response.fallback) {
@@ -173,13 +170,6 @@ const RecommendPage: React.FC = () => {
     navigate("/meal-config");
   };
   
-  // 끼니별 탭 구성
-  const mealTabs = [
-    { id: 'breakfast' as MealTime, label: '아침', icon: <Coffee className="h-4 w-4 mr-2" /> },
-    { id: 'lunch' as MealTime, label: '점심', icon: <UtensilsCrossed className="h-4 w-4 mr-2" /> },
-    { id: 'dinner' as MealTime, label: '저녁', icon: <Utensils className="h-4 w-4 mr-2" /> }
-  ];
-  
   // 로딩 상태 렌더링
   if (loading) {
     return (
@@ -215,6 +205,13 @@ const RecommendPage: React.FC = () => {
       </div>
     );
   }
+  
+  // 끼니별 탭 구성
+  const mealTabs = [
+    { id: 'breakfast' as MealTime, label: '아침', icon: <Coffee className="h-4 w-4 mr-2" /> },
+    { id: 'lunch' as MealTime, label: '점심', icon: <UtensilsCrossed className="h-4 w-4 mr-2" /> },
+    { id: 'dinner' as MealTime, label: '저녁', icon: <Utensils className="h-4 w-4 mr-2" /> }
+  ];
   
   return (
     <div className="container max-w-7xl">
@@ -302,24 +299,26 @@ const RecommendPage: React.FC = () => {
           {/* 음식 카드 목록 */}
           <div className="mb-6">
             {filteredFoods && filteredFoods.length > 0 ? (
-              <FoodCardList 
-                foods={filteredFoods}
-                userInfo={userInfo || {
-                  gender: 'male',
-                  age: 30,
-                  height: 175,
-                  weight: 70,
-                  goal: 'weight-loss',
-                  activityLevel: 'medium',
-                  mealCount: 3,
-                  allergies: [],
-                  isAgreementChecked: true,
-                  budget: 15000
-                }}
-                selectedFoods={selectedFoods}
-                onSelectFood={handleSelectFood}
-                onViewDetails={handleViewDetails}
-              />
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                <FoodCardList 
+                  foods={filteredFoods}
+                  userInfo={userInfo || {
+                    gender: 'male',
+                    age: 30,
+                    height: 175,
+                    weight: 70,
+                    goal: 'weight-loss',
+                    activityLevel: 'medium',
+                    mealCount: 3,
+                    allergies: [],
+                    isAgreementChecked: true,
+                    budget: 15000
+                  }}
+                  selectedFoods={selectedFoods}
+                  onSelectFood={handleSelectFood}
+                  onViewDetails={handleViewDetails}
+                />
+              </div>
             ) : (
               <div className="text-center py-12 bg-gray-50 rounded-lg">
                 <h3 className="text-xl font-medium text-gray-500 mb-2">

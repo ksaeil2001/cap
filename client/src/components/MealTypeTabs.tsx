@@ -1,6 +1,6 @@
 import React from 'react';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { MealTime } from '@/types';
+import { MealTime } from '@/stores/useMealConfigStore';
 import { Coffee, UtensilsCrossed, Utensils } from 'lucide-react';
 
 interface MealTypeTabsProps {
@@ -15,24 +15,24 @@ const MealTypeTabs: React.FC<MealTypeTabsProps> = ({
   const mealTypes: { id: MealTime; label: string; icon: React.ReactNode }[] = [
     { 
       id: 'breakfast', 
-      label: 'Breakfast', 
+      label: '아침', 
       icon: <Coffee className="h-4 w-4 mr-2" /> 
     },
     { 
       id: 'lunch', 
-      label: 'Lunch', 
+      label: '점심', 
       icon: <UtensilsCrossed className="h-4 w-4 mr-2" /> 
     },
     { 
       id: 'dinner', 
-      label: 'Dinner', 
+      label: '저녁', 
       icon: <Utensils className="h-4 w-4 mr-2" /> 
     },
   ];
 
   return (
     <div className="mb-6">
-      <h3 className="text-lg font-medium mb-3">Select Meal Type</h3>
+      <h3 className="text-lg font-medium mb-3">끼니 유형 선택</h3>
       <Tabs 
         value={activeMealType} 
         onValueChange={(value) => onTabChange(value as MealTime)}

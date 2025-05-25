@@ -23,19 +23,34 @@ const formSchema = z.object({
   gender: z.enum(['male', 'female'], {
     required_error: '성별을 선택해주세요',
   }),
-  age: z.coerce.number().min(16).max(100),
-  height: z.coerce.number().min(100).max(250),
-  weight: z.coerce.number().min(30).max(250),
-  bodyFatPercent: z.coerce.number().min(3).max(50).optional(),
+  age: z.coerce.number().min(10).max(120).int()
+    .refine(val => val >= 10 && val <= 120, {
+      message: '나이는 10세에서 120세 사이여야 합니다',
+    }),
+  height: z.coerce.number().min(100).max(250).refine(val => val >= 100 && val <= 250, {
+    message: '키는 100cm에서 250cm 사이여야 합니다',
+  }),
+  weight: z.coerce.number().min(30).max(200).refine(val => val >= 30 && val <= 200, {
+    message: '체중은 30kg에서 200kg 사이여야 합니다',
+  }),
+  bodyFatPercent: z.coerce.number().min(5).max(60).optional()
+    .refine(val => val === undefined || (val >= 5 && val <= 60), {
+      message: '체지방률은 5%에서 60% 사이여야 합니다',
+    }),
   goal: z.enum(['weight-loss', 'muscle-gain'], {
     required_error: '목표를 선택해주세요',
   }),
   activityLevel: z.enum(['low', 'medium', 'high'], {
     required_error: '활동 수준을 선택해주세요',
   }),
-  mealCount: z.coerce.number().min(3).max(6),
-  allergies: z.array(z.string()).optional().default([]),
-  budget: z.coerce.number().min(20).max(300),
+  mealCount: z.union([z.literal(2), z.literal(3)]).or(z.coerce.number().refine(val => val === 2 || val === 3, {
+    message: '식사 횟수는 2 또는 3이어야 합니다',
+  })),
+  allergies: z.array(z.string()).default([]),
+  budget: z.coerce.number().min(1).max(50000).int()
+    .refine(val => val >= 1 && val <= 50000, {
+      message: '예산은 1원에서 50,000원 사이여야 합니다',
+    }),
   isAgreementChecked: z.literal(true, {
     invalid_type_error: '이용 약관에 동의해주세요',
   }),
@@ -115,7 +130,7 @@ const MainInputPage = () => {
       activityLevel: 'medium',
       mealCount: 3,
       allergies: [],
-      budget: 100,
+      budget: 30000,
       isAgreementChecked: true,
     });
     
@@ -228,20 +243,20 @@ const MainInputPage = () => {
                 name="bodyFatPercent"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>체지방률 (선택사항)</FormLabel>
+                    <FormLabel>체지방률 (%)</FormLabel>
                     <FormControl>
                       <div className="pt-2">
                         <Slider
                           defaultValue={[field.value || 15]}
-                          min={3}
-                          max={50}
+                          min={5}
+                          max={60}
                           step={1}
                           onValueChange={(vals) => field.onChange(vals[0])}
                         />
                         <div className="flex justify-between mt-2">
-                          <span className="text-xs text-neutral-500">3%</span>
+                          <span className="text-xs text-neutral-500">5%</span>
                           <span className="text-xs font-medium">{field.value || 15}%</span>
-                          <span className="text-xs text-neutral-500">50%</span>
+                          <span className="text-xs text-neutral-500">60%</span>
                         </div>
                       </div>
                     </FormControl>
@@ -325,23 +340,27 @@ const MainInputPage = () => {
                   <FormItem>
                     <FormLabel>하루 식사 횟수</FormLabel>
                     <FormControl>
-                      <Select
+                      <RadioGroup
                         onValueChange={(value) => field.onChange(parseInt(value))}
                         value={field.value.toString()}
+                        className="flex space-x-4"
                       >
-                        <SelectTrigger>
-                          <SelectValue placeholder="식사 횟수 선택" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="3">3끼</SelectItem>
-                          <SelectItem value="4">4끼</SelectItem>
-                          <SelectItem value="5">5끼</SelectItem>
-                          <SelectItem value="6">6끼</SelectItem>
-                        </SelectContent>
-                      </Select>
+                        <FormItem className="flex items-center space-x-2 space-y-0">
+                          <FormControl>
+                            <RadioGroupItem value="2" />
+                          </FormControl>
+                          <FormLabel className="font-normal cursor-pointer">2끼</FormLabel>
+                        </FormItem>
+                        <FormItem className="flex items-center space-x-2 space-y-0">
+                          <FormControl>
+                            <RadioGroupItem value="3" />
+                          </FormControl>
+                          <FormLabel className="font-normal cursor-pointer">3끼</FormLabel>
+                        </FormItem>
+                      </RadioGroup>
                     </FormControl>
                     <FormDescription>
-                      식사 횟수에 따라 1회 식사량을 조정합니다.
+                      식사 횟수에 따라 끼니당 영양소 및 예산이 조정됩니다.
                     </FormDescription>
                     <FormMessage />
                   </FormItem>
@@ -411,26 +430,27 @@ const MainInputPage = () => {
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-6">
-              {/* Budget Slider */}
+              {/* Budget Input */}
               <FormField
                 control={form.control}
                 name="budget"
                 render={({ field }) => (
                   <FormItem>
-                    <FormLabel>주간 식품 예산 (원)</FormLabel>
+                    <FormLabel>식단 예산 (원)</FormLabel>
                     <FormControl>
                       <div className="pt-2">
-                        <Slider
-                          defaultValue={[field.value]}
-                          min={20}
-                          max={300}
-                          step={5}
-                          onValueChange={(vals) => field.onChange(vals[0])}
+                        <Input 
+                          type="number" 
+                          {...field} 
+                          onChange={(e) => field.onChange(parseInt(e.target.value || "0"))}
+                          min={1}
+                          max={50000}
+                          step={1000}
                         />
                         <div className="flex justify-between mt-2">
-                          <span className="text-xs text-neutral-500">₩20,000</span>
-                          <span className="text-xs font-medium">₩{field.value * 1000}</span>
-                          <span className="text-xs text-neutral-500">₩300,000</span>
+                          <span className="text-xs text-neutral-500">최소: ₩1</span>
+                          <span className="text-xs font-medium">₩{field.value.toLocaleString()}</span>
+                          <span className="text-xs text-neutral-500">최대: ₩50,000</span>
                         </div>
                       </div>
                     </FormControl>

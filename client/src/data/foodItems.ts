@@ -191,6 +191,9 @@ export const foodItems: FoodItem[] = rawFoodData.map((item, index) => {
   if (item.fat < 5) mealTags.push('low-fat');
   if (item.carbs < 10) mealTags.push('low-carb');
   
+  // 한국어 태그 추가
+  mealTags.push('한식');
+  
   // 알레르기 정보 생성 (랜덤)
   const possibleAllergies = ['gluten', 'dairy', 'nuts', 'soy', 'shellfish'];
   const allergies = item.allergies.length > 0 ? item.allergies : [];
@@ -215,7 +218,7 @@ export const foodItems: FoodItem[] = rawFoodData.map((item, index) => {
     price: price,
     tags: [...mealTags, ...item.tags],
     allergies: allergies,
-    image: `https://source.unsplash.com/300x200/?food,${encodeURIComponent(item.name.split('_')[0])}`
+    image: `https://source.unsplash.com/300x200/?korean,food,${encodeURIComponent(item.name.split('_')[0])}`
   };
 });
 

@@ -20,17 +20,22 @@ const RecommendPage: React.FC = () => {
   const { toast } = useToast();
   const userInfo = useUserStore();
   
+  // 스토어에서 사용 가능한 함수만 가져오기
   const { 
-    meals, 
+    recommendedFoods,
+    filteredFoods,
     summary, 
-    fallback, 
-    selectedFoods,
-    currentMealType,
-    setRecommendations,
-    selectFood,
-    removeFood,
-    setMealType
+    fallback,
+    setRecommendedFoods, 
+    setSummary,
+    setFallback,
+    filterByMealType
   } = useRecommendStore();
+  
+  // 필요한 state 변수 추가 (기존 스토어에 없는 기능)
+  const [selectedFoods, setSelectedFoods] = useState<FoodItem[]>([]);
+  const [currentMealType, setCurrentMealType] = useState<'breakfast' | 'lunch' | 'dinner'>('breakfast');
+  const [meals, setMeals] = useState<FoodItem[][]>([]);
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -68,11 +73,14 @@ const RecommendPage: React.FC = () => {
         };
         
         const response = await getRecommendedFoods(apiUserInfo);
-        setRecommendations(
-          response.meals,
-          response.summary,
-          response.fallback
-        );
+        
+        // 스토어 함수 이름이 변경되었으므로 적절하게 호출
+        setRecommendedFoods(response.meals);
+        setSummary(response.summary);
+        setFallback(response.fallback);
+        
+        // meals 상태 업데이트
+        setMeals(response.meals);
         
         // Show fallback warning if needed
         if (response.fallback) {
@@ -83,19 +91,32 @@ const RecommendPage: React.FC = () => {
           });
         }
       } catch (error) {
-        console.error("Failed to fetch recommendations:", error);
-        setError("Failed to load food recommendations. Please try again.");
+        console.error("Failed to fetch recommendations:", error instanceof Error ? error.message : error);
+        console.error("Error details:", error);
+        
+        // 더 구체적인 오류 메시지 제공
+        let errorMessage = "식품 추천을 불러오는 데 실패했습니다.";
+        
+        if (error instanceof Error) {
+          errorMessage += ` 오류: ${error.message}`;
+        } else if (typeof error === 'object' && error !== null) {
+          errorMessage += ` 상세 정보를 로그에서 확인하세요.`;
+        }
+        
+        setError(errorMessage);
       } finally {
         setLoading(false);
       }
     };
     
     fetchRecommendations();
-  }, [userInfo, navigate, toast, setRecommendations]);
+  }, [userInfo, navigate, toast, setRecommendedFoods, setSummary, setFallback]);
   
   // Handle meal type tab change
   const handleMealTypeChange = (mealType: 'breakfast' | 'lunch' | 'dinner') => {
-    setMealType(mealType);
+    setCurrentMealType(mealType);
+    // 필터링 함수 호출 (Zustand store의 기능 사용)
+    filterByMealType(mealType);
   };
   
   // Handle food selection
@@ -103,9 +124,11 @@ const RecommendPage: React.FC = () => {
     const isAlreadySelected = selectedFoods.some(f => f.id === food.id);
     
     if (isAlreadySelected) {
-      removeFood(food.id);
+      // 로컬 상태에서 음식 제거
+      setSelectedFoods(prev => prev.filter(item => item.id !== food.id));
     } else {
-      selectFood(food);
+      // 로컬 상태에 음식 추가 
+      setSelectedFoods(prev => [...prev, food]);
     }
     
     // Close the modal if open
@@ -238,7 +261,7 @@ const RecommendPage: React.FC = () => {
                       <Button 
                         size="sm" 
                         variant="ghost" 
-                        onClick={() => removeFood(food.id)}
+                        onClick={() => setSelectedFoods(prev => prev.filter(item => item.id !== food.id))}
                         className="h-6 w-6 p-0"
                       >
                         ✕

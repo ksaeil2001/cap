@@ -30,11 +30,13 @@ export async function getRecommendedFoods(userInfo: UserInfo): Promise<Recommend
       return await apiResponse.json();
     } catch (apiError) {
       // If the FastAPI endpoint fails, fallback to mock implementation
+      console.error("FastAPI endpoint error:", apiError instanceof Error ? apiError.message : apiError);
       console.log("FastAPI endpoint not available, using mock API for development");
       return await mockRecommend(userInfo);
     }
   } catch (error) {
-    console.error("Error getting recommendations:", error);
+    console.error("Error getting recommendations:", error instanceof Error ? error.message : error);
+    console.error("Error stack:", error instanceof Error ? error.stack : "No stack available");
     return getFallbackResponse();
   }
 }

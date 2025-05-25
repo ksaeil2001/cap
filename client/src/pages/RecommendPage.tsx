@@ -18,7 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 const RecommendPage: React.FC = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const userInfo = useUserStore(state => state.userInfo);
+  const userInfo = useUserStore();
   
   const { 
     meals, 

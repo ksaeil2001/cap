@@ -656,7 +656,7 @@ const MainInputPage = () => {
                           onChange={(e) => field.onChange(parseInt(e.target.value || "0"))}
                           min={1}
                           max={60000}
-                          step={1000}
+                          step={1}
                           placeholder="일일 식단 예산을 입력하세요"
                         />
                         <div className="flex justify-between mt-2">

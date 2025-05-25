@@ -1,6 +1,5 @@
 import { UserInfo } from "@/types";
-import { FoodItem, NutritionSummary } from "@/stores/useRecommendStore";
-import { mockRecommend } from "./mockRecommend";
+import { FoodItem, NutritionSummary, mockRecommend } from "./mockRecommend";
 import { apiRequest } from "@/lib/queryClient";
 
 interface RecommendResponse {
@@ -13,7 +12,7 @@ interface RecommendResponse {
  * Get recommended foods based on user information
  * This is the main API function that will be called from the UI
  */
-export async function getRecommendedFoods(userInfo: UserInfo): Promise<RecommendResponse> {
+export async function getRecommendedFoods(userInfo: Partial<UserInfo>): Promise<RecommendResponse> {
   try {
     // Try to use the real API endpoint
     console.log("Using FastAPI backend for recommendations...");

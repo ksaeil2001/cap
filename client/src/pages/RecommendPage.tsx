@@ -7,7 +7,8 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Loader2, AlertTriangle } from 'lucide-react';
 import { useUserStore } from '@/stores/useUserStore';
-import { useRecommendStore, FoodItem } from '@/stores/useRecommendStore';
+import { useRecommendStore } from '@/stores/useRecommendStore';
+import { FoodItem } from '@/api/mockRecommend';
 import { getRecommendedFoods } from '@/api/mealApi';
 import NutritionProgressBar from '@/components/NutritionProgressBar';
 import FoodCardList from '@/components/FoodCardList';
@@ -160,14 +161,15 @@ const RecommendPage: React.FC = () => {
   
   // Get current meal foods
   const getCurrentMealFoods = (): FoodItem[] => {
-    if (!Array.isArray(meals)) {
-      return [];
+    if (!Array.isArray(meals) || meals.length === 0) {
+      // 대체 로직: 필터링된 음식이 있다면 사용
+      return filteredFoods;
     }
     
     const mealIndex = currentMealType === 'breakfast' ? 0 : 
                      currentMealType === 'lunch' ? 1 : 2;
     
-    return Array.isArray(meals[mealIndex]) ? meals[mealIndex] : [];
+    return Array.isArray(meals[mealIndex]) ? meals[mealIndex] : filteredFoods;
   };
   
   // Render loading state
@@ -286,7 +288,8 @@ const RecommendPage: React.FC = () => {
                 activityLevel: 'medium',
                 mealCount: 3,
                 allergies: [],
-                budget: 100
+                budget: 100,
+                isAgreementChecked: true
               }}
               selectedFoods={selectedFoods}
               onSelectFood={handleSelectFood}

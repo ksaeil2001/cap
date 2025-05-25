@@ -270,7 +270,7 @@ const createFoodObject = (foodItem: FoodItem) => {
 };
 
 // Calculate BMR (Basal Metabolic Rate) based on user info
-const calculateBMR = (userInfo: UserInfo): number => {
+const calculateBMR = (userInfo: Partial<UserInfo>): number => {
   const { gender, weight, height, age } = userInfo;
   
   // Mifflin-St Jeor Equation
@@ -282,7 +282,7 @@ const calculateBMR = (userInfo: UserInfo): number => {
 };
 
 // Mock recommendation API function
-export const mockRecommend = async (userInfo: UserInfo): Promise<RecommendResponse> => {
+export const mockRecommend = async (userInfo: Partial<UserInfo>): Promise<RecommendResponse> => {
   console.log("Using mock API for development");
   
   // Calculate BMR and adjust based on activity level and goal

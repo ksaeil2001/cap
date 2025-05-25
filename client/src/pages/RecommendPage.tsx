@@ -21,22 +21,24 @@ const RecommendPage: React.FC = () => {
   const { toast } = useToast();
   const userInfo = useUserStore();
   
-  // 스토어에서 사용 가능한 함수만 가져오기
+  // 스토어에서 사용 가능한 함수와 상태 가져오기
   const { 
-    recommendedFoods,
     filteredFoods,
+    mealsFoods,
+    allFoods,
+    currentMealType: storeMealType,
     summary, 
     fallback,
     setRecommendedFoods, 
     setSummary,
     setFallback,
-    filterByMealType
+    setCurrentMealType,
+    filterByMealType,
+    getCurrentMealFoods
   } = useRecommendStore();
   
   // 필요한 state 변수 추가 (기존 스토어에 없는 기능)
   const [selectedFoods, setSelectedFoods] = useState<FoodItem[]>([]);
-  const [currentMealType, setCurrentMealType] = useState<'breakfast' | 'lunch' | 'dinner'>('breakfast');
-  const [meals, setMeals] = useState<FoodItem[][]>([]);
   
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -178,25 +180,7 @@ const RecommendPage: React.FC = () => {
     navigate("/meal-config");
   };
   
-  // Get current meal foods with improved error handling
-  const getCurrentMealFoods = (): FoodItem[] => {
-    // 방어적 프로그래밍: meals가 배열인지 확인
-    if (!Array.isArray(meals) || meals.length === 0) {
-      // 필터링된 음식이 있다면 사용, 없으면 빈 배열 반환
-      return Array.isArray(filteredFoods) ? filteredFoods : [];
-    }
-    
-    const mealIndex = currentMealType === 'breakfast' ? 0 : 
-                     currentMealType === 'lunch' ? 1 : 2;
-    
-    // meals[mealIndex]가 배열인지 확인
-    if (!Array.isArray(meals[mealIndex])) {
-      // 대체 로직: 필터링된 음식이 있다면 사용, 없으면 빈 배열 반환
-      return Array.isArray(filteredFoods) ? filteredFoods : [];
-    }
-    
-    return meals[mealIndex];
-  };
+  // 현재 끼니에 대한 음식 목록 가져오기 (스토어에서 가져온 함수 사용)
   
   // Render loading state
   if (loading) {

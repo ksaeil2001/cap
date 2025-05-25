@@ -18,8 +18,14 @@ export interface RecommendResponse {
 export interface RecommendStore {
   // State
   isLoading: boolean;
-  recommendedFoods: FoodItem[];
+  mealsFoods: {
+    breakfast: FoodItem[];
+    lunch: FoodItem[];
+    dinner: FoodItem[];
+  };
+  allFoods: FoodItem[];
   filteredFoods: FoodItem[];
+  currentMealType: MealTime;
   summary: RecommendResponse['summary'] | null;
   fallback: boolean;
   
@@ -27,16 +33,24 @@ export interface RecommendStore {
   setRecommendedFoods: (foods: FoodItem[][]) => void;
   setSummary: (summary: RecommendResponse['summary']) => void;
   setFallback: (fallback: boolean) => void;
+  setCurrentMealType: (mealType: MealTime) => void;
   filterByMealType: (mealType: MealTime) => void;
   filterByCalories: (min: number, max: number) => void;
   filterByPrice: (min: number, max: number) => void;
   clearFilters: () => void;
+  getCurrentMealFoods: () => FoodItem[];
 }
 
 export const useRecommendStore = create<RecommendStore>((set, get) => ({
   isLoading: false,
-  recommendedFoods: [],
+  mealsFoods: {
+    breakfast: [],
+    lunch: [],
+    dinner: []
+  },
+  allFoods: [],
   filteredFoods: [],
+  currentMealType: 'breakfast',
   summary: null,
   fallback: false,
   
@@ -46,19 +60,46 @@ export const useRecommendStore = create<RecommendStore>((set, get) => ({
     if (!foodsByMeal || !Array.isArray(foodsByMeal)) {
       console.warn("Received invalid foodsByMeal data:", foodsByMeal);
       set({
-        recommendedFoods: [],
+        mealsFoods: {
+          breakfast: [],
+          lunch: [],
+          dinner: []
+        },
+        allFoods: [],
         filteredFoods: []
       });
       return;
     }
     
-    // Flatten all meal foods into a single array (방어적 처리)
-    const allFoods = Array.isArray(foodsByMeal) ? foodsByMeal.flat() : [];
+    // 끼니별로 음식 분리 (방어적 처리)
+    const breakfastFoods = Array.isArray(foodsByMeal[0]) ? foodsByMeal[0] : [];
+    const lunchFoods = Array.isArray(foodsByMeal[1]) ? foodsByMeal[1] : [];
+    const dinnerFoods = Array.isArray(foodsByMeal[2]) ? foodsByMeal[2] : [];
+    
+    // 모든 음식을 하나의 배열로 합치기
+    const allFoods = [...breakfastFoods, ...lunchFoods, ...dinnerFoods];
     
     set({
-      recommendedFoods: allFoods,
-      filteredFoods: allFoods
+      mealsFoods: {
+        breakfast: breakfastFoods,
+        lunch: lunchFoods,
+        dinner: dinnerFoods
+      },
+      allFoods: allFoods,
+      filteredFoods: breakfastFoods // 기본값으로 breakfast 표시
     });
+  },
+  
+  // 현재 선택된 끼니 타입 설정
+  setCurrentMealType: (mealType: MealTime) => {
+    set({ currentMealType: mealType });
+    get().filterByMealType(mealType);
+  },
+  
+  // 현재 끼니 타입에 해당하는 음식 가져오기
+  getCurrentMealFoods: () => {
+    const { mealsFoods, currentMealType } = get();
+    return mealsFoods[currentMealType];
   },
   
   // Set nutrition summary
@@ -73,62 +114,41 @@ export const useRecommendStore = create<RecommendStore>((set, get) => ({
   
   // Filter foods by meal type (breakfast, lunch, dinner)
   filterByMealType: (mealType: MealTime) => {
-    const { recommendedFoods } = get();
-    
-    // Map meal types to appropriate categories
-    const categoryMap: Record<MealTime, string[]> = {
-      breakfast: ['breakfast', 'cereal', 'dairy', 'fruit'],
-      lunch: ['sandwich', 'salad', 'soup', 'protein', 'vegetable'],
-      dinner: ['main', 'protein', 'pasta', 'rice', 'vegetable', 'meat']
-    };
-    
-    const targetCategories = categoryMap[mealType];
-    
-    const filtered = recommendedFoods.filter(food => {
-      // If food has a category and it's in the target categories for this meal type
-      if (food.category && targetCategories.includes(food.category.toLowerCase())) {
-        return true;
-      }
-      
-      // If food has tags that match the meal type
-      if (food.tags && food.tags.some(tag => 
-        tag.toLowerCase().includes(mealType) || 
-        targetCategories.some(cat => tag.toLowerCase().includes(cat))
-      )) {
-        return true;
-      }
-      
-      return false;
-    });
-    
-    set({ filteredFoods: filtered });
+    const { mealsFoods } = get();
+    // 해당 끼니에 맞는 음식 목록 설정
+    const foodsForMealType = mealsFoods[mealType] || [];
+    set({ filteredFoods: foodsForMealType, currentMealType: mealType });
   },
   
   // Filter foods by calorie range
   filterByCalories: (min: number, max: number) => {
-    const { recommendedFoods } = get();
+    const { currentMealType, mealsFoods } = get();
+    const currentFoods = mealsFoods[currentMealType] || [];
     
-    const filtered = recommendedFoods.filter(food => 
-      food.kcal >= min && food.kcal <= max
-    );
+    const filtered = currentFoods.filter((food: FoodItem) => {
+      const calories = food.calories || food.kcal || 0;
+      return calories >= min && calories <= max;
+    });
     
     set({ filteredFoods: filtered });
   },
   
   // Filter foods by price range
   filterByPrice: (min: number, max: number) => {
-    const { recommendedFoods } = get();
+    const { currentMealType, mealsFoods } = get();
+    const currentFoods = mealsFoods[currentMealType] || [];
     
-    const filtered = recommendedFoods.filter(food => 
-      food.price >= min && food.price <= max
-    );
+    const filtered = currentFoods.filter((food: FoodItem) => {
+      const price = food.price || 0;
+      return price >= min && price <= max;
+    });
     
     set({ filteredFoods: filtered });
   },
   
-  // Clear all filters and show all foods
+  // Clear all filters and show all foods for current meal type
   clearFilters: () => {
-    const { recommendedFoods } = get();
-    set({ filteredFoods: recommendedFoods });
+    const { currentMealType, mealsFoods } = get();
+    set({ filteredFoods: mealsFoods[currentMealType] || [] });
   }
 }));

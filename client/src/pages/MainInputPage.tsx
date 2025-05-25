@@ -1,9 +1,10 @@
-import React from 'react';
+import React, { useState, KeyboardEvent } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import AlertCustom from '@/components/ui/alert-custom';
+import { X, Plus } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -14,6 +15,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Separator } from '@/components/ui/separator';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
 
 import { useUserStore } from '@/stores/useUserStore';
 import { useToast } from '@/hooks/use-toast';
@@ -367,56 +369,121 @@ const MainInputPage = () => {
                 )}
               />
 
-              {/* Allergies */}
+              {/* Allergies - Tag Input Style */}
               <FormField
                 control={form.control}
                 name="allergies"
-                render={() => (
-                  <FormItem>
-                    <div className="mb-4">
-                      <FormLabel>알레르기 및 식이 제한</FormLabel>
-                      <FormDescription>
-                        피하고 싶은 알레르기 식품이나 음식을 선택하세요.
-                      </FormDescription>
-                    </div>
-                    <div className="grid grid-cols-2 gap-2">
-                      {allergiesOptions.map((option) => (
-                        <FormField
-                          key={option.id}
-                          control={form.control}
-                          name="allergies"
-                          render={({ field }) => {
-                            return (
-                              <FormItem
-                                key={option.id}
-                                className="flex flex-row items-start space-x-3 space-y-0"
+                render={({ field }) => {
+                  const [inputValue, setInputValue] = useState("");
+                  
+                  // 태그 추가 함수
+                  const addTag = (tag: string) => {
+                    const trimmedTag = tag.trim();
+                    
+                    // 빈 입력이거나 특수문자만 있는 경우 무시
+                    if (!trimmedTag || !/[a-zA-Z0-9가-힣]+/.test(trimmedTag)) {
+                      return;
+                    }
+                    
+                    // 중복 확인
+                    if (field.value.includes(trimmedTag)) {
+                      toast({
+                        title: "중복된 항목",
+                        description: "이미 추가된 알레르기 항목입니다.",
+                        variant: "destructive",
+                      });
+                      return;
+                    }
+                    
+                    // 최대 5개 제한
+                    if (field.value.length >= 5) {
+                      toast({
+                        title: "최대 항목 수 초과",
+                        description: "알레르기 항목은 최대 5개까지 입력 가능합니다.",
+                        variant: "destructive",
+                      });
+                      return;
+                    }
+                    
+                    // 태그 추가
+                    field.onChange([...field.value, trimmedTag]);
+                    setInputValue("");
+                  };
+                  
+                  // 태그 삭제 함수
+                  const removeTag = (tag: string) => {
+                    field.onChange(field.value.filter(t => t !== tag));
+                  };
+                  
+                  // 키보드 이벤트 처리
+                  const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
+                    if (e.key === 'Enter' || e.key === ',') {
+                      e.preventDefault(); // 폼 제출 방지
+                      addTag(inputValue);
+                    }
+                  };
+                  
+                  return (
+                    <FormItem>
+                      <div className="mb-4">
+                        <FormLabel>알레르기 및 식이 제한</FormLabel>
+                        <FormDescription>
+                          피하고 싶은 알레르기 식품이나 음식을 입력하세요. (최대 5개)
+                        </FormDescription>
+                      </div>
+                      
+                      <div className="flex items-center mb-2">
+                        <FormControl>
+                          <Input
+                            placeholder="알레르기 항목 입력 후 엔터"
+                            value={inputValue}
+                            onChange={(e) => setInputValue(e.target.value)}
+                            onKeyDown={handleKeyDown}
+                            disabled={field.value.length >= 5}
+                            className="flex-1"
+                          />
+                        </FormControl>
+                        <Button
+                          type="button"
+                          variant="outline"
+                          size="sm"
+                          className="ml-2"
+                          onClick={() => addTag(inputValue)}
+                          disabled={!inputValue.trim() || field.value.length >= 5}
+                        >
+                          <Plus className="h-4 w-4" />
+                        </Button>
+                      </div>
+                      
+                      {field.value.length > 0 && (
+                        <div className="flex flex-wrap gap-2 mt-3">
+                          {field.value.map((tag, index) => (
+                            <Badge key={index} variant="outline" className="py-1 px-2 flex items-center">
+                              {tag}
+                              <Button
+                                type="button"
+                                variant="ghost"
+                                size="sm"
+                                className="h-4 w-4 p-0 ml-1"
+                                onClick={() => removeTag(tag)}
                               >
-                                <FormControl>
-                                  <Checkbox
-                                    checked={field.value?.includes(option.id)}
-                                    onCheckedChange={(checked) => {
-                                      return checked
-                                        ? field.onChange([...field.value, option.id])
-                                        : field.onChange(
-                                            field.value?.filter(
-                                              (value) => value !== option.id
-                                            )
-                                          )
-                                    }}
-                                  />
-                                </FormControl>
-                                <FormLabel className="font-normal cursor-pointer">
-                                  {option.label}
-                                </FormLabel>
-                              </FormItem>
-                            )
-                          }}
-                        />
-                      ))}
-                    </div>
-                    <FormMessage />
-                  </FormItem>
-                )}
+                                <X className="h-3 w-3" />
+                              </Button>
+                            </Badge>
+                          ))}
+                        </div>
+                      )}
+                      
+                      {field.value.length === 0 && (
+                        <p className="text-sm text-neutral-500 mt-2">
+                          등록된 알레르기 항목이 없습니다. 상단 입력창에 알레르기 항목을 입력하세요.
+                        </p>
+                      )}
+                      
+                      <FormMessage />
+                    </FormItem>
+                  );
+                }}
               />
             </CardContent>
           </Card>

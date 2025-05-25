@@ -50,30 +50,30 @@ export interface RecommendResponse {
   fallback: boolean;
 }
 
-// 추가한 한국어 음식 데이터 사용
-// 전체 음식 데이터베이스
+// 추가한 한국어 음식 데이터만 사용
+// 전체 음식 데이터베이스 - food_items.json 파일에서 가져옴
 const foodDatabase: FoodItem[] = sampleFoodItems;
 
-// 식사 시간별로 음식 분류
+// 아침 식사용 음식 (300kcal 미만 또는 breakfast 태그가 있는 음식)
 const breakfastFoods: FoodItem[] = foodDatabase.filter(food => 
   food.tags.includes("breakfast") || 
   (food.kcal < 300) || 
   (food.category && ['fruit', 'dairy'].includes(food.category))
-).slice(0, 10);
+);
 
-// 점심 음식
+// 점심 식사용 음식 (250-500kcal 또는 lunch 태그가 있는 음식)
 const lunchFoods: FoodItem[] = foodDatabase.filter(food => 
   food.tags.includes("lunch") || 
   (food.kcal >= 250 && food.kcal <= 500) || 
   (food.category && ['burger', 'salad', 'soup'].includes(food.category))
-).slice(0, 10);
+);
 
-// 저녁 음식
+// 저녁 식사용 음식 (400kcal 이상 또는 dinner 태그가 있는 음식)
 const dinnerFoods: FoodItem[] = foodDatabase.filter(food => 
   food.tags.includes("dinner") || 
   (food.kcal >= 400) || 
   (food.category && ['meat', 'seafood', 'burger'].includes(food.category))
-).slice(0, 10);
+);
 
 // Helper function to create compatible food objects
 const createFoodObject = (foodItem: FoodItem) => {

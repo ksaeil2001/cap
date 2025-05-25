@@ -289,8 +289,7 @@ const RecommendPage: React.FC = () => {
                 mealCount: 3,
                 allergies: [],
                 isAgreementChecked: true,
-                budget: 100,
-                isAgreementChecked: true
+                budget: 100
               }}
               selectedFoods={selectedFoods}
               onSelectFood={handleSelectFood}

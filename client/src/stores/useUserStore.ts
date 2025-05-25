@@ -11,6 +11,7 @@ export interface UserInfo {
   mealCount: number;
   allergies: string[];
   budget: number; // Weekly budget
+  isAgreementChecked: boolean; // 이용약관 동의 여부
 }
 
 export interface UserStore extends UserInfo {
@@ -29,7 +30,8 @@ const initialUserInfo: UserInfo = {
   activityLevel: 'medium',
   mealCount: 3,
   allergies: [],
-  budget: 100
+  budget: 100,
+  isAgreementChecked: true
 };
 
 export const useUserStore = create<UserStore>((set) => ({

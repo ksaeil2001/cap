@@ -55,12 +55,8 @@ export const useRecommendStore = create<RecommendStore>((set, get) => ({
   summary: null,
   fallback: false,
   
-  // 끼니별 선택된 음식 초기화
-  selectedPerMeal: {
-    breakfast: [],
-    lunch: [],
-    dinner: []
-  },
+  // 더 이상 이 스토어에서 선택된 음식을 관리하지 않습니다
+  // (MealSelectionStore로 이동)
   
   // Set recommended foods from API response
   setRecommendedFoods: (foodsByMeal: FoodItem[][]) => {

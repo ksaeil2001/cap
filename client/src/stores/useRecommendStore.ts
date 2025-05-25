@@ -30,6 +30,13 @@ export interface RecommendStore {
   summary: RecommendResponse['summary'] | null;
   fallback: boolean;
   
+  // 끼니별 선택된 음식 (새로 추가)
+  selectedPerMeal: {
+    breakfast: FoodItem[];
+    lunch: FoodItem[];
+    dinner: FoodItem[];
+  };
+  
   // Actions
   setRecommendedFoods: (foods: FoodItem[][]) => void;
   setSummary: (summary: RecommendResponse['summary']) => void;
@@ -40,6 +47,11 @@ export interface RecommendStore {
   filterByPrice: (min: number, max: number) => void;
   clearFilters: () => void;
   getCurrentMealFoods: () => FoodItem[];
+  
+  // 끼니별 음식 선택/제거 기능 (새로 추가)
+  addFoodToMeal: (mealType: MealTime, food: FoodItem) => void;
+  removeFoodFromMeal: (mealType: MealTime, foodId: string) => void;
+  clearSelectedMeals: () => void;
 }
 
 export const useRecommendStore = create<RecommendStore>((set, get) => ({
@@ -54,6 +66,13 @@ export const useRecommendStore = create<RecommendStore>((set, get) => ({
   currentMealType: 'breakfast',
   summary: null,
   fallback: false,
+  
+  // 끼니별 선택된 음식 초기화
+  selectedPerMeal: {
+    breakfast: [],
+    lunch: [],
+    dinner: []
+  },
   
   // Set recommended foods from API response
   setRecommendedFoods: (foodsByMeal: FoodItem[][]) => {
@@ -72,12 +91,25 @@ export const useRecommendStore = create<RecommendStore>((set, get) => ({
       return;
     }
     
+    // 현재 사용자 정보 가져오기 (사용 가능한 경우)
+    // 사용자 mealCount에 따라 다르게 처리
+    let userMealCount = 3;
+    try {
+      // 안전하게 외부 store 접근
+      const userStore = useUserStore.getState();
+      if (userStore && userStore.mealCount) {
+        userMealCount = userStore.mealCount;
+      }
+    } catch (error) {
+      console.warn("Failed to get user mealCount, using default:", error);
+    }
+    
     // 끼니별로 음식 분리 (방어적 처리)
     let breakfastFoods: FoodItem[] = [];
     let lunchFoods: FoodItem[] = [];
     let dinnerFoods: FoodItem[] = [];
     
-    if (mealCount === 2) {
+    if (userMealCount === 2) {
       // 점심, 저녁만 사용하는 경우 (2끼)
       lunchFoods = Array.isArray(foodsByMeal[0]) ? foodsByMeal[0] : [];
       dinnerFoods = Array.isArray(foodsByMeal[1]) ? foodsByMeal[1] : [];
@@ -91,8 +123,8 @@ export const useRecommendStore = create<RecommendStore>((set, get) => ({
     // 모든 음식을 하나의 배열로 합치기
     const allFoods = [...breakfastFoods, ...lunchFoods, ...dinnerFoods];
     
-    // 기본 표시 끼니 설정 (mealCount에 따라)
-    const defaultMealFoods = mealCount === 2 ? lunchFoods : breakfastFoods;
+    // 기본 표시 끼니 설정 (userMealCount에 따라)
+    const defaultMealFoods = userMealCount === 2 ? lunchFoods : breakfastFoods;
     
     set({
       mealsFoods: {
@@ -102,7 +134,44 @@ export const useRecommendStore = create<RecommendStore>((set, get) => ({
       },
       allFoods: allFoods,
       filteredFoods: defaultMealFoods,
-      currentMealType: mealCount === 2 ? 'lunch' : 'breakfast' // 기본 선택 끼니도 동적으로 설정
+      currentMealType: userMealCount === 2 ? 'lunch' : 'breakfast' // 기본 선택 끼니도 동적으로 설정
+    });
+  },
+  
+  // 끼니별 음식 선택 기능 (새로 추가)
+  addFoodToMeal: (mealType: MealTime, food: FoodItem) => {
+    set((state) => {
+      // 이미 선택된 음식인지 확인
+      const isAlreadySelected = state.selectedPerMeal[mealType].some(item => item.id === food.id);
+      if (isAlreadySelected) return state; // 이미 있으면 추가하지 않음
+      
+      return {
+        selectedPerMeal: {
+          ...state.selectedPerMeal,
+          [mealType]: [...state.selectedPerMeal[mealType], food]
+        }
+      };
+    });
+  },
+  
+  // 끼니별 음식 제거 기능 (새로 추가)
+  removeFoodFromMeal: (mealType: MealTime, foodId: string) => {
+    set((state) => ({
+      selectedPerMeal: {
+        ...state.selectedPerMeal,
+        [mealType]: state.selectedPerMeal[mealType].filter(item => item.id !== foodId)
+      }
+    }));
+  },
+  
+  // 모든 선택된 음식 초기화 (새로 추가)
+  clearSelectedMeals: () => {
+    set({
+      selectedPerMeal: {
+        breakfast: [],
+        lunch: [],
+        dinner: []
+      }
     });
   },
   

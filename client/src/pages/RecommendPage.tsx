@@ -136,17 +136,31 @@ const RecommendPage: React.FC = () => {
     setCurrentMealType(mealType);
   };
   
-  // 음식 선택 처리
+  // 음식 선택 처리 - 현재 선택된 끼니에만 추가
   const handleSelectFood = (food: FoodItem) => {
-    const isAlreadySelected = selectedFoods.some(f => f.id === food.id);
+    // 현재 선택된 끼니에 음식 추가/제거
+    const addFoodToMeal = useRecommendStore.getState().addFoodToMeal;
+    const removeFoodFromMeal = useRecommendStore.getState().removeFoodFromMeal;
+    const selectedMeals = useRecommendStore.getState().selectedPerMeal;
+    
+    // 현재 선택된 끼니에 이미 있는지 확인
+    const isAlreadySelected = selectedMeals[currentMealType]?.some(f => f.id === food.id);
     
     if (isAlreadySelected) {
-      // 이미 선택된 경우 제거
-      setSelectedFoods(prev => prev.filter(item => item.id !== food.id));
+      // 이미 선택된 경우 현재 끼니에서만 제거
+      removeFoodFromMeal(currentMealType, food.id);
     } else {
-      // 새로 선택
-      setSelectedFoods(prev => [...prev, food]);
+      // 새로 선택: 현재 끼니에만 추가
+      addFoodToMeal(currentMealType, food);
     }
+    
+    // 로컬 상태도 동기화 (필요 시)
+    const allSelectedFoods = [
+      ...selectedMeals.breakfast,
+      ...selectedMeals.lunch, 
+      ...selectedMeals.dinner
+    ];
+    setSelectedFoods(allSelectedFoods);
     
     // 모달 열려있으면 닫기
     if (isDetailModalOpen) {

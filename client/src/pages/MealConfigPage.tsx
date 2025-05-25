@@ -44,21 +44,47 @@ const MealConfigPage: React.FC = () => {
     meals,
     nutritionSummary,
     validationStatus,
-    addFoodToMeal,
-    removeFoodFromMeal,
+    addFoodToMeal: addFoodToMealConfig,
+    removeFoodFromMeal: removeFoodFromMealConfig,
     getMealTotalCalories,
     getMealTotalCost,
     updateNutritionSummary,
     isReadyForSummary
   } = useMealConfigStore();
   
-  const { allFoods, filteredFoods, filterByMealType, clearFilters } = useRecommendStore();
+  const { 
+    allFoods, 
+    filteredFoods, 
+    filterByMealType, 
+    clearFilters,
+    selectedPerMeal, // 새로 추가한 끼니별 선택 음식
+    addFoodToMeal: addFoodToRecommend,
+    removeFoodFromMeal: removeFoodFromRecommend
+  } = useRecommendStore();
   const userInfo = useUserStore();
   
-  // Initialize nutrition summary when component mounts
+  // 컴포넌트 마운트 시 실행할 초기화 로직
   useEffect(() => {
+    // RecommendPage에서 선택한 음식을 MealConfigStore에 로드
+    const { breakfast, lunch, dinner } = selectedPerMeal;
+    
+    // 이미 선택된 음식이 있다면 MealConfigStore에 추가
+    if (breakfast && breakfast.length > 0) {
+      breakfast.forEach(food => addFoodToMealConfig('breakfast', food));
+    }
+    
+    if (lunch && lunch.length > 0) {
+      lunch.forEach(food => addFoodToMealConfig('lunch', food));
+    }
+    
+    if (dinner && dinner.length > 0) {
+      dinner.forEach(food => addFoodToMealConfig('dinner', food));
+    }
+    
+    // 영양 정보 업데이트
     updateNutritionSummary();
-    // Load recommendations for the first tab
+    
+    // 첫 번째 탭에 대한 추천 음식 로드
     clearFilters();
     filterByMealType(activeTab);
   }, []);
@@ -70,14 +96,20 @@ const MealConfigPage: React.FC = () => {
     filterByMealType(mealType);
   };
   
-  // Handle add food
+  // Handle add food - MealConfig 스토어를 사용
   const handleAddFood = (mealType: MealTime, food: FoodItem) => {
-    addFoodToMeal(mealType, food);
+    addFoodToMealConfig(mealType, food);
+    
+    // 선택 정보를 RecommendStore에도 동기화 (선택사항)
+    addFoodToRecommend(mealType, food);
   };
   
-  // Handle remove food
+  // Handle remove food - MealConfig 스토어를 사용
   const handleRemoveFood = (mealType: MealTime, foodId: string) => {
-    removeFoodFromMeal(mealType, foodId);
+    removeFoodFromMealConfig(mealType, foodId);
+    
+    // 선택 정보를 RecommendStore에도 동기화 (선택사항)
+    removeFoodFromRecommend(mealType, foodId);
   };
   
   // Navigate to previous page

@@ -24,7 +24,7 @@ export async function getRecommendedFoods(userInfo: UserInfo): Promise<Recommend
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(userInfo),
+        body: userInfo,
       });
       
       return await apiResponse.json();

@@ -56,7 +56,18 @@ const RecommendPage: React.FC = () => {
         }
         
         // Get food recommendations
-        const response = await getRecommendedFoods(userInfo);
+        // Strip out isAgreementChecked to make it compatible with API
+        const { 
+          gender, age, height, weight, bodyFatPercent, 
+          goal, activityLevel, mealCount, allergies, budget 
+        } = userInfo;
+        
+        const apiUserInfo = {
+          gender, age, height, weight, bodyFatPercent, 
+          goal, activityLevel, mealCount, allergies, budget
+        };
+        
+        const response = await getRecommendedFoods(apiUserInfo);
         setRecommendations(
           response.meals,
           response.summary,

@@ -30,13 +30,6 @@ export interface RecommendStore {
   summary: RecommendResponse['summary'] | null;
   fallback: boolean;
   
-  // 끼니별 선택된 음식 (새로 추가)
-  selectedPerMeal: {
-    breakfast: FoodItem[];
-    lunch: FoodItem[];
-    dinner: FoodItem[];
-  };
-  
   // Actions
   setRecommendedFoods: (foods: FoodItem[][]) => void;
   setSummary: (summary: RecommendResponse['summary']) => void;
@@ -47,11 +40,6 @@ export interface RecommendStore {
   filterByPrice: (min: number, max: number) => void;
   clearFilters: () => void;
   getCurrentMealFoods: () => FoodItem[];
-  
-  // 끼니별 음식 선택/제거 기능 (새로 추가)
-  addFoodToMeal: (mealType: MealTime, food: FoodItem) => void;
-  removeFoodFromMeal: (mealType: MealTime, foodId: string) => void;
-  clearSelectedMeals: () => void;
 }
 
 export const useRecommendStore = create<RecommendStore>((set, get) => ({

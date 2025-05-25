@@ -68,17 +68,23 @@ const MealConfigPage: React.FC = () => {
     // RecommendPage에서 선택한 음식을 MealConfigStore에 로드
     const { breakfast, lunch, dinner } = selectedPerMeal;
     
-    // 이미 선택된 음식이 있다면 MealConfigStore에 추가
+    // 끼니별로 음식을 MealConfigStore에 추가
     if (breakfast && breakfast.length > 0) {
-      breakfast.forEach(food => addFoodToMealConfig('breakfast', food));
+      breakfast.forEach(food => {
+        addFoodToMealConfig('breakfast', food);
+      });
     }
     
     if (lunch && lunch.length > 0) {
-      lunch.forEach(food => addFoodToMealConfig('lunch', food));
+      lunch.forEach(food => {
+        addFoodToMealConfig('lunch', food);
+      });
     }
     
     if (dinner && dinner.length > 0) {
-      dinner.forEach(food => addFoodToMealConfig('dinner', food));
+      dinner.forEach(food => {
+        addFoodToMealConfig('dinner', food);
+      });
     }
     
     // 영양 정보 업데이트

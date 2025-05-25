@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Loader2, AlertTriangle, Coffee, UtensilsCrossed, Utensils } from 'lucide-react';
 import { useUserStore } from '@/stores/useUserStore';
 import { useRecommendStore } from '@/stores/useRecommendStore';
+import { useMealSelectionStore } from '@/stores/useMealSelectionStore';
 import { FoodItem } from '@/api/mockRecommend';
 import { getRecommendedFoods } from '@/api/mealApi';
 import NutritionProgressBar from '@/components/NutritionProgressBar';
@@ -138,28 +139,22 @@ const RecommendPage: React.FC = () => {
   
   // 음식 선택 처리 - 현재 선택된 끼니에만 추가
   const handleSelectFood = (food: FoodItem) => {
-    // 현재 선택된 끼니에 음식 추가/제거
-    const addFoodToMeal = useRecommendStore.getState().addFoodToMeal;
-    const removeFoodFromMeal = useRecommendStore.getState().removeFoodFromMeal;
-    const selectedMeals = useRecommendStore.getState().selectedPerMeal;
+    // 새로 만든 MealSelectionStore 사용
+    const mealSelectionStore = useMealSelectionStore.getState();
     
     // 현재 선택된 끼니에 이미 있는지 확인
-    const isAlreadySelected = selectedMeals[currentMealType]?.some(f => f.id === food.id);
+    const isAlreadySelected = mealSelectionStore.isFoodSelected(currentMealType, food.id);
     
     if (isAlreadySelected) {
       // 이미 선택된 경우 현재 끼니에서만 제거
-      removeFoodFromMeal(currentMealType, food.id);
+      mealSelectionStore.removeFoodFromMeal(currentMealType, food.id);
     } else {
       // 새로 선택: 현재 끼니에만 추가
-      addFoodToMeal(currentMealType, food);
+      mealSelectionStore.addFoodToMeal(currentMealType, food);
     }
     
-    // 로컬 상태도 동기화 (필요 시)
-    const allSelectedFoods = [
-      ...selectedMeals.breakfast,
-      ...selectedMeals.lunch, 
-      ...selectedMeals.dinner
-    ];
+    // 로컬 상태도 동기화
+    const allSelectedFoods = mealSelectionStore.getAllSelectedFoods();
     setSelectedFoods(allSelectedFoods);
     
     // 모달 열려있으면 닫기

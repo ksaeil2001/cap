@@ -26,7 +26,22 @@ export async function getRecommendedFoods(userInfo: Partial<UserInfo>): Promise<
         body: userInfo,
       });
       
-      return await apiResponse.json();
+      const responseData = await apiResponse.json();
+      
+      // 방어적 프로그래밍: 응답 데이터 구조 확인
+      if (!responseData || !responseData.meals) {
+        console.warn("API returned incomplete data structure:", responseData);
+        // 응답에 meals가 없으면 mockRecommend 사용
+        return await mockRecommend(userInfo);
+      }
+      
+      // meals 배열이 올바른지 확인하고 빈 배열로 초기화
+      if (!Array.isArray(responseData.meals)) {
+        console.warn("API returned invalid meals data (not an array):", responseData.meals);
+        responseData.meals = [[], [], []];
+      }
+      
+      return responseData;
     } catch (apiError) {
       // If the FastAPI endpoint fails, fallback to mock implementation
       console.error("FastAPI endpoint error:", apiError instanceof Error ? apiError.message : apiError);

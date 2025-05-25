@@ -53,8 +53,8 @@ const RecommendPage: React.FC = () => {
         // Verify user has completed profile
         if (!userInfo || !userInfo.gender || !userInfo.age || !userInfo.weight) {
           toast({
-            title: "Profile incomplete",
-            description: "Please complete your profile information first.",
+            title: "프로필 미완성",
+            description: "먼저 프로필 정보를 완성해주세요.",
             variant: "destructive",
           });
           navigate("/");
@@ -75,19 +75,34 @@ const RecommendPage: React.FC = () => {
         
         const response = await getRecommendedFoods(apiUserInfo);
         
-        // 스토어 함수 이름이 변경되었으므로 적절하게 호출
-        setRecommendedFoods(response.meals);
-        setSummary(response.summary);
-        setFallback(response.fallback);
+        // 방어적 프로그래밍: 응답이 유효한지 확인
+        if (!response) {
+          throw new Error("서버 응답이 없습니다.");
+        }
         
-        // meals 상태 업데이트
-        setMeals(response.meals);
+        // meals 확인 및 기본값 설정
+        const validMeals = Array.isArray(response.meals) ? response.meals : [[], [], []];
+        
+        // 스토어 상태 업데이트
+        setRecommendedFoods(validMeals);
+        setSummary(response.summary || {
+          calories: { target: 2000, actual: 0 },
+          protein: { target: 150, actual: 0 },
+          fat: { target: 70, actual: 0 },
+          carbs: { target: 250, actual: 0 },
+          budget: { target: 100, actual: 0 },
+          allergy: false
+        });
+        setFallback(response.fallback || false);
+        
+        // 로컬 상태 업데이트
+        setMeals(validMeals);
         
         // Show fallback warning if needed
         if (response.fallback) {
           toast({
-            title: "Limited recommendations",
-            description: "We've provided alternative options based on your preferences.",
+            title: "제한된 추천",
+            description: "선호도에 따라 대체 옵션을 제공했습니다.",
             variant: "default",
           });
         }
@@ -105,6 +120,10 @@ const RecommendPage: React.FC = () => {
         }
         
         setError(errorMessage);
+        
+        // 오류 발생 시 기본 빈 데이터 설정
+        setMeals([[], [], []]);
+        setRecommendedFoods([[], [], []]);
       } finally {
         setLoading(false);
       }
@@ -159,17 +178,24 @@ const RecommendPage: React.FC = () => {
     navigate("/meal-config");
   };
   
-  // Get current meal foods
+  // Get current meal foods with improved error handling
   const getCurrentMealFoods = (): FoodItem[] => {
+    // 방어적 프로그래밍: meals가 배열인지 확인
     if (!Array.isArray(meals) || meals.length === 0) {
-      // 대체 로직: 필터링된 음식이 있다면 사용
-      return filteredFoods;
+      // 필터링된 음식이 있다면 사용, 없으면 빈 배열 반환
+      return Array.isArray(filteredFoods) ? filteredFoods : [];
     }
     
     const mealIndex = currentMealType === 'breakfast' ? 0 : 
                      currentMealType === 'lunch' ? 1 : 2;
     
-    return Array.isArray(meals[mealIndex]) ? meals[mealIndex] : filteredFoods;
+    // meals[mealIndex]가 배열인지 확인
+    if (!Array.isArray(meals[mealIndex])) {
+      // 대체 로직: 필터링된 음식이 있다면 사용, 없으면 빈 배열 반환
+      return Array.isArray(filteredFoods) ? filteredFoods : [];
+    }
+    
+    return meals[mealIndex];
   };
   
   // Render loading state

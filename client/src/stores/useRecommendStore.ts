@@ -42,8 +42,18 @@ export const useRecommendStore = create<RecommendStore>((set, get) => ({
   
   // Set recommended foods from API response
   setRecommendedFoods: (foodsByMeal: FoodItem[][]) => {
-    // Flatten all meal foods into a single array
-    const allFoods = foodsByMeal.flat();
+    // 방어적 프로그래밍: foodsByMeal이 undefined, null 또는 배열이 아닌 경우 대비
+    if (!foodsByMeal || !Array.isArray(foodsByMeal)) {
+      console.warn("Received invalid foodsByMeal data:", foodsByMeal);
+      set({
+        recommendedFoods: [],
+        filteredFoods: []
+      });
+      return;
+    }
+    
+    // Flatten all meal foods into a single array (방어적 처리)
+    const allFoods = Array.isArray(foodsByMeal) ? foodsByMeal.flat() : [];
     
     set({
       recommendedFoods: allFoods,

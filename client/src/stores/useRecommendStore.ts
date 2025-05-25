@@ -56,7 +56,7 @@ export const useRecommendStore = create<RecommendStore>((set, get) => ({
   fallback: false,
   
   // Set recommended foods from API response
-  setRecommendedFoods: (foodsByMeal: FoodItem[][], mealCount: number = 3) => {
+  setRecommendedFoods: (foodsByMeal: FoodItem[][]) => {
     // 방어적 프로그래밍: foodsByMeal이 undefined, null 또는 배열이 아닌 경우 대비
     if (!foodsByMeal || !Array.isArray(foodsByMeal)) {
       console.warn("Received invalid foodsByMeal data:", foodsByMeal);

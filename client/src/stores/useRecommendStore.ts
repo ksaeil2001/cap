@@ -1,6 +1,7 @@
 import { create } from 'zustand';
 import { FoodItem } from '@/api/mockRecommend';
 import { MealTime } from './useMealConfigStore';
+import { useUserStore } from './useUserStore';
 
 export interface RecommendResponse {
   meals: FoodItem[][];
@@ -55,7 +56,7 @@ export const useRecommendStore = create<RecommendStore>((set, get) => ({
   fallback: false,
   
   // Set recommended foods from API response
-  setRecommendedFoods: (foodsByMeal: FoodItem[][]) => {
+  setRecommendedFoods: (foodsByMeal: FoodItem[][], mealCount: number = 3) => {
     // 방어적 프로그래밍: foodsByMeal이 undefined, null 또는 배열이 아닌 경우 대비
     if (!foodsByMeal || !Array.isArray(foodsByMeal)) {
       console.warn("Received invalid foodsByMeal data:", foodsByMeal);
@@ -72,12 +73,26 @@ export const useRecommendStore = create<RecommendStore>((set, get) => ({
     }
     
     // 끼니별로 음식 분리 (방어적 처리)
-    const breakfastFoods = Array.isArray(foodsByMeal[0]) ? foodsByMeal[0] : [];
-    const lunchFoods = Array.isArray(foodsByMeal[1]) ? foodsByMeal[1] : [];
-    const dinnerFoods = Array.isArray(foodsByMeal[2]) ? foodsByMeal[2] : [];
+    let breakfastFoods: FoodItem[] = [];
+    let lunchFoods: FoodItem[] = [];
+    let dinnerFoods: FoodItem[] = [];
+    
+    if (mealCount === 2) {
+      // 점심, 저녁만 사용하는 경우 (2끼)
+      lunchFoods = Array.isArray(foodsByMeal[0]) ? foodsByMeal[0] : [];
+      dinnerFoods = Array.isArray(foodsByMeal[1]) ? foodsByMeal[1] : [];
+    } else {
+      // 아침, 점심, 저녁 모두 사용하는 경우 (3끼)
+      breakfastFoods = Array.isArray(foodsByMeal[0]) ? foodsByMeal[0] : [];
+      lunchFoods = Array.isArray(foodsByMeal[1]) ? foodsByMeal[1] : [];
+      dinnerFoods = Array.isArray(foodsByMeal[2]) ? foodsByMeal[2] : [];
+    }
     
     // 모든 음식을 하나의 배열로 합치기
     const allFoods = [...breakfastFoods, ...lunchFoods, ...dinnerFoods];
+    
+    // 기본 표시 끼니 설정 (mealCount에 따라)
+    const defaultMealFoods = mealCount === 2 ? lunchFoods : breakfastFoods;
     
     set({
       mealsFoods: {
@@ -86,7 +101,8 @@ export const useRecommendStore = create<RecommendStore>((set, get) => ({
         dinner: dinnerFoods
       },
       allFoods: allFoods,
-      filteredFoods: breakfastFoods // 기본값으로 breakfast 표시
+      filteredFoods: defaultMealFoods,
+      currentMealType: mealCount === 2 ? 'lunch' : 'breakfast' // 기본 선택 끼니도 동적으로 설정
     });
   },
   

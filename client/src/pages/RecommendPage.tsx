@@ -82,7 +82,9 @@ const RecommendPage: React.FC = () => {
         
         // 스토어 상태 업데이트
         try {
-          setRecommendedFoods(validMeals);
+          // 사용자 mealCount 전달하여 올바른 끼니 배열 설정
+          const userMealCount = userInfo?.mealCount || 3;
+          setRecommendedFoods(validMeals, userMealCount);
           setSummary(response.summary || {
             calories: { target: 2000, actual: 0 },
             protein: { target: 150, actual: 0 },
@@ -173,12 +175,25 @@ const RecommendPage: React.FC = () => {
     navigate("/meal-config");
   };
   
-  // 끼니별 탭 구성
-  const mealTabs = [
-    { id: 'breakfast' as MealTime, label: '아침', icon: <Coffee className="h-4 w-4 mr-2" /> },
-    { id: 'lunch' as MealTime, label: '점심', icon: <UtensilsCrossed className="h-4 w-4 mr-2" /> },
-    { id: 'dinner' as MealTime, label: '저녁', icon: <Utensils className="h-4 w-4 mr-2" /> }
+  // 사용자 끼니 수에 따라 동적으로 탭 구성
+  const mealTypeMapping = [
+    { id: 'breakfast' as MealTime, label: '아침', icon: <Coffee className="h-4 w-4 mr-2" />, index: 0 },
+    { id: 'lunch' as MealTime, label: '점심', icon: <UtensilsCrossed className="h-4 w-4 mr-2" />, index: 1 },
+    { id: 'dinner' as MealTime, label: '저녁', icon: <Utensils className="h-4 w-4 mr-2" />, index: 2 }
   ];
+  
+  // 끼니 수에 따라 표시할 탭 결정 (2끼 또는 3끼)
+  const mealTabs = userInfo?.mealCount === 2
+    ? mealTypeMapping.slice(1, 3) // mealCount가 2면 점심, 저녁만 표시
+    : mealTypeMapping; // 그 외에는 모든 탭 표시
+    
+  // 컴포넌트 마운트 시 초기 끼니 설정 - mealCount에 따라 적절한 시작 탭 선택
+  useEffect(() => {
+    if (userInfo?.mealCount === 2 && currentMealType === 'breakfast') {
+      // 2끼 설정인데 아침이 선택된 경우 점심으로 변경
+      setCurrentMealType('lunch');
+    }
+  }, [userInfo?.mealCount, currentMealType, setCurrentMealType]);
   
   // 로딩 상태 렌더링
   if (loading) {

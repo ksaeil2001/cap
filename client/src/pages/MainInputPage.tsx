@@ -60,16 +60,37 @@ const formSchema = z.object({
 
 type FormValues = z.infer<typeof formSchema>;
 
-// Allergies options
-const allergiesOptions = [
-  { id: 'gluten', label: '글루텐' },
-  { id: 'dairy', label: '유제품' },
-  { id: 'nuts', label: '견과류' },
-  { id: 'eggs', label: '계란' },
-  { id: 'soy', label: '대두(콩)' },
-  { id: 'fish', label: '생선' },
-  { id: 'shellfish', label: '조개류' },
-];
+// 알레르기 옵션 목록 - 카테고리별로 정리
+const allergyCategoryOptions = {
+  '곡류': ['밀', '메밀', '보리', '귀리', '호밀', '옥수수', '쌀'],
+  '콩류': ['대두(콩)', '녹두', '팥', '완두콩', '병아리콩', '렌틸콩'],
+  '유제품': ['우유', '유청(whey)', '카제인(casein)', '크림', '버터', '치즈', '요구르트'],
+  '육류': ['돼지고기', '쇠고기', '닭고기', '양고기', '오리고기', '말고기'],
+  '계란': ['달걀 흰자', '달걀 노른자', '메추리알', '오리알'],
+  '견과류/씨앗': ['땅콩', '호두', '잣', '아몬드', '캐슈넛', '브라질너트', '피칸', '마카다미아', '헤이즐넛', '해바라기씨', '참깨', '들깨', '치아씨드', '호박씨'],
+  '어류': ['고등어', '멸치', '참치', '연어', '꽁치', '방어', '청어', '송어', '대구', '광어', '아나고', '붕장어', '민어'],
+  '갑각류': ['새우', '게', '크릴', '바닷가재'],
+  '연체류': ['오징어', '낙지', '문어', '쭈꾸미', '해삼', '해파리'],
+  '조개류': ['굴', '전복', '홍합', '바지락', '가리비', '대합', '키조개', '모시조개'],
+  '과일': ['복숭아', '토마토', '키위', '바나나', '망고', '파인애플', '딸기', '체리', '사과', '포도', '감', '멜론', '수박', '귤', '오렌지', '라임', '레몬', '석류'],
+  '향신채소': ['마늘', '생강', '겨자', '고추', '양파', '파', '부추', '후추', '정향', '계피', '고수', '카레가루', '샤프란'],
+  '해조류': ['김', '미역', '다시마', '톳', '매생이', '파래', '모자반'],
+  '기타 식품': ['표고버섯', '느타리버섯', '새송이', '양송이', '송이버섯', '달팽이', '멍게', '매뚜기', '곤충분말', '로열젤리', '벌꿀', '꽃가루', '이스트'],
+  '식품첨가물': ['아황산염', 'MSG', '타르색소', '아질산염', '벤조산염', '소르빈산염', '산화방지제', '구연산', '프로피온산'],
+  '가공식품': ['된장', '고추장', '간장', '젤라틴', '햄', '소시지', '어묵', '라면스프', '케첩', '마요네즈', '굴소스'],
+  '음료': ['커피', '카카오', '초콜릿', '녹차', '홍차', '청량음료', '유자차', '알로에 음료', '에너지드링크'],
+};
+
+// 모든 알레르기 항목을 평면화하여 단일 배열로 생성
+const flatAllergyOptions = Object.entries(allergyCategoryOptions).reduce((acc, [category, items]) => {
+  // 각 항목에 카테고리 정보 추가
+  const categoryItems = items.map(item => ({
+    value: item,
+    label: item,
+    category
+  }));
+  return [...acc, ...categoryItems];
+}, [] as { value: string; label: string; category: string }[]);
 
 const MainInputPage = () => {
   const navigate = useNavigate();
@@ -369,12 +390,31 @@ const MainInputPage = () => {
                 )}
               />
 
-              {/* Allergies - Tag Input Style */}
+              {/* Allergies - Tag Input Style with Autocomplete */}
               <FormField
                 control={form.control}
                 name="allergies"
                 render={({ field }) => {
                   const [inputValue, setInputValue] = useState("");
+                  const [showSuggestions, setShowSuggestions] = useState(false);
+                  const [filteredSuggestions, setFilteredSuggestions] = useState<typeof flatAllergyOptions>([]);
+                  const inputRef = React.useRef<HTMLInputElement>(null);
+                  
+                  // 입력값에 따라 추천 항목 필터링
+                  React.useEffect(() => {
+                    if (inputValue.trim() === '') {
+                      setFilteredSuggestions([]);
+                      return;
+                    }
+                    
+                    const filtered = flatAllergyOptions.filter(option => 
+                      option.label.toLowerCase().includes(inputValue.toLowerCase()) &&
+                      !field.value.includes(option.value)
+                    );
+                    
+                    setFilteredSuggestions(filtered);
+                    setShowSuggestions(filtered.length > 0);
+                  }, [inputValue, field.value]);
                   
                   // 태그 추가 함수
                   const addTag = (tag: string) => {
@@ -408,6 +448,8 @@ const MainInputPage = () => {
                     // 태그 추가
                     field.onChange([...field.value, trimmedTag]);
                     setInputValue("");
+                    // 추천 목록 닫기
+                    setShowSuggestions(false);
                   };
                   
                   // 태그 삭제 함수
@@ -419,9 +461,31 @@ const MainInputPage = () => {
                   const handleKeyDown = (e: KeyboardEvent<HTMLInputElement>) => {
                     if (e.key === 'Enter' || e.key === ',') {
                       e.preventDefault(); // 폼 제출 방지
-                      addTag(inputValue);
+                      
+                      // 추천 항목에서 첫 번째 항목 선택 또는 직접 입력값 사용
+                      if (showSuggestions && filteredSuggestions.length > 0) {
+                        addTag(filteredSuggestions[0].value);
+                      } else {
+                        addTag(inputValue);
+                      }
+                    } else if (e.key === 'Escape') {
+                      setShowSuggestions(false);
                     }
                   };
+                  
+                  // 입력 필드 외부 클릭 시 추천 목록 닫기
+                  React.useEffect(() => {
+                    const handleClickOutside = (event: MouseEvent) => {
+                      if (inputRef.current && !inputRef.current.contains(event.target as Node)) {
+                        setShowSuggestions(false);
+                      }
+                    };
+                    
+                    document.addEventListener('mousedown', handleClickOutside);
+                    return () => {
+                      document.removeEventListener('mousedown', handleClickOutside);
+                    };
+                  }, []);
                   
                   return (
                     <FormItem>
@@ -432,52 +496,132 @@ const MainInputPage = () => {
                         </FormDescription>
                       </div>
                       
-                      <div className="flex items-center mb-2">
-                        <FormControl>
-                          <Input
-                            placeholder="알레르기 항목 입력 후 엔터"
-                            value={inputValue}
-                            onChange={(e) => setInputValue(e.target.value)}
-                            onKeyDown={handleKeyDown}
-                            disabled={field.value.length >= 5}
-                            className="flex-1"
-                          />
-                        </FormControl>
-                        <Button
-                          type="button"
-                          variant="outline"
-                          size="sm"
-                          className="ml-2"
-                          onClick={() => addTag(inputValue)}
-                          disabled={!inputValue.trim() || field.value.length >= 5}
-                        >
-                          <Plus className="h-4 w-4" />
-                        </Button>
+                      <div className="relative" ref={inputRef}>
+                        <div className="flex items-center mb-2">
+                          <FormControl>
+                            <Input
+                              placeholder="알레르기 항목 입력 또는 선택"
+                              value={inputValue}
+                              onChange={(e) => {
+                                setInputValue(e.target.value);
+                                if (e.target.value.trim() !== '') {
+                                  setShowSuggestions(true);
+                                }
+                              }}
+                              onKeyDown={handleKeyDown}
+                              onFocus={() => inputValue.trim() !== '' && setShowSuggestions(true)}
+                              disabled={field.value.length >= 5}
+                              className="flex-1"
+                            />
+                          </FormControl>
+                          <Button
+                            type="button"
+                            variant="outline"
+                            size="sm"
+                            className="ml-2"
+                            onClick={() => addTag(inputValue)}
+                            disabled={!inputValue.trim() || field.value.length >= 5}
+                          >
+                            <Plus className="h-4 w-4" />
+                          </Button>
+                        </div>
+                        
+                        {/* 자동완성 드롭다운 */}
+                        {showSuggestions && filteredSuggestions.length > 0 && (
+                          <div className="absolute z-10 w-full bg-white dark:bg-gray-800 rounded-md shadow-lg border mt-1 max-h-60 overflow-auto">
+                            <div className="p-2">
+                              <h4 className="text-xs font-semibold text-gray-500 mb-2">추천 알레르기 항목</h4>
+                              <div className="space-y-1">
+                                {filteredSuggestions.slice(0, 8).map((suggestion, index) => (
+                                  <div
+                                    key={index}
+                                    className="flex items-center justify-between p-2 hover:bg-gray-100 dark:hover:bg-gray-700 rounded cursor-pointer"
+                                    onClick={() => {
+                                      addTag(suggestion.value);
+                                    }}
+                                  >
+                                    <div>
+                                      <span className="font-medium">{suggestion.label}</span>
+                                      <span className="text-xs text-gray-500 ml-2">({suggestion.category})</span>
+                                    </div>
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      className="h-6 w-6 p-0"
+                                      onClick={(e) => {
+                                        e.stopPropagation();
+                                        addTag(suggestion.value);
+                                      }}
+                                    >
+                                      <Plus className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        )}
                       </div>
                       
+                      {/* 선택된 태그 표시 */}
                       {field.value.length > 0 && (
                         <div className="flex flex-wrap gap-2 mt-3">
-                          {field.value.map((tag, index) => (
-                            <Badge key={index} variant="outline" className="py-1 px-2 flex items-center">
-                              {tag}
-                              <Button
-                                type="button"
-                                variant="ghost"
-                                size="sm"
-                                className="h-4 w-4 p-0 ml-1"
-                                onClick={() => removeTag(tag)}
+                          {field.value.map((tag, index) => {
+                            // 태그에 해당하는 카테고리 찾기
+                            const tagInfo = flatAllergyOptions.find(option => option.value === tag);
+                            
+                            return (
+                              <Badge 
+                                key={index} 
+                                variant="outline" 
+                                className="py-1 px-2 flex items-center"
                               >
-                                <X className="h-3 w-3" />
-                              </Button>
-                            </Badge>
-                          ))}
+                                <span>{tag}</span>
+                                {tagInfo && (
+                                  <span className="text-xs text-gray-500 ml-1">
+                                    ({tagInfo.category})
+                                  </span>
+                                )}
+                                <Button
+                                  type="button"
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-4 w-4 p-0 ml-1"
+                                  onClick={() => removeTag(tag)}
+                                >
+                                  <X className="h-3 w-3" />
+                                </Button>
+                              </Badge>
+                            );
+                          })}
                         </div>
                       )}
                       
+                      {/* 선택된 태그가 없을 때 안내 메시지 */}
                       {field.value.length === 0 && (
-                        <p className="text-sm text-neutral-500 mt-2">
-                          등록된 알레르기 항목이 없습니다. 상단 입력창에 알레르기 항목을 입력하세요.
-                        </p>
+                        <div className="mt-2">
+                          <p className="text-sm text-neutral-500">
+                            등록된 알레르기 항목이 없습니다. 위 입력창에 알레르기 항목을 입력하거나 추천 목록에서 선택하세요.
+                          </p>
+                          
+                          {/* 자주 사용되는 알레르기 항목 제안 */}
+                          <div className="mt-3">
+                            <h4 className="text-xs font-semibold text-gray-500 mb-2">자주 사용되는 알레르기 항목</h4>
+                            <div className="flex flex-wrap gap-1 mt-1">
+                              {['우유', '대두(콩)', '땅콩', '밀', '달걀 흰자', '새우', '고등어'].map((item, idx) => (
+                                <Badge 
+                                  key={idx} 
+                                  variant="outline" 
+                                  className="cursor-pointer hover:bg-gray-100"
+                                  onClick={() => addTag(item)}
+                                >
+                                  {item} <Plus className="h-3 w-3 ml-1" />
+                                </Badge>
+                              ))}
+                            </div>
+                          </div>
+                        </div>
                       )}
                       
                       <FormMessage />

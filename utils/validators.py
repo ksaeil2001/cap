@@ -48,8 +48,8 @@ def validate_user_profile(profile: Dict[str, Any]) -> Tuple[bool, List[str]]:
         
         # 예산 검증
         budget = profile.get('budget_per_meal', 0)
-        if not isinstance(budget, (int, float)) or budget < 1000 or budget > 20000:
-            errors.append("1회 식사 예산은 1,000원에서 20,000원 사이여야 합니다.")
+        if not isinstance(budget, (int, float)) or budget < 1000 or budget > 100000:
+            errors.append("1회 식사 예산은 1,000원에서 100,000원 사이여야 합니다.")
         
         # 알레르기 개수 검증
         allergies = profile.get('allergies', [])
@@ -99,8 +99,8 @@ def validate_budget(budget: int) -> Tuple[bool, str]:
     try:
         if not isinstance(budget, (int, float)):
             return False, "예산은 숫자여야 합니다."
-        if budget < 1000 or budget > 20000:
-            return False, "1회 식사 예산은 1,000원에서 20,000원 사이여야 합니다."
+        if budget < 1000 or budget > 100000:
+            return False, "1회 식사 예산은 1,000원에서 100,000원 사이여야 합니다."
         return True, ""
     except:
         return False, "예산 검증 중 오류가 발생했습니다."

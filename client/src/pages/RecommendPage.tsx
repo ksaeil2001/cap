@@ -142,23 +142,25 @@ const RecommendPage: React.FC = () => {
   
   // 음식 선택 처리 - 현재 선택된 끼니에만 추가
   const handleSelectFood = (food: FoodItem) => {
-    // 새로 만든 MealSelectionStore 사용
-    const mealSelectionStore = useMealSelectionStore.getState();
-    
-    // 현재 선택된 끼니에 이미 있는지 확인
-    const isAlreadySelected = mealSelectionStore.isFoodSelected(currentMealType, food.id);
+    // 현재 선택된 끼니의 음식 목록에서 이미 선택된 음식인지 확인
+    const currentMealFoods = selectedPerMeal[currentMealType] || [];
+    const isAlreadySelected = currentMealFoods.some(item => item.id === food.id);
     
     if (isAlreadySelected) {
-      // 이미 선택된 경우 현재 끼니에서만 제거
-      mealSelectionStore.removeFoodFromMeal(currentMealType, food.id);
+      // 이미 선택된 음식이면 제거
+      removeFoodFromMeal(currentMealType, food.id);
     } else {
-      // 새로 선택: 현재 끼니에만 추가
-      mealSelectionStore.addFoodToMeal(currentMealType, food);
+      // 선택되지 않은 음식이면 현재 끼니에 추가
+      addFoodToMeal(currentMealType, food);
     }
     
-    // 로컬 상태도 동기화
-    const allSelectedFoods = mealSelectionStore.getAllSelectedFoods();
-    setSelectedFoods(allSelectedFoods);
+    // 로컬 상태 동기화 (모든 끼니의 선택된 음식 합치기)
+    const allSelected = [
+      ...selectedPerMeal.breakfast,
+      ...selectedPerMeal.lunch, 
+      ...selectedPerMeal.dinner
+    ];
+    setSelectedFoods(allSelected);
     
     // 모달 열려있으면 닫기
     if (isDetailModalOpen) {
@@ -174,8 +176,10 @@ const RecommendPage: React.FC = () => {
   
   // 계속하기 버튼 처리
   const handleContinue = () => {
-    // 선택된 음식 확인
-    if (!Array.isArray(selectedFoods) || selectedFoods.length === 0) {
+    // 끼니별 선택된 음식 확인
+    const totalSelected = selectedPerMeal.breakfast.length + selectedPerMeal.lunch.length + selectedPerMeal.dinner.length;
+    
+    if (totalSelected === 0) {
       toast({
         title: "선택된 음식 없음",
         description: "계속하기 전에 적어도 하나 이상의 음식을 선택해주세요.",
@@ -184,6 +188,7 @@ const RecommendPage: React.FC = () => {
       return;
     }
     
+    // MealConfigPage로 이동 (selectedPerMeal 데이터가 전역 상태에 저장되어 있음)
     navigate("/meal-config");
   };
   
@@ -296,19 +301,21 @@ const RecommendPage: React.FC = () => {
           </div>
         </div>
         
-        {/* 선택된 음식 요약 */}
-        {Array.isArray(selectedFoods) && selectedFoods.length > 0 && (
+        {/* 현재 끼니의 선택된 음식 요약 */}
+        {selectedPerMeal[currentMealType] && selectedPerMeal[currentMealType].length > 0 && (
           <div className="mb-6 p-4 bg-primary-50 rounded-lg border border-primary-200">
-            <h3 className="text-lg font-medium mb-2 text-primary-700">선택한 식품 ({selectedFoods.length})</h3>
+            <h3 className="text-lg font-medium mb-2 text-primary-700">
+              {currentMealType === 'breakfast' ? '아침' : currentMealType === 'lunch' ? '점심' : '저녁'}에 선택한 식품 ({selectedPerMeal[currentMealType].length})
+            </h3>
             <div className="flex flex-wrap gap-2">
-              {selectedFoods.map(food => (
+              {selectedPerMeal[currentMealType].map(food => (
                 <Card key={food.id} className="bg-white flex-grow-0">
                   <CardContent className="p-2 flex items-center justify-between">
                     <span className="text-sm font-medium">{food.name}</span>
                     <Button 
                       size="sm" 
                       variant="ghost" 
-                      onClick={() => setSelectedFoods(prev => prev.filter(item => item.id !== food.id))}
+                      onClick={() => removeFoodFromMeal(currentMealType, food.id)}
                       className="h-6 w-6 p-0"
                     >
                       ✕
@@ -337,7 +344,7 @@ const RecommendPage: React.FC = () => {
                 isAgreementChecked: true,
                 budget: 15000
               }}
-              selectedFoods={selectedFoods}
+              selectedFoods={selectedPerMeal[currentMealType] || []}
               onSelectFood={handleSelectFood}
               onViewDetails={handleViewDetails}
             />
@@ -364,7 +371,7 @@ const RecommendPage: React.FC = () => {
         </Button>
         <Button 
           onClick={handleContinue}
-          disabled={!Array.isArray(selectedFoods) || selectedFoods.length === 0}
+          disabled={(selectedPerMeal.breakfast.length + selectedPerMeal.lunch.length + selectedPerMeal.dinner.length) === 0}
         >
           식단 구성으로 계속하기
         </Button>

@@ -11,7 +11,7 @@ import { useRecommendStore } from '@/stores/useRecommendStore';
 import { useMealSelectionStore } from '@/stores/useMealSelectionStore';
 import { FoodItem } from '@/api/mockRecommend';
 import { getRecommendedFoods } from '@/api/mealApi';
-import NutritionProgressBar from '@/components/NutritionProgressBar';
+
 import FoodCardList from '@/components/FoodCardList';
 import FoodDetailModal from '@/components/FoodDetailModal';
 import { MealTime } from '@/stores/useMealConfigStore';
@@ -269,37 +269,31 @@ const RecommendPage: React.FC = () => {
         </Alert>
       )}
       
-      <Tabs defaultValue="browse" className="mb-6">
-        <TabsList className="w-full mb-6">
-          <TabsTrigger value="browse" className="flex-1">식품 둘러보기</TabsTrigger>
-          <TabsTrigger value="nutrition" className="flex-1">영양 분석</TabsTrigger>
-        </TabsList>
-        
-        {/* 식품 둘러보기 탭 */}
-        <TabsContent value="browse">
-          {/* 끼니별 탭 */}
-          <div className="mb-6">
-            <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
-              <div className="flex">
-                {mealTabs.map(tab => (
-                  <button
-                    key={tab.id}
-                    className={`flex-1 py-3 px-4 flex items-center justify-center text-sm font-medium transition-colors ${
-                      currentMealType === tab.id
-                        ? 'bg-primary text-white'
-                        : 'bg-white text-gray-700 hover:bg-gray-50'
-                    }`}
-                    onClick={() => handleMealTypeChange(tab.id)}
-                  >
-                    {tab.icon}
-                    {tab.label}
-                  </button>
-                ))}
-              </div>
+      {/* 식품 둘러보기 - 탭 제거하고 직접 표시 */}
+      <div className="mb-6">
+        {/* 끼니별 탭 */}
+        <div className="mb-6">
+          <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+            <div className="flex">
+              {mealTabs.map(tab => (
+                <button
+                  key={tab.id}
+                  className={`flex-1 py-3 px-4 flex items-center justify-center text-sm font-medium transition-colors ${
+                    currentMealType === tab.id
+                      ? 'bg-primary text-white'
+                      : 'bg-white text-gray-700 hover:bg-gray-50'
+                  }`}
+                  onClick={() => handleMealTypeChange(tab.id)}
+                >
+                  {tab.icon}
+                  {tab.label}
+                </button>
+              ))}
             </div>
           </div>
-          
-          {/* 선택된 음식 요약 */}
+        </div>
+        
+        {/* 선택된 음식 요약 */}
           {Array.isArray(selectedFoods) && selectedFoods.length > 0 && (
             <div className="mb-6 p-4 bg-primary-50 rounded-lg border border-primary-200">
               <h3 className="text-lg font-medium mb-2 text-primary-700">선택한 식품 ({selectedFoods.length})</h3>
@@ -355,87 +349,8 @@ const RecommendPage: React.FC = () => {
               </div>
             )}
           </div>
-        </TabsContent>
-        
-        {/* 영양 분석 탭 */}
-        <TabsContent value="nutrition">
-          {summary && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Card>
-                <CardContent className="pt-6">
-                  <h3 className="text-lg font-medium mb-4">영양 정보</h3>
-                  <div className="space-y-6">
-                    <NutritionProgressBar
-                      label="일일 칼로리"
-                      current={summary.calories.actual}
-                      target={summary.calories.target}
-                      unit="kcal"
-                    />
-                    
-                    <NutritionProgressBar
-                      label="단백질"
-                      current={summary.protein.actual}
-                      target={summary.protein.target}
-                      unit="g"
-                      color="bg-blue-500"
-                    />
-                    
-                    <NutritionProgressBar
-                      label="탄수화물"
-                      current={summary.carbs.actual}
-                      target={summary.carbs.target}
-                      unit="g"
-                      color="bg-amber-500"
-                    />
-                    
-                    <NutritionProgressBar
-                      label="지방"
-                      current={summary.fat.actual}
-                      target={summary.fat.target}
-                      unit="g"
-                      color="bg-purple-500"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-              
-              <Card>
-                <CardContent className="pt-6">
-                  <h3 className="text-lg font-medium mb-4">예산 분석</h3>
-                  <NutritionProgressBar
-                    label="일일 예산"
-                    current={summary.budget.actual}
-                    target={summary.budget.target}
-                    unit="₩"
-                    color="bg-green-500"
-                  />
-                  
-                  <div className="mt-8 space-y-4">
-                    <div className="flex justify-between items-center">
-                      <span className="text-neutral-600">설정 예산:</span>
-                      <span className="font-medium">₩{typeof summary.budget.target === 'number' ? summary.budget.target.toLocaleString() : '정보 없음'}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-neutral-600">현재 사용:</span>
-                      <span className="font-medium">₩{typeof summary.budget.actual === 'number' ? summary.budget.actual.toLocaleString() : '정보 없음'}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-neutral-600">주간 비용 (예상):</span>
-                      <span className="font-medium">₩{typeof summary.budget.actual === 'number' ? (summary.budget.actual * 7).toLocaleString() : '정보 없음'}</span>
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <span className="text-neutral-600">남은 예산:</span>
-                      <span className="font-medium text-green-600">
-                        ₩{(typeof summary.budget.target === 'number' && typeof summary.budget.actual === 'number') ? (summary.budget.target - summary.budget.actual).toLocaleString() : '정보 없음'}
-                      </span>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-          )}
-        </TabsContent>
-      </Tabs>
+        </div>
+      </div>
       
       {/* 하단 네비게이션 */}
       <div className="flex justify-between">

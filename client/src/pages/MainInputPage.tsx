@@ -691,8 +691,8 @@ const MainInputPage = () => {
                           type="number" 
                           {...field} 
                           onChange={(e) => field.onChange(parseInt(e.target.value || "0"))}
-                          min={1}
-                          max={100000}
+                          min={MIN_BUDGET}
+                          max={MAX_BUDGET}
                           step={1}
                           placeholder="일일 식단 예산을 입력하세요"
                         />

@@ -706,14 +706,27 @@ def analysis_page():
         return
     
     try:
-        # 시각화 모듈 임포트 및 사용
-        from utils.visualization import MealPlanVisualizer
+        # 새로운 영양소 시각화 모듈 사용
+        from utils.nutrition_visualizer import display_nutrition_dashboard
         
-        # 시각화 객체 생성
-        visualizer = MealPlanVisualizer()
+        # 추천 결과를 영양소 분석용 형태로 변환
+        formatted_foods = []
+        for food in recommendations:
+            formatted_food = {
+                'name': food.get('name', ''),
+                'calories': food.get('calories', 0),
+                'protein': food.get('protein', 0),
+                'fat': food.get('fat', 0),
+                'carbs': food.get('carbs', 0),
+                'sodium': food.get('sodium', 0),
+                'sugar': food.get('sugar', 0),
+                'fiber': food.get('fiber', 0),
+                'price': food.get('price', 0)
+            }
+            formatted_foods.append(formatted_food)
         
-        # 종합 대시보드 표시
-        visualizer.display_comprehensive_dashboard(recommendations, user_profile)
+        # 종합 영양 분석 대시보드 표시
+        display_nutrition_dashboard(formatted_foods, user_profile)
         
         # 상세 추천 이유 섹션
         st.markdown("---")

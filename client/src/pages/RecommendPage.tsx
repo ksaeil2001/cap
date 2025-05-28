@@ -246,7 +246,7 @@ const RecommendPage: React.FC = () => {
         <h2 className="text-3xl font-heading font-bold mb-4">추천 식품</h2>
         {userInfo ? (
           <p className="text-neutral-600 max-w-2xl mx-auto">
-            이 식품들은 {userInfo?.goal === 'weight-loss' ? '체중 감량' : '근육 증가'} 목표, 식이 선호도, 일일 예산 ₩{userInfo?.budget?.toLocaleString() || '0'}원에 맞춰 개인화되었습니다.
+            이 식품들은 {userInfo?.goal === 'weight-loss' ? '체중 감량' : '근육 증가'} 목표, 식이 선호도, 일일 예산 ₩{typeof userInfo?.budget === 'number' ? userInfo.budget.toLocaleString() : '정보 없음'}원에 맞춰 개인화되었습니다.
             식단에 포함하고 싶은 항목을 선택하세요.
           </p>
         ) : (
@@ -413,20 +413,20 @@ const RecommendPage: React.FC = () => {
                   <div className="mt-8 space-y-4">
                     <div className="flex justify-between items-center">
                       <span className="text-neutral-600">설정 예산:</span>
-                      <span className="font-medium">₩{summary.budget.target.toLocaleString()}</span>
+                      <span className="font-medium">₩{typeof summary.budget.target === 'number' ? summary.budget.target.toLocaleString() : '정보 없음'}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-neutral-600">현재 사용:</span>
-                      <span className="font-medium">₩{summary.budget.actual.toLocaleString()}</span>
+                      <span className="font-medium">₩{typeof summary.budget.actual === 'number' ? summary.budget.actual.toLocaleString() : '정보 없음'}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-neutral-600">주간 비용 (예상):</span>
-                      <span className="font-medium">₩{(summary.budget.actual * 7).toLocaleString()}</span>
+                      <span className="font-medium">₩{typeof summary.budget.actual === 'number' ? (summary.budget.actual * 7).toLocaleString() : '정보 없음'}</span>
                     </div>
                     <div className="flex justify-between items-center">
                       <span className="text-neutral-600">남은 예산:</span>
                       <span className="font-medium text-green-600">
-                        ₩{(summary.budget.target - summary.budget.actual).toLocaleString()}
+                        ₩{(typeof summary.budget.target === 'number' && typeof summary.budget.actual === 'number') ? (summary.budget.target - summary.budget.actual).toLocaleString() : '정보 없음'}
                       </span>
                     </div>
                   </div>

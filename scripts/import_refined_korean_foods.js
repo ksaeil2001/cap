@@ -18,23 +18,31 @@ async function importRefinedKoreanFoods() {
     
     console.log(`📊 총 ${koreanFoods.length}개의 한국 음식 데이터 발견`);
     
-    // 관련 테이블들 순서대로 정리
-    console.log('🗑️ 관련 데이터 정리...');
-    await db.delete(foodNutrients);
-    await db.delete(foods);
+    // 기존 음식 이름들 가져오기
+    console.log('📋 기존 음식 데이터 확인...');
+    const existingFoods = await db.select({ name: foods.name }).from(foods);
+    const existingNames = new Set(existingFoods.map(f => f.name));
+    console.log(`📊 기존 음식 ${existingNames.size}개 발견`);
     
     // 데이터 변환 및 삽입
     let insertedCount = 0;
     let skippedCount = 0;
+    let duplicateCount = 0;
     
     for (const food of koreanFoods) {
       try {
+        // 이미 존재하는 음식인지 확인
+        if (existingNames.has(food.name)) {
+          duplicateCount++;
+          continue;
+        }
+        
         // 데이터 매핑 (기존 foods 테이블 스키마에 맞춤)
         const foodData = {
           name: food.name,
           category: food.category || 'unknown',
           calories: parseInt(food.calories) || 0,
-          price: Math.round((parseFloat(food.price) || 0) * 100), // 원을 센트로 변환
+          price: parseInt(food.price) || 0, // 이미 원 단위로 저장
           image: null // image 필드는 선택사항
         };
         
@@ -42,8 +50,8 @@ async function importRefinedKoreanFoods() {
         await db.insert(foods).values(foodData);
         insertedCount++;
         
-        if (insertedCount % 50 === 0) {
-          console.log(`✅ ${insertedCount}개 음식 데이터 삽입 완료...`);
+        if (insertedCount % 100 === 0) {
+          console.log(`✅ ${insertedCount}개 새로운 음식 데이터 삽입 완료...`);
         }
         
       } catch (error) {
@@ -53,8 +61,9 @@ async function importRefinedKoreanFoods() {
     }
     
     console.log('\n🎉 한국 음식 데이터 가져오기 완료!');
-    console.log(`✅ 성공: ${insertedCount}개`);
-    console.log(`⚠️ 건너뜀: ${skippedCount}개`);
+    console.log(`✅ 새로 추가: ${insertedCount}개`);
+    console.log(`🔄 기존 중복: ${duplicateCount}개`);
+    console.log(`⚠️ 실패: ${skippedCount}개`);
     
     // 결과 확인
     const totalFoods = await db.select().from(foods);

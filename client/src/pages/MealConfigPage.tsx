@@ -66,8 +66,14 @@ const MealConfigPage: React.FC = () => {
   
   // 컴포넌트 마운트 시 실행할 초기화 로직
   useEffect(() => {
+    // selectedPerMeal이 undefined인 경우 안전하게 처리
+    if (!selectedPerMeal) {
+      console.log('추천 데이터를 불러오는 중입니다...');
+      return;
+    }
+    
     // RecommendPage에서 선택한 음식을 MealConfigStore에 로드
-    const { breakfast, lunch, dinner } = selectedPerMeal;
+    const { breakfast = [], lunch = [], dinner = [] } = selectedPerMeal;
     
     // 끼니별로 음식을 MealConfigStore에 추가
     if (breakfast && breakfast.length > 0) {

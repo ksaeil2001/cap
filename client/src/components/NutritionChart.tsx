@@ -23,8 +23,8 @@ const NutritionChart: React.FC<NutritionChartProps> = ({ nutritionData }) => {
 
   const gaugeData1 = [
     {
-      type: 'indicator',
-      mode: 'gauge+number+delta',
+      type: 'indicator' as const,
+      mode: 'gauge+number+delta' as const,
       value: caloriePercentage,
       domain: { x: [0, 1], y: [0, 1] },
       title: { text: "칼로리 달성률 (%)", font: { size: 14 } },
@@ -48,8 +48,8 @@ const NutritionChart: React.FC<NutritionChartProps> = ({ nutritionData }) => {
 
   const gaugeData2 = [
     {
-      type: 'indicator',
-      mode: 'gauge+number+delta',
+      type: 'indicator' as const,
+      mode: 'gauge+number+delta' as const,
       value: proteinPercentage,
       domain: { x: [0, 1], y: [0, 1] },
       title: { text: "단백질 달성률 (%)", font: { size: 14 } },
@@ -73,8 +73,8 @@ const NutritionChart: React.FC<NutritionChartProps> = ({ nutritionData }) => {
 
   const gaugeData3 = [
     {
-      type: 'indicator',
-      mode: 'gauge+number+delta',
+      type: 'indicator' as const,
+      mode: 'gauge+number+delta' as const,
       value: carbsPercentage,
       domain: { x: [0, 1], y: [0, 1] },
       title: { text: "탄수화물 달성률 (%)", font: { size: 14 } },
@@ -98,8 +98,8 @@ const NutritionChart: React.FC<NutritionChartProps> = ({ nutritionData }) => {
 
   const gaugeData4 = [
     {
-      type: 'indicator',
-      mode: 'gauge+number+delta',
+      type: 'indicator' as const,
+      mode: 'gauge+number+delta' as const,
       value: fatPercentage,
       domain: { x: [0, 1], y: [0, 1] },
       title: { text: "지방 달성률 (%)", font: { size: 14 } },
@@ -123,8 +123,8 @@ const NutritionChart: React.FC<NutritionChartProps> = ({ nutritionData }) => {
 
   const budgetGaugeData = [
     {
-      type: 'indicator',
-      mode: 'gauge+number+delta',
+      type: 'indicator' as const,
+      mode: 'gauge+number+delta' as const,
       value: budgetPercentage,
       domain: { x: [0, 1], y: [0, 1] },
       title: { text: "예산 사용률 (%)", font: { size: 16 } },
@@ -157,7 +157,7 @@ const NutritionChart: React.FC<NutritionChartProps> = ({ nutritionData }) => {
         nutritionData.fat.actual
       ],
       name: '현재',
-      type: 'bar',
+      type: 'bar' as const,
       marker: {
         color: ['#3B82F6', '#8B5CF6', '#F59E0B', '#10B981']
       }
@@ -171,7 +171,7 @@ const NutritionChart: React.FC<NutritionChartProps> = ({ nutritionData }) => {
         nutritionData.fat.target
       ],
       name: '목표',
-      type: 'bar',
+      type: 'bar' as const,
       marker: {
         color: ['#93C5FD', '#C4B5FD', '#FCD34D', '#6EE7B7']
       }
@@ -194,7 +194,7 @@ const NutritionChart: React.FC<NutritionChartProps> = ({ nutritionData }) => {
     yaxis: { title: { text: '수치' } },
     height: 350,
     margin: { t: 50, b: 50, l: 50, r: 50 },
-    barmode: 'group',
+    barmode: 'group' as const,
     paper_bgcolor: 'rgba(0,0,0,0)',
     plot_bgcolor: 'rgba(0,0,0,0)'
   };
@@ -263,8 +263,8 @@ const NutritionChart: React.FC<NutritionChartProps> = ({ nutritionData }) => {
         {/* 바 차트 - 현재 vs 목표 */}
         <div className="bg-white rounded-lg p-4">
           <Plot
-            data={barData}
-            layout={barLayout}
+            data={barData as any}
+            layout={barLayout as any}
             style={{ width: '100%', height: '350px' }}
             config={{ displayModeBar: false, responsive: true }}
           />

@@ -206,27 +206,13 @@ SAMPLE_FOODS = [
 
 def load_food_database() -> List[FoodItem]:
     """
-    Load food data from file or use sample data
-    
-    Returns:
-        List[FoodItem]: List of food items
+    ❌ 비활성화됨: 기존 DB 및 샘플 데이터는 사용하지 않음
+    ✅ 대신 korean_food_loader.load_korean_foods() 사용
     """
-    try:
-        # Try to load from a file if it exists
-        food_db_path = os.path.join(os.path.dirname(__file__), 'data/foods.json')
-        if os.path.exists(food_db_path):
-            with open(food_db_path, 'r') as f:
-                foods_data = json.load(f)
-        else:
-            # Use sample data
-            foods_data = SAMPLE_FOODS
-        
-        # Convert to FoodItem objects
-        return [FoodItem(**food) for food in foods_data]
-    except Exception as e:
-        print(f"Error loading food database: {e}")
-        # Fallback to sample data
-        return [FoodItem(**food) for food in SAMPLE_FOODS]
+    print("⚠️ load_food_database()는 비활성화되었습니다.")
+    print("   정제된 한국 음식 데이터만 사용합니다.")
+    print("   korean_food_loader.load_korean_foods()를 사용하세요.")
+    return []
 
 def calculate_bmr(user_info):
     """

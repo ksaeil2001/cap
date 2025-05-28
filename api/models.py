@@ -16,24 +16,30 @@ class UserInfo(BaseModel):
     budget: float = Field(..., ge=MIN_BUDGET_WEEKLY, le=MAX_BUDGET_WEEKLY)  # Weekly budget
 
 class FoodItem(BaseModel):
-    """Food item data model"""
+    """정제된 한국 음식 데이터 모델"""
     id: str
     name: str
-    type: Optional[str] = None
-    category: Optional[str] = None
-    cuisine: Optional[str] = None
-    calories: float  # 정제된 데이터에서는 calories로 명명
+    type: str
+    category: str
+    cuisine: str
+    calories: float
     protein: float
     fat: float
     carbs: float
-    sodium: Optional[float] = None
-    sugar: Optional[float] = None
-    fiber: Optional[float] = None
+    sodium: float
+    sugar: float
+    fiber: float
+    saturatedFat: Optional[float] = None
+    cholesterol: Optional[float] = None
+    transFat: Optional[float] = None
+    calcium: Optional[float] = None
+    iron: Optional[float] = None
+    vitaminC: Optional[float] = None
+    ingredients: List[str]
+    tags: List[str]
+    allergies: List[str]
     price: float
-    tags: List[str] = []
-    allergies: List[str] = []
-    ingredients: List[str] = []
-    score: Optional[float] = None
+    score: float
     popularity: Optional[int] = None
     rating: Optional[float] = None
     brand: Optional[str] = None

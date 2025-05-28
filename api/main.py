@@ -68,44 +68,52 @@ async def recommend(user_info: UserInfo):
             "diseases": []  # 추후 확장 가능
         }
         
-        # 추천 실행
-        recommendations = get_recommendations(user_profile)
+        # 추천 실행 (끼니별 구조로 반환됨)
+        meal_recommendations = get_recommendations(user_profile)
         
-        if not recommendations:
+        if not meal_recommendations:
             raise HTTPException(status_code=404, detail="추천 가능한 음식이 없습니다")
         
-        # 추천 결과를 FoodItem 형태로 변환
-        recommended_foods = []
-        for rec in recommendations:
-            food_item = FoodItem(
-                id=f"rec-{len(recommended_foods)}",
-                name=rec['name'],
-                type=rec.get('type', ''),
-                category=rec.get('category', ''),
-                cuisine='한식',
-                calories=rec['calories'],
-                protein=rec['protein'],
-                fat=0,  # 기본값
-                carbs=0,  # 기본값
-                sodium=0,  # 기본값
-                sugar=0,  # 기본값
-                fiber=0,  # 기본값
-                ingredients=[],
-                tags=rec.get('tags', []),
-                allergies=[],
-                price=rec['price'],
-                score=rec['score']
-            )
-            recommended_foods.append(food_item)
+        # 끼니별 추천 결과를 FoodItem 형태로 변환
+        meals = []
+        all_recommended_foods = []
         
-        # 식사별로 분배 (각 식사에 1개씩)
-        meal_count = min(user_info.mealCount, len(recommended_foods))
-        meals = [[food] for food in recommended_foods[:meal_count]]
+        for meal_time in ['breakfast', 'lunch', 'dinner']:
+            meal_foods = []
+            if meal_time in meal_recommendations:
+                for rec in meal_recommendations[meal_time]:
+                    try:
+                        food_item = FoodItem(
+                            id=f"rec-{meal_time}-{len(meal_foods)}",
+                            name=rec['name'],
+                            type=rec.get('type', ''),
+                            category=rec.get('category', ''),
+                            cuisine='한식',
+                            calories=float(rec['calories']),
+                            protein=float(rec['protein']),
+                            fat=float(rec.get('fat', 0)),
+                            carbs=float(rec.get('carbs', 0)),
+                            sodium=0,  # 기본값
+                            sugar=0,  # 기본값
+                            fiber=0,  # 기본값
+                            ingredients=[],
+                            tags=rec.get('tags', []),
+                            allergies=[],
+                            price=float(rec['price']),
+                            score=float(rec['score'])
+                        )
+                        meal_foods.append(food_item)
+                        all_recommended_foods.append(food_item)
+                    except (ValueError, KeyError) as e:
+                        print(f"Error converting food item {rec.get('name', 'unknown')}: {e}")
+                        continue
+            
+            meals.append(meal_foods)
         
         # 영양 요약 계산
-        total_calories = sum(food.calories for food in recommended_foods[:meal_count])
-        total_protein = sum(food.protein for food in recommended_foods[:meal_count])
-        total_cost = sum(food.price for food in recommended_foods[:meal_count])
+        total_calories = sum(food.calories for food in all_recommended_foods)
+        total_protein = sum(food.protein for food in all_recommended_foods)
+        total_cost = sum(food.price for food in all_recommended_foods)
         
         target_calories = 2000 if user_info.goal == "weight-loss" else 2200
         target_protein = 120 if user_info.goal == "muscle-gain" else 80

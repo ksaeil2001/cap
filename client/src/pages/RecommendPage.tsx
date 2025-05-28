@@ -65,12 +65,15 @@ const RecommendPage: React.FC = () => {
         // API 호출을 위한 사용자 정보 준비
         const { 
           gender, age, height, weight, bodyFatPercent, 
-          goal, activityLevel, mealCount, allergies, budget 
+          goal, activityLevel, mealCount, allergies, budgetPerMeal 
         } = userInfo;
         
         const apiUserInfo = {
           gender, age, height, weight, bodyFatPercent, 
-          goal, activityLevel, mealCount, allergies, budget
+          goal: goal === 'weight-maintenance' ? 'weight-loss' : goal as 'weight-loss' | 'muscle-gain', // 타입 호환성 보장
+          activityLevel, mealCount, allergies, 
+          budget: budgetPerMeal * mealCount, // 일일 총 예산으로 계산
+          isAgreementChecked: true
         };
         
         // 추천 API 호출
@@ -254,7 +257,7 @@ const RecommendPage: React.FC = () => {
         <h2 className="text-3xl font-heading font-bold mb-4">추천 식품</h2>
         {userInfo ? (
           <p className="text-neutral-600 max-w-2xl mx-auto">
-            이 식품들은 {userInfo?.goal === 'weight-loss' ? '체중 감량' : '근육 증가'} 목표, 식이 선호도, 일일 예산 ₩{typeof userInfo?.budget === 'number' ? userInfo.budget.toLocaleString() : '정보 없음'}원에 맞춰 개인화되었습니다.
+            이 식품들은 {userInfo?.goal === 'weight-loss' ? '체중 감량' : '근육 증가'} 목표, 식이 선호도, 끼니당 예산 ₩{typeof userInfo?.budgetPerMeal === 'number' ? userInfo.budgetPerMeal.toLocaleString() : '정보 없음'}원에 맞춰 개인화되었습니다.
             식단에 포함하고 싶은 항목을 선택하세요.
           </p>
         ) : (
@@ -332,17 +335,17 @@ const RecommendPage: React.FC = () => {
           {filteredFoods && filteredFoods.length > 0 ? (
             <FoodCardList 
               foods={filteredFoods}
-              userInfo={userInfo || {
-                gender: 'male',
-                age: 30,
-                height: 175,
-                weight: 70,
-                goal: 'weight-loss',
-                activityLevel: 'medium',
-                mealCount: 3,
-                allergies: [],
-                isAgreementChecked: true,
-                budget: 15000
+              userInfo={{
+                gender: userInfo?.gender || 'male',
+                age: userInfo?.age || 30,
+                height: userInfo?.height || 175,
+                weight: userInfo?.weight || 70,
+                goal: userInfo?.goal === 'weight-maintenance' ? 'weight-loss' : (userInfo?.goal as 'weight-loss' | 'muscle-gain') || 'weight-loss',
+                activityLevel: userInfo?.activityLevel || 'medium',
+                mealCount: userInfo?.mealCount || 3,
+                allergies: userInfo?.allergies || [],
+                budget: userInfo?.budgetPerMeal ? userInfo.budgetPerMeal * userInfo.mealCount : 30000,
+                isAgreementChecked: userInfo?.isAgreementChecked || true
               }}
               selectedFoods={selectedPerMeal[currentMealType] || []}
               onSelectFood={handleSelectFood}

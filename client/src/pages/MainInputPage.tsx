@@ -20,7 +20,7 @@ import { Badge } from '@/components/ui/badge';
 import { useUserStore } from '@/stores/useUserStore';
 import { useToast } from '@/hooks/use-toast';
 
-// Form schema validation
+// Form schema validation - 확장된 사용자 프로파일 폼
 const formSchema = z.object({
   gender: z.enum(['male', 'female'], {
     required_error: '성별을 선택해주세요',
@@ -39,8 +39,8 @@ const formSchema = z.object({
     .refine(val => val === undefined || (val >= 5 && val <= 60), {
       message: '체지방률은 5%에서 60% 사이여야 합니다',
     }),
-  goal: z.enum(['weight-loss', 'muscle-gain'], {
-    required_error: '목표를 선택해주세요',
+  goal: z.enum(['weight-loss', 'weight-maintenance', 'muscle-gain'], {
+    required_error: '건강 목표를 선택해주세요',
   }),
   activityLevel: z.enum(['low', 'medium', 'high'], {
     required_error: '활동 수준을 선택해주세요',
@@ -49,10 +49,12 @@ const formSchema = z.object({
     message: '식사 횟수는 2 또는 3이어야 합니다',
   })),
   allergies: z.array(z.string()).default([]),
-  budget: z.coerce.number().min(1).max(60000).int()
-    .refine(val => val >= 1 && val <= 60000, {
-      message: '일일 예산은 1원에서 60,000원 사이여야 합니다',
+  budgetPerMeal: z.coerce.number().min(1000).max(20000).int()
+    .refine(val => val >= 1000 && val <= 20000, {
+      message: '1회 식사 예산은 1,000원에서 20,000원 사이여야 합니다',
     }),
+  preferences: z.array(z.string()).default([]),
+  diseases: z.array(z.string()).default([]),
   isAgreementChecked: z.literal(true, {
     invalid_type_error: '이용 약관에 동의해주세요',
   }),
@@ -92,6 +94,34 @@ const flatAllergyOptions = Object.entries(allergyCategoryOptions).reduce((acc, [
   return [...acc, ...categoryItems];
 }, [] as { value: string; label: string; category: string }[]);
 
+// 식습관/선호도 옵션
+const preferenceOptions = [
+  { value: 'vegetarian', label: '채식' },
+  { value: 'keto', label: '키토' },
+  { value: 'high-protein', label: '고단백' },
+  { value: 'low-sodium', label: '저염식' },
+  { value: 'gluten-free', label: '글루텐프리' },
+  { value: 'low-carb', label: '저탄수화물' },
+  { value: 'mediterranean', label: '지중해식' },
+  { value: 'paleo', label: '팔레오' },
+  { value: 'vegan', label: '비건' },
+  { value: 'halal', label: '할랄' }
+];
+
+// 질환 정보 옵션
+const diseaseOptions = [
+  { value: 'diabetes', label: '당뇨' },
+  { value: 'hypertension', label: '고혈압' },
+  { value: 'hyperlipidemia', label: '고지혈증' },
+  { value: 'kidney-disease', label: '신장질환' },
+  { value: 'liver-disease', label: '간질환' },
+  { value: 'heart-disease', label: '심장질환' },
+  { value: 'thyroid', label: '갑상선질환' },
+  { value: 'gout', label: '통풍' },
+  { value: 'osteoporosis', label: '골다공증' },
+  { value: 'anemia', label: '빈혈' }
+];
+
 const MainInputPage = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -111,7 +141,9 @@ const MainInputPage = () => {
       activityLevel: userState.activityLevel,
       mealCount: userState.mealCount,
       allergies: userState.allergies,
-      budget: userState.budget,
+      budgetPerMeal: userState.budgetPerMeal,
+      preferences: userState.preferences || [],
+      diseases: userState.diseases || [],
       isAgreementChecked: true, // 필수 동의 체크
     },
   });
@@ -153,7 +185,7 @@ const MainInputPage = () => {
       activityLevel: 'medium',
       mealCount: 3,
       allergies: [],
-      budget: 15000, // 일일 예산 기본값 변경
+      budgetPerMeal: 15000, // 1회 식사 예산 기본값 변경
       isAgreementChecked: true,
     });
     
@@ -644,7 +676,7 @@ const MainInputPage = () => {
               {/* Budget Input */}
               <FormField
                 control={form.control}
-                name="budget"
+                name="budgetPerMeal"
                 render={({ field }) => (
                   <FormItem>
                     <FormLabel>일일 예산 (원)</FormLabel>
@@ -661,7 +693,7 @@ const MainInputPage = () => {
                         />
                         <div className="flex justify-between mt-2">
                           <span className="text-xs text-neutral-500">최소: ₩1</span>
-                          <span className="text-xs font-medium">₩{field.value.toLocaleString()}</span>
+                          <span className="text-xs font-medium">₩{(field.value || 0).toLocaleString()}</span>
                           <span className="text-xs text-neutral-500">최대: ₩60,000</span>
                         </div>
                       </div>

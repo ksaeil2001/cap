@@ -35,7 +35,7 @@ async function importRefinedKoreanFoods() {
           category: food.category || 'unknown',
           calories: parseInt(food.calories) || 0,
           price: Math.round((parseFloat(food.price) || 0) * 100), // 원을 센트로 변환
-          image: '/images/default-food.jpg' // 기본 이미지 경로
+          image: null // image 필드는 선택사항
         };
         
         // 데이터베이스에 삽입

@@ -22,7 +22,7 @@ export const foods = pgTable("foods", {
   category: text("category").notNull(),
   calories: integer("calories").notNull(),
   price: integer("price").notNull(), // Stored in cents
-  image: text("image").notNull(),
+  image: text("image"),
   mainNutrientId: integer("main_nutrient_id").references(() => nutrients.id),
 });
 

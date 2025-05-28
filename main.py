@@ -33,7 +33,7 @@ def initialize_session_state():
         if 'food_recommender' not in st.session_state:
             # 추천 시스템 초기화 시 예외 처리
             try:
-                from food_recommender import KoreanFoodRecommender
+                from api.recommend import KoreanFoodRecommender
                 st.session_state.food_recommender = KoreanFoodRecommender()
             except ImportError as e:
                 st.error(f"❌ 추천 시스템 로드 실패: {e}")

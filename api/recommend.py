@@ -1,8 +1,8 @@
 import json
 import pandas as pd
 import numpy as np
+import os
 from typing import Dict, List, Any
-import streamlit as st
 
 class KoreanFoodRecommender:
     """한국 음식 데이터 기반 AI 추천 시스템"""
@@ -16,7 +16,7 @@ class KoreanFoodRecommender:
         """한국 음식 데이터 로드 (강화된 예외 처리)"""
         try:
             # 파일 존재 여부 확인
-            file_path = 'attached_assets/food_items_part_1.json'
+            file_path = 'data/food_items.json'
             if not os.path.exists(file_path):
                 raise FileNotFoundError(f"음식 데이터 파일을 찾을 수 없습니다: {file_path}")
             

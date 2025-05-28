@@ -5,6 +5,11 @@ import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import AlertCustom from '@/components/ui/alert-custom';
 import { X, Plus } from 'lucide-react';
+import { 
+  MIN_BUDGET, MAX_BUDGET, DEFAULT_BUDGET, MIN_AGE, MAX_AGE, 
+  MIN_HEIGHT, MAX_HEIGHT, MIN_WEIGHT, MAX_WEIGHT, MAX_ALLERGIES, 
+  BUDGET_ERROR_MSG, BUDGET_MIN_DISPLAY, BUDGET_MAX_DISPLAY 
+} from '@/constants/budget';
 
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -692,9 +697,9 @@ const MainInputPage = () => {
                           placeholder="일일 식단 예산을 입력하세요"
                         />
                         <div className="flex justify-between mt-2">
-                          <span className="text-xs text-neutral-500">최소: ₩1</span>
+                          <span className="text-xs text-neutral-500">최소: {BUDGET_MIN_DISPLAY}</span>
                           <span className="text-xs font-medium">₩{(field.value || 0).toLocaleString()}</span>
-                          <span className="text-xs text-neutral-500">최대: ₩100,000</span>
+                          <span className="text-xs text-neutral-500">최대: {BUDGET_MAX_DISPLAY}</span>
                         </div>
                       </div>
                     </FormControl>

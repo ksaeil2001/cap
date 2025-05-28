@@ -105,8 +105,8 @@ def validate_budget(budget: int) -> Tuple[bool, str]:
     try:
         if not isinstance(budget, (int, float)):
             return False, "예산은 숫자여야 합니다."
-        if budget < 1000 or budget > 100000:
-            return False, "1회 식사 예산은 1,000원에서 100,000원 사이여야 합니다."
+        if budget < MIN_BUDGET or budget > MAX_BUDGET:
+            return False, BUDGET_ERROR_MSG
         return True, ""
     except:
         return False, "예산 검증 중 오류가 발생했습니다."

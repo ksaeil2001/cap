@@ -5,6 +5,12 @@ import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import AlertCustom from '@/components/ui/alert-custom';
 import { X, Plus } from 'lucide-react';
+import { 
+  MIN_BUDGET, MAX_BUDGET, DEFAULT_BUDGET, MIN_AGE, MAX_AGE, 
+  MIN_HEIGHT, MAX_HEIGHT, MIN_WEIGHT, MAX_WEIGHT, MAX_ALLERGIES, 
+  MAX_PREFERENCES, BUDGET_ERROR_MSG, AGE_ERROR_MSG, HEIGHT_ERROR_MSG, 
+  WEIGHT_ERROR_MSG, BUDGET_MIN_DISPLAY, BUDGET_MAX_DISPLAY 
+} from '@/constants/budget';
 
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormDescription, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -25,28 +31,28 @@ const formSchema = z.object({
   gender: z.enum(['male', 'female'], {
     required_error: '성별을 선택해주세요',
   }),
-  age: z.coerce.number().min(10).max(120).int()
-    .refine(val => val >= 10 && val <= 120, {
-      message: '나이는 10세에서 120세 사이여야 합니다',
+  age: z.coerce.number().min(MIN_AGE).max(MAX_AGE).int()
+    .refine(val => val >= MIN_AGE && val <= MAX_AGE, {
+      message: AGE_ERROR_MSG,
     }),
-  height: z.coerce.number().min(100).max(250).refine(val => val >= 100 && val <= 250, {
-    message: '키는 100cm에서 250cm 사이여야 합니다',
+  height: z.coerce.number().min(MIN_HEIGHT).max(MAX_HEIGHT).refine(val => val >= MIN_HEIGHT && val <= MAX_HEIGHT, {
+    message: HEIGHT_ERROR_MSG,
   }),
-  weight: z.coerce.number().min(30).max(200).refine(val => val >= 30 && val <= 200, {
-    message: '체중은 30kg에서 200kg 사이여야 합니다',
+  weight: z.coerce.number().min(MIN_WEIGHT).max(MAX_WEIGHT).refine(val => val >= MIN_WEIGHT && val <= MAX_WEIGHT, {
+    message: WEIGHT_ERROR_MSG,
   }),
   healthGoal: z.enum(['weight-loss', 'weight-maintenance', 'muscle-gain'], {
     required_error: '건강 목표를 선택해주세요',
   }),
-  budgetPerMeal: z.coerce.number().min(1000).max(100000).int()
-    .refine(val => val >= 1000 && val <= 100000, {
-      message: '1회 식사 예산은 1,000원에서 100,000원 사이여야 합니다',
+  budgetPerMeal: z.coerce.number().min(MIN_BUDGET).max(MAX_BUDGET).int()
+    .refine(val => val >= MIN_BUDGET && val <= MAX_BUDGET, {
+      message: BUDGET_ERROR_MSG,
     }),
-  allergies: z.array(z.string()).max(7, {
-    message: '알레르기는 최대 7개까지 선택할 수 있습니다',
+  allergies: z.array(z.string()).max(MAX_ALLERGIES, {
+    message: `알레르기는 최대 ${MAX_ALLERGIES}개까지 선택할 수 있습니다`,
   }).default([]),
-  preferences: z.array(z.string()).max(5, {
-    message: '식습관/선호도는 최대 5개까지 선택할 수 있습니다',
+  preferences: z.array(z.string()).max(MAX_PREFERENCES, {
+    message: `식습관/선호도는 최대 ${MAX_PREFERENCES}개까지 선택할 수 있습니다`,
   }).default([]),
   diseases: z.array(z.string()).max(5, {
     message: '질환 정보는 최대 5개까지 선택할 수 있습니다',
@@ -461,18 +467,18 @@ const MainInputPage = () => {
                     <FormControl>
                       <div className="pt-2">
                         <Slider
-                          defaultValue={[field.value || 10000]}
-                          min={1000}
-                          max={100000}
+                          defaultValue={[field.value || DEFAULT_BUDGET]}
+                          min={MIN_BUDGET}
+                          max={MAX_BUDGET}
                           step={1000}
                           onValueChange={(vals) => field.onChange(vals[0])}
                         />
                         <div className="flex justify-between mt-2">
-                          <span className="text-xs text-neutral-500">1,000원</span>
+                          <span className="text-xs text-neutral-500">{BUDGET_MIN_DISPLAY}</span>
                           <span className="text-sm font-medium">
-                            {(field.value || 10000).toLocaleString()}원
+                            {(field.value || DEFAULT_BUDGET).toLocaleString()}원
                           </span>
-                          <span className="text-xs text-neutral-500">100,000원</span>
+                          <span className="text-xs text-neutral-500">{BUDGET_MAX_DISPLAY}</span>
                         </div>
                       </div>
                     </FormControl>

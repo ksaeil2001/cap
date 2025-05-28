@@ -16,7 +16,7 @@ import {
   AlertCircle, 
   ArrowLeft, 
   ArrowRight, 
-  DollarSign, 
+  Wallet, 
   AlertTriangle,
   CheckCircle2
 } from 'lucide-react';
@@ -266,7 +266,7 @@ const MealConfigPage: React.FC = () => {
                   <div className="flex justify-between items-center">
                     <h3 className="font-medium">일일 예산</h3>
                     <div className={`flex items-center ${nutritionSummary.budget.actual > nutritionSummary.budget.target ? 'text-red-500' : 'text-green-500'}`}>
-                      <DollarSign className="h-4 w-4 mr-1" />
+                      <Wallet className="h-4 w-4 mr-1" />
                       <span>
                         {formatCurrency(nutritionSummary.budget.actual)} / {formatCurrency(nutritionSummary.budget.target)}
                       </span>

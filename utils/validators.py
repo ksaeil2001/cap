@@ -18,10 +18,18 @@ def validate_user_profile(profile: Dict[str, Any]) -> Tuple[bool, List[str]]:
     
     try:
         # 필수 필드 검증
-        required_fields = ['gender', 'age', 'height', 'weight', 'health_goal']
+        required_fields = ['gender', 'age', 'height', 'weight', 'health_goal', 'budget_per_meal']
         for field in required_fields:
-            if field not in profile or not profile[field]:
-                errors.append(f"{field}는 필수 입력 항목입니다.")
+            if field not in profile or profile[field] is None:
+                field_names = {
+                    'gender': '성별',
+                    'age': '나이', 
+                    'height': '키',
+                    'weight': '몸무게',
+                    'health_goal': '건강 목표',
+                    'budget_per_meal': '식사 예산'
+                }
+                errors.append(f"{field_names.get(field, field)}는 필수 입력 항목입니다.")
         
         # 나이 검증
         age = profile.get('age', 0)
@@ -62,6 +70,54 @@ def validate_user_profile(profile: Dict[str, Any]) -> Tuple[bool, List[str]]:
         errors.append(f"검증 중 오류 발생: {str(e)}")
     
     return len(errors) == 0, errors
+
+def validate_age(age: int) -> Tuple[bool, str]:
+    """나이 유효성 검증"""
+    try:
+        if not isinstance(age, (int, float)):
+            return False, "나이는 숫자여야 합니다."
+        if age < 10 or age > 120:
+            return False, "나이는 10세에서 120세 사이여야 합니다."
+        return True, ""
+    except:
+        return False, "나이 검증 중 오류가 발생했습니다."
+
+def validate_height_weight(height: float, weight: float) -> Tuple[bool, List[str]]:
+    """키와 몸무게 유효성 검증"""
+    errors = []
+    try:
+        if not isinstance(height, (int, float)) or height < 100 or height > 250:
+            errors.append("키는 100cm에서 250cm 사이여야 합니다.")
+        if not isinstance(weight, (int, float)) or weight < 30 or weight > 200:
+            errors.append("몸무게는 30kg에서 200kg 사이여야 합니다.")
+        return len(errors) == 0, errors
+    except:
+        return False, ["키와 몸무게 검증 중 오류가 발생했습니다."]
+
+def validate_budget(budget: int) -> Tuple[bool, str]:
+    """예산 유효성 검증"""
+    try:
+        if not isinstance(budget, (int, float)):
+            return False, "예산은 숫자여야 합니다."
+        if budget < 1000 or budget > 20000:
+            return False, "1회 식사 예산은 1,000원에서 20,000원 사이여야 합니다."
+        return True, ""
+    except:
+        return False, "예산 검증 중 오류가 발생했습니다."
+
+def validate_selection_limits(allergies: List[str], preferences: List[str], diseases: List[str]) -> Tuple[bool, List[str]]:
+    """선택 항목 개수 제한 검증"""
+    errors = []
+    try:
+        if len(allergies) > 7:
+            errors.append("알레르기는 최대 7개까지 선택할 수 있습니다.")
+        if len(preferences) > 5:
+            errors.append("식습관/선호도는 최대 5개까지 선택할 수 있습니다.")
+        if len(diseases) > 5:
+            errors.append("질환 정보는 최대 5개까지 선택할 수 있습니다.")
+        return len(errors) == 0, errors
+    except:
+        return False, ["선택 항목 검증 중 오류가 발생했습니다."]
 
 def sanitize_input(value: Any, input_type: str = 'string') -> Any:
     """

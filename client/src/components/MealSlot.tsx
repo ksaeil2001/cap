@@ -30,14 +30,6 @@ const MealSlot: React.FC<MealSlotProps> = ({
       <CardContent className="p-4">
         <div className="flex items-center justify-between mb-3">
           <h3 className="text-lg font-semibold">{title}</h3>
-          <div className="flex space-x-2">
-            <Badge variant="outline">
-              {totalCalories.toFixed(0)} kcal
-            </Badge>
-            <Badge variant="outline" className="bg-green-50">
-              {formatCurrency(totalCost)}
-            </Badge>
-          </div>
         </div>
         
         <div className="space-y-2 min-h-[100px]">

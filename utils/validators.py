@@ -3,6 +3,12 @@
 """
 
 from typing import Dict, List, Any, Tuple
+from settings import (
+    MIN_BUDGET, MAX_BUDGET, MIN_AGE, MAX_AGE, 
+    MIN_HEIGHT, MAX_HEIGHT, MIN_WEIGHT, MAX_WEIGHT,
+    MAX_ALLERGIES, MAX_PREFERENCES, MAX_DISEASES,
+    BUDGET_ERROR_MSG, AGE_ERROR_MSG, HEIGHT_ERROR_MSG, WEIGHT_ERROR_MSG
+)
 
 def validate_user_profile(profile: Dict[str, Any]) -> Tuple[bool, List[str]]:
     """
@@ -33,33 +39,33 @@ def validate_user_profile(profile: Dict[str, Any]) -> Tuple[bool, List[str]]:
         
         # 나이 검증
         age = profile.get('age', 0)
-        if not isinstance(age, (int, float)) or age < 10 or age > 120:
-            errors.append("나이는 10세에서 120세 사이여야 합니다.")
+        if not isinstance(age, (int, float)) or age < MIN_AGE or age > MAX_AGE:
+            errors.append(AGE_ERROR_MSG)
         
         # 키 검증
         height = profile.get('height', 0)
-        if not isinstance(height, (int, float)) or height < 100 or height > 250:
-            errors.append("키는 100cm에서 250cm 사이여야 합니다.")
+        if not isinstance(height, (int, float)) or height < MIN_HEIGHT or height > MAX_HEIGHT:
+            errors.append(HEIGHT_ERROR_MSG)
         
         # 몸무게 검증
         weight = profile.get('weight', 0)
-        if not isinstance(weight, (int, float)) or weight < 30 or weight > 200:
-            errors.append("몸무게는 30kg에서 200kg 사이여야 합니다.")
+        if not isinstance(weight, (int, float)) or weight < MIN_WEIGHT or weight > MAX_WEIGHT:
+            errors.append(WEIGHT_ERROR_MSG)
         
         # 예산 검증
         budget = profile.get('budget_per_meal', 0)
-        if not isinstance(budget, (int, float)) or budget < 1000 or budget > 100000:
-            errors.append("1회 식사 예산은 1,000원에서 100,000원 사이여야 합니다.")
+        if not isinstance(budget, (int, float)) or budget < MIN_BUDGET or budget > MAX_BUDGET:
+            errors.append(BUDGET_ERROR_MSG)
         
         # 알레르기 개수 검증
         allergies = profile.get('allergies', [])
-        if isinstance(allergies, list) and len(allergies) > 7:
-            errors.append("알레르기는 최대 7개까지 선택할 수 있습니다.")
+        if isinstance(allergies, list) and len(allergies) > MAX_ALLERGIES:
+            errors.append(f"알레르기는 최대 {MAX_ALLERGIES}개까지 선택할 수 있습니다.")
         
         # 선호도 개수 검증
         preferences = profile.get('preferences', [])
-        if isinstance(preferences, list) and len(preferences) > 5:
-            errors.append("식습관/선호도는 최대 5개까지 선택할 수 있습니다.")
+        if isinstance(preferences, list) and len(preferences) > MAX_PREFERENCES:
+            errors.append(f"식습관/선호도는 최대 {MAX_PREFERENCES}개까지 선택할 수 있습니다.")
         
         # 질환 개수 검증
         diseases = profile.get('diseases', [])

@@ -66,7 +66,7 @@ const initialNutritionSummary: NutritionSummary = {
   protein: { target: 150, actual: 0 },
   fat: { target: 70, actual: 0 },
   carbs: { target: 250, actual: 0 },
-  budget: { target: 100, actual: 0 },
+  budget: { target: 30000, actual: 0 }, // 기본값: 10,000원 × 3끼 = 30,000원
   allergy: false
 };
 
@@ -167,7 +167,7 @@ export const useMealConfigStore = create<MealConfigStore>((set, get) => ({
     let proteinTarget = 150;
     let fatTarget = 70;
     let carbsTarget = 250;
-    let budgetTarget = userInfo.budget / 7; // Daily budget (weekly/7)
+    let budgetTarget = userInfo.budgetPerMeal * userInfo.mealCount; // Daily budget (per meal × meal count)
     
     if (recommendStore.summary) {
       calorieTarget = recommendStore.summary.calories.target;

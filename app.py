@@ -4,6 +4,9 @@ import numpy as np
 import json
 from typing import Dict, List, Any
 import os
+import plotly.express as px
+import plotly.graph_objects as go
+from food_recommender import KoreanFoodRecommender
 
 # 페이지 설정
 st.set_page_config(
@@ -24,6 +27,9 @@ def initialize_session_state():
     
     if 'recommendations' not in st.session_state:
         st.session_state.recommendations = []
+    
+    if 'food_recommender' not in st.session_state:
+        st.session_state.food_recommender = KoreanFoodRecommender()
 
 # 1단계: 사용자 정보 입력 폼
 def user_input_page():
@@ -189,6 +195,7 @@ def recommend_page():
         return
     
     profile = st.session_state.user_profile
+    recommender = st.session_state.food_recommender
     
     # 사용자 정보 요약 표시
     with st.expander("👤 입력한 정보 확인", expanded=False):
@@ -206,11 +213,116 @@ def recommend_page():
             st.metric("목표", profile.get("health_goal", "미설정"))
             st.metric("예산", f"{profile.get('budget_per_meal', 0):,}원")
     
-    # 식단 추천 로직 (향후 AI 연동 예정)
-    st.subheader("🍽️ 추천 식단")
+    # 실제 AI 식단 추천 실행
+    st.subheader("🍽️ AI 맞춤 식단 추천")
     
-    # 임시 추천 결과 (실제로는 AI 추천 엔진 연동)
-    st.info("🤖 AI가 분석 중입니다... 곧 맞춤 식단을 추천해드립니다!")
+    with st.spinner("🤖 한국 음식 데이터베이스에서 최적의 식단을 분석 중입니다..."):
+        # 실제 추천 시스템 실행
+        recommendations = recommender.recommend_meals(profile, num_recommendations=9)
+        st.session_state.recommendations = recommendations
+    
+    if recommendations:
+        st.success(f"✅ {len(recommendations)}개의 맞춤 한국 음식을 추천해드립니다!")
+        
+        # 추천 결과를 3개씩 3행으로 표시
+        st.subheader("🥘 추천 메뉴")
+        
+        for i in range(0, len(recommendations), 3):
+            cols = st.columns(3)
+            
+            for j, col in enumerate(cols):
+                if i + j < len(recommendations):
+                    food = recommendations[i + j]
+                    
+                    with col:
+                        with st.container():
+                            st.markdown(f"### {food.get('name', '알 수 없는 음식')}")
+                            
+                            # 음식 정보 카드
+                            col_info1, col_info2 = st.columns(2)
+                            
+                            with col_info1:
+                                st.metric("칼로리", f"{food.get('calories', 0):.0f} kcal")
+                                st.metric("단백질", f"{food.get('protein', 0):.1f}g")
+                            
+                            with col_info2:
+                                st.metric("가격", f"{food.get('price', 0):,}원")
+                                st.metric("점수", f"{food.get('total_score', 0):.0f}/100")
+                            
+                            # 카테고리 및 타입 표시
+                            if food.get('category'):
+                                st.caption(f"🏷️ {food.get('category')}")
+                            
+                            # 영양소 세부 정보
+                            with st.expander("영양 정보 자세히 보기"):
+                                st.write(f"**탄수화물:** {food.get('carbs', 0):.1f}g")
+                                st.write(f"**지방:** {food.get('fat', 0):.1f}g")
+                                st.write(f"**나트륨:** {food.get('sodium', 0):.1f}mg")
+                                st.write(f"**식이섬유:** {food.get('fiber', 0):.1f}g")
+                            
+                            st.divider()
+        
+        # 영양 요약 정보
+        nutrition_summary = recommender.get_nutrition_summary(recommendations, profile)
+        
+        if nutrition_summary:
+            st.subheader("📊 영양 요약")
+            
+            col1, col2, col3, col4 = st.columns(4)
+            
+            with col1:
+                calorie_pct = nutrition_summary.get('calorie_percentage', 0)
+                st.metric(
+                    "총 칼로리",
+                    f"{nutrition_summary.get('total_calories', 0):.0f} kcal",
+                    f"목표 대비 {calorie_pct:.0f}%"
+                )
+            
+            with col2:
+                protein_pct = nutrition_summary.get('protein_percentage', 0)
+                st.metric(
+                    "총 단백질",
+                    f"{nutrition_summary.get('total_protein', 0):.1f}g",
+                    f"목표 대비 {protein_pct:.0f}%"
+                )
+            
+            with col3:
+                st.metric(
+                    "총 탄수화물",
+                    f"{nutrition_summary.get('total_carbs', 0):.1f}g"
+                )
+            
+            with col4:
+                st.metric(
+                    "총 예상 비용",
+                    f"{nutrition_summary.get('total_cost', 0):,}원",
+                    f"예산: {nutrition_summary.get('budget', 0):,}원"
+                )
+            
+            # 영양 균형 차트
+            st.subheader("📈 영양 균형 분석")
+            
+            # 칼로리와 단백질 목표 달성률 시각화
+            target_data = {
+                '영양소': ['칼로리', '단백질'],
+                '목표 달성률 (%)': [calorie_pct, protein_pct],
+                '상태': ['적정' if 80 <= calorie_pct <= 120 else '조정 필요',
+                        '적정' if 80 <= protein_pct <= 120 else '조정 필요']
+            }
+            
+            fig = px.bar(
+                target_data, 
+                x='영양소', 
+                y='목표 달성률 (%)',
+                color='상태',
+                title="영양소 목표 달성률",
+                color_discrete_map={'적정': 'green', '조정 필요': 'orange'}
+            )
+            fig.update_layout(showlegend=True)
+            st.plotly_chart(fig, use_container_width=True)
+    
+    else:
+        st.warning("😅 조건에 맞는 음식을 찾지 못했습니다. 알레르기나 예산 조건을 조정해보세요.")
     
     # 페이지 네비게이션
     col1, col2 = st.columns(2)

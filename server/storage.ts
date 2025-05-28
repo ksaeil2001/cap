@@ -157,7 +157,7 @@ export class DatabaseStorage implements IStorage {
 
       if (koreanFoods.length === 0) {
         console.warn('No Korean foods found in database');
-        return sampleFoods.slice(0, 5);
+        return [];
       }
 
       // 데이터베이스 음식을 Food 타입으로 변환

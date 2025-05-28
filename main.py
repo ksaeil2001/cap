@@ -651,55 +651,193 @@ def recommend_page():
     render_recommendation_page()
 
 def analysis_page():
-    """영양 분석 페이지"""
-    st.title("📊 영양 분석 및 상세 정보")
-    
+    """시각화된 영양 분석 페이지"""
     # 기본 데이터 확인
     user_profile = get_session_value('user_profile', {})
     recommendations = get_session_value('recommendations', [])
     
     if not user_profile or not recommendations:
-        st.warning("분석할 데이터가 없습니다.")
-        if st.button("🔙 추천 페이지로 돌아가기"):
-            set_session_value('page', 'recommend')
-            st.rerun()
+        st.warning("⚠️ 분석할 데이터가 없습니다.")
+        col1, col2 = st.columns(2)
+        with col1:
+            if st.button("🔙 추천 페이지로 돌아가기", type="primary"):
+                set_session_value('page', 'recommend')
+                st.rerun()
+        with col2:
+            if st.button("📝 처음부터 시작"):
+                set_session_value('page', 'input')
+                st.rerun()
         return
     
     try:
-        # 영양 요약 정보
-        st.subheader("📈 영양 요약")
+        # 시각화 모듈 임포트 및 사용
+        from utils.visualization import MealPlanVisualizer
         
+        # 시각화 객체 생성
+        visualizer = MealPlanVisualizer()
+        
+        # 종합 대시보드 표시
+        visualizer.display_comprehensive_dashboard(recommendations, user_profile)
+        
+        # 상세 추천 이유 섹션
+        st.markdown("---")
+        st.subheader("🧠 AI 추천 분석")
+        
+        analysis_col1, analysis_col2 = st.columns(2)
+        
+        with analysis_col1:
+            st.markdown("#### 🎯 목표 기반 분석")
+            goal = user_profile.get('health_goal', '목표')
+            activity = user_profile.get('activity_level', '활동')
+            
+            st.write(f"• **건강 목표**: {goal}")
+            st.write(f"• **활동 수준**: {activity}")
+            
+            if goal == '체중감량':
+                st.info("💡 칼로리 제한과 저염식 위주로 추천했습니다")
+            elif goal == '근육증가':
+                st.info("💡 고단백 식품 위주로 추천했습니다")
+            else:
+                st.info("💡 균형 잡힌 영양소 구성으로 추천했습니다")
+        
+        with analysis_col2:
+            st.markdown("#### 🚫 제약 조건 분석")
+            budget = user_profile.get('budget_per_meal', 0)
+            allergies = user_profile.get('allergies', [])
+            
+            st.write(f"• **1회 식사 예산**: {budget:,}원")
+            
+            if allergies:
+                st.write(f"• **알레르기 제외**: {', '.join(allergies)}")
+                st.success("✅ 모든 알레르기 성분을 안전하게 제외했습니다")
+            else:
+                st.write("• **알레르기**: 없음")
+            
+            total_price = sum(meal.get('price', 0) for meal in recommendations)
+            daily_budget = budget * 3  # 하루 3끼 기준
+            
+            if total_price <= daily_budget:
+                savings = daily_budget - total_price
+                st.success(f"💰 예산 내에서 {savings:,}원을 절약했습니다!")
+        
+        # 영양소 상세 분석
+        st.markdown("---")
+        st.subheader("🔬 영양소 상세 분석")
+        
+        # 영양소 합계 계산
+        total_calories = sum(meal.get('calories', 0) for meal in recommendations)
+        total_protein = sum(meal.get('protein', 0) for meal in recommendations)
+        total_fat = sum(meal.get('fat', 0) for meal in recommendations)
+        total_carbs = sum(meal.get('carbs', 0) for meal in recommendations)
+        
+        nutrition_col1, nutrition_col2, nutrition_col3, nutrition_col4 = st.columns(4)
+        
+        with nutrition_col1:
+            st.metric(
+                "총 칼로리",
+                f"{total_calories}kcal",
+                delta=f"{total_calories - 1800:.0f}" if total_calories else None
+            )
+        
+        with nutrition_col2:
+            st.metric(
+                "총 단백질",
+                f"{total_protein}g",
+                delta=f"{total_protein - 60:.0f}g" if total_protein else None
+            )
+        
+        with nutrition_col3:
+            st.metric(
+                "총 지방",
+                f"{total_fat}g",
+                delta=f"{total_fat - 60:.0f}g" if total_fat else None
+            )
+        
+        with nutrition_col4:
+            st.metric(
+                "총 탄수화물",
+                f"{total_carbs}g",
+                delta=f"{total_carbs - 225:.0f}g" if total_carbs else None
+            )
+        
+        # 개선 제안
+        st.markdown("---")
+        st.subheader("💡 개선 제안")
+        
+        suggestions = []
+        
+        # 칼로리 기반 제안
+        if total_calories < 1200:
+            suggestions.append("⚠️ 칼로리가 부족합니다. 견과류나 아보카도 같은 건강한 지방을 추가해보세요.")
+        elif total_calories > 2500:
+            suggestions.append("⚠️ 칼로리가 높습니다. 포션 크기를 줄이거나 저칼로리 대안을 고려해보세요.")
+        
+        # 단백질 기반 제안
+        weight = user_profile.get('weight', 70)
+        protein_need = weight * 0.8  # 체중 1kg당 0.8g
+        if total_protein < protein_need:
+            suggestions.append(f"💪 단백질이 부족합니다. 권장량({protein_need:.0f}g)을 위해 닭가슴살이나 두부를 추가해보세요.")
+        
+        # 목표별 제안
+        if goal == '체중감량' and total_calories > 1500:
+            suggestions.append("🎯 체중감량 목표를 위해 저칼로리 음식으로 일부 대체해보세요.")
+        elif goal == '근육증가' and total_protein < weight * 1.2:
+            suggestions.append("🎯 근육증가 목표를 위해 단백질 보충제나 계란을 추가해보세요.")
+        
+        if suggestions:
+            for suggestion in suggestions:
+                st.info(suggestion)
+        else:
+            st.success("🎉 완벽한 식단입니다! 모든 영양 기준을 잘 만족합니다.")
+        
+        # 네비게이션 버튼
+        st.markdown("---")
+        nav_col1, nav_col2, nav_col3 = st.columns(3)
+        
+        with nav_col1:
+            if st.button("🔙 추천 페이지", use_container_width=True):
+                set_session_value('page', 'recommend')
+                st.rerun()
+        
+        with nav_col2:
+            if st.button("📝 정보 수정", use_container_width=True):
+                set_session_value('page', 'input')
+                st.rerun()
+        
+        with nav_col3:
+            if st.button("🔄 새 추천받기", use_container_width=True):
+                # 기존 추천 삭제하고 추천 페이지로
+                if 'recommendations' in st.session_state:
+                    del st.session_state['recommendations']
+                set_session_value('page', 'recommend')
+                st.rerun()
+            
+    except ImportError as e:
+        st.error("❌ 시각화 모듈을 불러올 수 없습니다.")
+        st.info("Plotly 라이브러리가 필요합니다. 기본 분석 정보를 제공합니다.")
+        
+        # 기본 분석 정보 표시
         recommender = get_session_value('food_recommender')
         if recommender:
-            nutrition_summary = recommender.get_nutrition_summary(recommendations, user_profile)
-            
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                st.metric("총 칼로리", f"{nutrition_summary.get('total_calories', 0):.0f}kcal")
-            with col2:
-                st.metric("평균 가격", f"{nutrition_summary.get('average_price', 0):,.0f}원")
-            with col3:
-                st.metric("영양 점수", f"{nutrition_summary.get('avg_nutrition_score', 0):.1f}/10")
+            try:
+                nutrition_summary = recommender.get_nutrition_summary(recommendations, user_profile)
+                
+                col1, col2, col3 = st.columns(3)
+                with col1:
+                    st.metric("총 칼로리", f"{nutrition_summary.get('total_calories', 0):.0f}kcal")
+                with col2:
+                    st.metric("평균 가격", f"{nutrition_summary.get('average_price', 0):,.0f}원")
+                with col3:
+                    st.metric("영양 점수", f"{nutrition_summary.get('avg_nutrition_score', 0):.2f}")
+            except Exception:
+                st.warning("영양 요약 정보를 가져올 수 없습니다.")
         
-        # 추천 이유
-        st.subheader("💡 추천 이유")
-        st.write(f"• **{user_profile.get('health_goal', '목표')}**에 최적화된 식단입니다")
-        st.write(f"• **{user_profile.get('activity_level', '활동')} 활동 수준**에 맞춘 칼로리입니다")
-        st.write(f"• **예산 {user_profile.get('budget_per_meal', 0):,}원** 내에서 선별했습니다")
-        
-        if user_profile.get('allergies'):
-            st.write(f"• **알레르기 항목({', '.join(user_profile['allergies'])})**을 제외했습니다")
-        
-        # 돌아가기 버튼
-        if st.button("🔙 추천 페이지로 돌아가기"):
-            set_session_value('page', 'recommend')
-            st.rerun()
-            
     except Exception as e:
-        st.error(f"❌ 분석 페이지 오류: {e}")
+        st.error(f"❌ 분석 페이지 처리 중 오류가 발생했습니다: {str(e)}")
         error_logs = get_session_value('error_logs', [])
-        error_logs.append(f"분석 페이지 오류: {e}")
-        set_session_value('error_logs', error_logs)
+        if error_logs is not None:
+            error_logs.append(f"분석 페이지 오류: {e}")
+            set_session_value('error_logs', error_logs)
 
 # 애플리케이션 실행
 if __name__ == "__main__":

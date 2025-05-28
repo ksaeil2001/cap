@@ -25,6 +25,7 @@ import { useRecommendStore } from '@/stores/useRecommendStore';
 import { useUserStore } from '@/stores/useUserStore';
 import { useMealSelectionStore } from '@/stores/useMealSelectionStore';
 import MealSlot from '@/components/MealSlot';
+import FoodCard from '@/components/Food/FoodCard';
 import { FoodItem } from '@/api/mockRecommend';
 import { formatCurrency } from '@/lib/utils';
 import NutritionProgressBar from '@/components/NutritionProgressBar';
@@ -291,26 +292,22 @@ const MealConfigPage: React.FC = () => {
                 </Tabs>
               </CardHeader>
               <CardContent>
-                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
+                <div className="max-h-[400px] overflow-y-auto pr-2">
                   {filteredFoods.length > 0 ? (
-                    filteredFoods.map((food: FoodItem) => (
-                      <div
-                        key={food.id}
-                        className="p-2 border rounded-md hover:bg-gray-50 cursor-pointer flex justify-between items-center"
-                        onClick={() => handleAddFood(activeTab, food)}
-                      >
-                        <div>
-                          <p className="font-medium">{food.name}</p>
-                          <div className="text-sm text-gray-500 flex gap-3">
-                            <span>{food.kcal} kcal</span>
-                            <span>{formatCurrency(food.price)}</span>
-                          </div>
-                        </div>
-                        <Button variant="ghost" size="sm">추가</Button>
-                      </div>
-                    ))
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                      {filteredFoods.map((food: FoodItem) => (
+                        <FoodCard
+                          key={food.id}
+                          food={food}
+                          userInfo={userInfo}
+                          onSelect={() => handleAddFood(activeTab, food)}
+                          showActions={true}
+                          variant="default"
+                        />
+                      ))}
+                    </div>
                   ) : (
-                    <p className="text-center text-gray-500 py-4">
+                    <p className="text-center text-gray-500 py-8">
                       사용 가능한 추천 음식이 없습니다. 추천 페이지로 돌아가서 제안을 받아보세요.
                     </p>
                   )}

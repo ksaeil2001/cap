@@ -20,10 +20,10 @@ const userInfoSchema = z.object({
   isAgreementChecked: z.boolean().optional().default(true),
 });
 
-// Start the FastAPI server
+// Start the FastAPI server on port 8001 to avoid conflicts
 function startFastAPIServer() {
-  console.log("Starting FastAPI server...");
-  const pythonProcess = spawn("python", ["-m", "api.run"]);
+  console.log("Starting FastAPI server on port 8001...");
+  const pythonProcess = spawn("python", ["-m", "uvicorn", "api.main:app", "--host", "0.0.0.0", "--port", "8001"]);
   
   pythonProcess.stdout.on("data", (data) => {
     console.log(`FastAPI server: ${data}`);
@@ -75,7 +75,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
       try {
         // Try to use the FastAPI backend first
         console.log("Attempting to use FastAPI backend for recommendations...");
-        const apiResponse = await fetch("http://localhost:8000/api/recommend", {
+        const apiResponse = await fetch("http://localhost:8001/api/recommend", {
           method: "POST",
           headers: {
             "Content-Type": "application/json",
@@ -112,7 +112,7 @@ export async function registerRoutes(app: Express): Promise<Server> {
   // Add a route to check API status
   app.get("/api/status", async (_req, res) => {
     try {
-      const response = await fetch("http://localhost:8000/");
+      const response = await fetch("http://localhost:8001/");
       const data = await response.json();
       res.json({ 
         status: "ok", 

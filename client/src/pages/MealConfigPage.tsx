@@ -291,73 +291,28 @@ const MealConfigPage: React.FC = () => {
                 </Tabs>
               </CardHeader>
               <CardContent>
-                <div className="space-y-3 max-h-[300px] overflow-y-auto pr-2">
+                <div className="space-y-2 max-h-[300px] overflow-y-auto pr-2">
                   {filteredFoods.length > 0 ? (
                     filteredFoods.map((food: FoodItem) => (
                       <div
                         key={food.id}
-                        className="p-3 border-2 border-gray-200 rounded-lg hover:border-blue-300 hover:bg-blue-50/30 cursor-pointer transition-all duration-200 group"
+                        className="p-2 border rounded-md hover:bg-gray-50 cursor-pointer flex justify-between items-center"
                         onClick={() => handleAddFood(activeTab, food)}
                       >
-                        <div className="flex justify-between items-start mb-2">
-                          <h4 className="font-semibold text-gray-800 line-clamp-1">{food.name}</h4>
-                          <Button 
-                            variant="ghost" 
-                            size="sm" 
-                            className="group-hover:bg-blue-100 group-hover:text-blue-700 transition-colors"
-                          >
-                            추가
-                          </Button>
+                        <div>
+                          <p className="font-medium">{food.name}</p>
+                          <div className="text-sm text-gray-500 flex gap-3">
+                            <span>{food.kcal} kcal</span>
+                            <span>{formatCurrency(food.price)}</span>
+                          </div>
                         </div>
-                        
-                        <div className="grid grid-cols-2 gap-2 mb-2 text-xs">
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">칼로리:</span>
-                            <span className="font-medium">{food.kcal} kcal</span>
-                          </div>
-                          <div className="flex justify-between">
-                            <span className="text-gray-600">가격:</span>
-                            <span className="font-medium text-green-600">{formatCurrency(food.price)}</span>
-                          </div>
-                          {food.protein && (
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">단백질:</span>
-                              <span className="font-medium">{food.protein}g</span>
-                            </div>
-                          )}
-                          {food.carbs && (
-                            <div className="flex justify-between">
-                              <span className="text-gray-600">탄수화물:</span>
-                              <span className="font-medium">{food.carbs}g</span>
-                            </div>
-                          )}
-                        </div>
-
-                        {food.tags && food.tags.length > 0 && (
-                          <div className="flex flex-wrap gap-1">
-                            {food.tags.slice(0, 3).map((tag, index) => (
-                              <Badge 
-                                key={index} 
-                                variant="secondary" 
-                                className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600"
-                              >
-                                {tag}
-                              </Badge>
-                            ))}
-                            {food.tags.length > 3 && (
-                              <Badge variant="outline" className="text-xs px-2 py-0.5">
-                                +{food.tags.length - 3}
-                              </Badge>
-                            )}
-                          </div>
-                        )}
+                        <Button variant="ghost" size="sm">추가</Button>
                       </div>
                     ))
                   ) : (
-                    <div className="text-center text-gray-500 py-8 border-2 border-dashed border-gray-200 rounded-lg bg-gray-50">
-                      <p className="mb-2">사용 가능한 추천 음식이 없습니다.</p>
-                      <p className="text-sm">추천 페이지로 돌아가서 제안을 받아보세요.</p>
-                    </div>
+                    <p className="text-center text-gray-500 py-4">
+                      사용 가능한 추천 음식이 없습니다. 추천 페이지로 돌아가서 제안을 받아보세요.
+                    </p>
                   )}
                 </div>
               </CardContent>

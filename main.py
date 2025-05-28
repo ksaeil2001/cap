@@ -297,7 +297,7 @@ def render_input_page():
             budget_input = st.number_input(
                 "일일 예산 (원)",
                 min_value=1000,
-                max_value=60000,
+                max_value=100000,
                 value=current_profile.get('daily_budget', 15000),
                 step=1000
             )
@@ -306,14 +306,14 @@ def render_input_page():
             budget_slider = st.slider(
                 "예산 슬라이더",
                 min_value=1000,
-                max_value=60000,
+                max_value=100000,
                 value=current_profile.get('daily_budget', 15000),
                 step=1000
             )
         
         # 두 입력값 동기화
         daily_budget = max(budget_input, budget_slider)
-        st.write(f"최소: ₩1,000, 최대: ₩60,000")
+        st.write(f"최소: ₩1,000, 최대: ₩100,000")
         st.caption("이 예산 범위 내에서 하루 식단을 최적화합니다.")
         
         st.markdown("---")
@@ -373,8 +373,8 @@ def render_input_page():
             if weight < 20 or weight > 200:
                 validation_errors.append("몸무게는 20kg에서 200kg 사이여야 합니다.")
             
-            if daily_budget < 1000 or daily_budget > 60000:
-                validation_errors.append("일일 예산은 1,000원에서 60,000원 사이여야 합니다.")
+            if daily_budget < 1000 or daily_budget > 100000:
+                validation_errors.append("일일 예산은 1,000원에서 100,000원 사이여야 합니다.")
             
             if len(st.session_state.allergy_list) > 5:
                 validation_errors.append("알레르기 항목은 최대 5개까지만 등록할 수 있습니다.")

@@ -18,35 +18,28 @@ class UserInfo(BaseModel):
 class FoodItem(BaseModel):
     """Food item data model"""
     id: str
-    foodId: int
     name: str
+    type: Optional[str] = None
     category: Optional[str] = None
-    kcal: float
+    cuisine: Optional[str] = None
+    calories: float  # 정제된 데이터에서는 calories로 명명
     protein: float
     fat: float
     carbs: float
+    sodium: Optional[float] = None
+    sugar: Optional[float] = None
+    fiber: Optional[float] = None
     price: float
     tags: List[str] = []
-    image: Optional[str] = None
-    
-    # Compatibility fields
-    calories: Optional[float] = None
-    mainNutrient: Optional[dict] = None
+    allergies: List[str] = []
+    ingredients: List[str] = []
+    score: Optional[float] = None
+    popularity: Optional[int] = None
+    rating: Optional[float] = None
+    brand: Optional[str] = None
     
     class Config:
         populate_by_name = True
-        
-    def __init__(self, **data):
-        super().__init__(**data)
-        # Ensure compatibility fields are populated
-        if not self.calories and self.kcal:
-            self.calories = self.kcal
-        if not self.mainNutrient:
-            self.mainNutrient = {
-                "name": "Protein",
-                "amount": self.protein,
-                "unit": "g"
-            }
 
 class NutritionSummary(BaseModel):
     """Nutrition summary data model"""

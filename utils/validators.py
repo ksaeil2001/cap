@@ -7,7 +7,8 @@ from settings import (
     MIN_BUDGET, MAX_BUDGET, MIN_AGE, MAX_AGE, 
     MIN_HEIGHT, MAX_HEIGHT, MIN_WEIGHT, MAX_WEIGHT,
     MAX_ALLERGIES, MAX_PREFERENCES, MAX_DISEASES,
-    BUDGET_ERROR_MSG, AGE_ERROR_MSG, HEIGHT_ERROR_MSG, WEIGHT_ERROR_MSG
+    BUDGET_ERROR_MSG, AGE_ERROR_MSG, HEIGHT_ERROR_MSG, WEIGHT_ERROR_MSG,
+    MEDICAL_CONDITIONS, DIETARY_RESTRICTIONS
 )
 
 def validate_user_profile(profile: Dict[str, Any]) -> Tuple[bool, List[str]]:
@@ -158,3 +159,78 @@ def sanitize_input(value: Any, input_type: str = 'string') -> Any:
             
     except (ValueError, TypeError):
         return None
+
+def validate_form_data(form_data: Dict[str, Any]) -> Tuple[bool, List[str]]:
+    """
+    Streamlit 폼 데이터 종합 검증
+    
+    Args:
+        form_data: Streamlit 폼에서 수집한 데이터
+        
+    Returns:
+        Tuple[bool, List[str]]: (검증 성공 여부, 오류 메시지 리스트)
+    """
+    errors = []
+    
+    # 필수 항목 검사
+    required_fields = ['gender', 'age', 'height', 'weight', 'goal', 'budget_per_meal']
+    for field in required_fields:
+        if field not in form_data or form_data[field] is None:
+            errors.append(f"{field} 항목은 필수입니다.")
+    
+    # 개별 필드 검증
+    if 'age' in form_data:
+        is_valid, error_msg = validate_age(form_data['age'])
+        if not is_valid:
+            errors.append(error_msg)
+    
+    if 'height' in form_data and 'weight' in form_data:
+        is_valid, height_weight_errors = validate_height_weight(
+            form_data['height'], form_data['weight']
+        )
+        if not is_valid:
+            errors.extend(height_weight_errors)
+    
+    if 'budget_per_meal' in form_data:
+        is_valid, error_msg = validate_budget(form_data['budget_per_meal'])
+        if not is_valid:
+            errors.append(error_msg)
+    
+    # 선택 제한 검증
+    allergies = form_data.get('allergies', [])
+    preferences = form_data.get('preferences', [])
+    medical_conditions = form_data.get('medical_conditions', [])
+    
+    is_valid, limit_errors = validate_selection_limits(
+        allergies, preferences, medical_conditions
+    )
+    if not is_valid:
+        errors.extend(limit_errors)
+    
+    return len(errors) == 0, errors
+
+def validate_medical_conditions(conditions: List[str]) -> Tuple[bool, str]:
+    """의학적 조건 유효성 검증"""
+    if len(conditions) > MAX_DISEASES:
+        return False, f"의학적 조건은 최대 {MAX_DISEASES}개까지 선택 가능합니다."
+    
+    # 유효한 조건인지 확인
+    valid_conditions = set(MEDICAL_CONDITIONS)
+    for condition in conditions:
+        if condition not in valid_conditions:
+            return False, f"'{condition}'은(는) 유효하지 않은 의학적 조건입니다."
+    
+    return True, ""
+
+def validate_dietary_restrictions(restrictions: List[str]) -> Tuple[bool, str]:
+    """식단 제한 유효성 검증"""
+    if len(restrictions) > MAX_DISEASES:  # 같은 제한 사용
+        return False, f"식단 제한은 최대 {MAX_DISEASES}개까지 선택 가능합니다."
+    
+    # 유효한 제한인지 확인
+    valid_restrictions = set(DIETARY_RESTRICTIONS)
+    for restriction in restrictions:
+        if restriction not in valid_restrictions:
+            return False, f"'{restriction}'은(는) 유효하지 않은 식단 제한입니다."
+    
+    return True, ""

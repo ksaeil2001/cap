@@ -222,6 +222,10 @@ def generate_meal_based_recommendations(df: pd.DataFrame, user_profile: Dict[str
         primary_suitable = primary_suitable[~primary_suitable['name'].isin(used_foods)]
         
         print(f"🍽️ {meal_time}: 우선 적합한 음식 {len(primary_suitable)}개 발견")
+        print(f"   🔄 현재 used_foods: {list(used_foods)}")
+        if len(primary_suitable) > 0:
+            print(f"   📋 후보 예시: {primary_suitable['name'].head(3).tolist()}")
+            print(f"   🏷️ 타입 분포: {primary_suitable['type'].value_counts().head(3).to_dict()}")
         
         # 2단계: 우선 후보가 부족하면 fallback 타입 추가
         if len(primary_suitable) < 3:
@@ -260,7 +264,7 @@ def generate_meal_based_recommendations(df: pd.DataFrame, user_profile: Dict[str
             
             print(f"⚠️ {meal_time}: 최종 보완 후 {len(selected_foods)}개 선택")
         
-        # 3단계: 추천 객체 생성
+        # 4단계: 추천 객체 생성
         for _, row in selected_foods.iterrows():
             food_name = row['name']
             if food_name not in used_foods:
@@ -285,6 +289,8 @@ def generate_meal_based_recommendations(df: pd.DataFrame, user_profile: Dict[str
                 
                 meal_recommendations[meal_time].append(recommendation)
                 used_foods.add(food_name)  # 사용된 음식으로 표시
+                
+                print(f"   ✅ {meal_time} 추가: {food_name} (타입: {row.get('type', '')})")
                 
                 # 목표 개수 달성 시 중단
                 if len(meal_recommendations[meal_time]) >= target_count:
@@ -324,6 +330,13 @@ def generate_meal_based_recommendations(df: pd.DataFrame, user_profile: Dict[str
             
             meal_recommendations[meal_time].append(recommendation)
             used_foods.add(food_name)
+    
+    # 최종 결과 요약 출력
+    print("\n🎯 끼니별 추천 결과 요약:")
+    for meal_time, foods in meal_recommendations.items():
+        print(f"   {meal_time}: {len(foods)}개")
+        for food in foods:
+            print(f"     - {food['name']} (타입: {food['type']})")
     
     return meal_recommendations
 

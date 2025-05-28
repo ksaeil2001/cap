@@ -13,26 +13,100 @@ class KoreanFoodRecommender:
         self.load_food_data()
     
     def load_food_data(self):
-        """한국 음식 데이터 로드"""
+        """한국 음식 데이터 로드 (강화된 예외 처리)"""
         try:
-            with open('attached_assets/food_items_part_1.json', 'r', encoding='utf-8') as f:
+            # 파일 존재 여부 확인
+            file_path = 'attached_assets/food_items_part_1.json'
+            if not os.path.exists(file_path):
+                raise FileNotFoundError(f"음식 데이터 파일을 찾을 수 없습니다: {file_path}")
+            
+            # JSON 파일 로드
+            with open(file_path, 'r', encoding='utf-8') as f:
                 food_list = json.load(f)
             
-            # DataFrame으로 변환하여 분석 용이하게 처리
+            # 데이터 유효성 검사
+            if not food_list or not isinstance(food_list, list):
+                raise ValueError("음식 데이터가 비어있거나 올바른 형식이 아닙니다.")
+            
+            # DataFrame으로 변환
             self.food_data = pd.DataFrame(food_list)
+            
+            # 필수 컬럼 확인
+            required_columns = ['name', 'calories']
+            missing_columns = [col for col in required_columns if col not in self.food_data.columns]
+            if missing_columns:
+                print(f"⚠️ 필수 컬럼이 누락되었습니다: {missing_columns}")
             
             # 가격 정보가 없는 경우 칼로리 기반으로 추정
             if 'price' not in self.food_data.columns:
-                self.food_data['price'] = self.estimate_price_from_calories()
+                try:
+                    self.food_data['price'] = self.estimate_price_from_calories()
+                except Exception as price_error:
+                    print(f"⚠️ 가격 추정 실패: {price_error}")
+                    # 기본 가격 설정
+                    self.food_data['price'] = 5000
             
             # 결측값 처리
             self.food_data = self.food_data.fillna(0)
             
-            print(f"✅ 총 {len(self.food_data)}개의 한국 음식 데이터를 로드했습니다.")
+            # 데이터 유효성 최종 확인
+            if len(self.food_data) == 0:
+                raise ValueError("로드된 음식 데이터가 비어있습니다.")
+            
+            print(f"✅ 총 {len(self.food_data)}개의 한국 음식 데이터를 성공적으로 로드했습니다.")
+            
+        except FileNotFoundError as e:
+            print(f"❌ 파일 오류: {e}")
+            self.food_data = self._create_sample_data()
+            
+        except json.JSONDecodeError as e:
+            print(f"❌ JSON 파싱 오류: {e}")
+            self.food_data = self._create_sample_data()
             
         except Exception as e:
-            print(f"❌ 음식 데이터 로드 실패: {e}")
-            self.food_data = pd.DataFrame()
+            print(f"❌ 예상치 못한 오류: {e}")
+            self.food_data = self._create_sample_data()
+    
+    def _create_sample_data(self):
+        """테스트용 샘플 데이터 생성"""
+        sample_foods = [
+            {
+                'id': 'sample_1',
+                'name': '김치찌개',
+                'category': '국물류',
+                'calories': 150,
+                'protein': 8.5,
+                'fat': 5.2,
+                'carbs': 18.3,
+                'sodium': 950,
+                'price': 8000
+            },
+            {
+                'id': 'sample_2', 
+                'name': '닭가슴살 샐러드',
+                'category': '샐러드',
+                'calories': 180,
+                'protein': 25.0,
+                'fat': 3.5,
+                'carbs': 12.0,
+                'sodium': 420,
+                'price': 12000
+            },
+            {
+                'id': 'sample_3',
+                'name': '현미밥',
+                'category': '주식',
+                'calories': 220,
+                'protein': 4.5,
+                'fat': 1.8,
+                'carbs': 45.0,
+                'sodium': 5,
+                'price': 3000
+            }
+        ]
+        
+        print("⚠️ 원본 데이터 로드 실패로 테스트용 샘플 데이터를 사용합니다.")
+        return pd.DataFrame(sample_foods)
     
     def estimate_price_from_calories(self):
         """칼로리 기반 가격 추정 (원 단위)"""

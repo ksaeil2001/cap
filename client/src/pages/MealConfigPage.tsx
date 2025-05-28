@@ -276,55 +276,7 @@ const MealConfigPage: React.FC = () => {
                 </div>
               </CardContent>
             </Card>
-            
-            {/* 현재 끼니에 대한 추천 음식 */}
-            <Card className="mt-4">
-              <CardHeader className="pb-2">
-                <CardTitle>{activeTab === 'breakfast' ? '아침' : activeTab === 'lunch' ? '점심' : '저녁'}에 음식 추가하기</CardTitle>
-                <Tabs value={activeTab} onValueChange={(value) => handleTabChange(value as MealTime)}>
-                  <TabsList className="grid grid-cols-3">
-                    {mealTypes.map((mealType) => (
-                      <TabsTrigger key={mealType.id} value={mealType.id}>
-                        {mealType.label}
-                      </TabsTrigger>
-                    ))}
-                  </TabsList>
-                </Tabs>
-              </CardHeader>
-              <CardContent>
-                <div className="max-h-[400px] overflow-y-auto pr-2">
-                  {filteredFoods.length > 0 ? (
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                      {filteredFoods.map((food: FoodItem) => (
-                        <FoodCard
-                          key={food.id}
-                          food={food}
-                          userInfo={userInfo}
-                          onSelect={() => handleAddFood(activeTab, food)}
-                          showActions={true}
-                          variant="default"
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <p className="text-center text-gray-500 py-8">
-                      사용 가능한 추천 음식이 없습니다. 추천 페이지로 돌아가서 제안을 받아보세요.
-                    </p>
-                  )}
-                </div>
-              </CardContent>
-              <CardFooter className="flex justify-between">
-                <Button variant="outline" onClick={() => navigate('/recommend')}>
-                  추천 페이지로 돌아가기
-                </Button>
-                <Button 
-                  onClick={() => navigate('/summary')}
-                  disabled={!isReadyForSummary()}
-                >
-                  요약 보기
-                </Button>
-              </CardFooter>
-            </Card>
+
           </div>
         </div>
       </div>

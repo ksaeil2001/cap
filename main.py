@@ -458,45 +458,164 @@ def user_input_page():
     render_input_page()
 
 def render_recommendation_page():
-    """완전한 추천 결과 페이지"""
-    st.title("🍽️ 맞춤 식단 추천 결과")
+    """🍱 개인 맞춤 AI 식단 추천 페이지"""
+    st.title("🍱 개인 맞춤 AI 식단 추천")
     
-    # 사용자 프로필 안전하게 가져오기
+    # 사용자 프로필 가져오기
     user_profile = get_session_value('user_profile', {})
     if not user_profile:
         st.warning("⚠️ 사용자 정보가 없습니다. 먼저 정보를 입력해주세요.")
-        col1, col2 = st.columns(2)
-        with col1:
-            if st.button("📝 정보 입력하러 가기", type="primary"):
-                set_session_value('page', 'input')
-                st.rerun()
-        return
-    
-    # 추천 시스템 가져오기
-    recommender = get_session_value('food_recommender')
-    if not recommender:
-        st.error("❌ 추천 시스템을 사용할 수 없습니다. 시스템을 다시 시작해주세요.")
-        if st.button("🔄 시스템 재시작"):
+        if st.button("📝 정보 입력하러 가기", type="primary"):
+            set_session_value('page', 'input')
             st.rerun()
         return
     
-    try:
-        # 사용자 정보 요약 표시
-        st.subheader("👤 입력하신 정보 요약")
+    # 추천 결과 가져오기 또는 생성
+    recommendations = get_session_value('recommend_result', [])
+    
+    if not recommendations:
+        # 추천 생성
+        st.info("🔄 개인 맞춤 식단을 생성하고 있습니다...")
         
-        info_col1, info_col2, info_col3, info_col4 = st.columns(4)
-        with info_col1:
-            st.metric("성별", user_profile.get('gender', 'N/A'))
-            st.metric("나이", f"{user_profile.get('age', 'N/A')}세")
-        with info_col2:
-            st.metric("키", f"{user_profile.get('height', 'N/A')}cm")
-            st.metric("몸무게", f"{user_profile.get('weight', 'N/A')}kg")
-        with info_col3:
-            st.metric("건강 목표", user_profile.get('health_goal', 'N/A'))
-            st.metric("활동 수준", user_profile.get('activity_level', 'N/A'))
-        with info_col4:
-            budget = user_profile.get('budget_per_meal', 0)
-            st.metric("식사 예산", f"{budget:,}원" if budget else 'N/A')
+        try:
+            # utils/recommender.py의 recommend 함수 호출
+            from utils.recommender import recommend
+            
+            # 사용자 프로필을 추천 함수 형식에 맞게 변환
+            profile_for_recommend = {
+                'gender': '남성' if user_profile.get('gender') == '남성' else '여성',
+                'age': user_profile.get('age', 25),
+                'height': user_profile.get('height', 170),
+                'weight': user_profile.get('weight', 70),
+                'goal': '체중감량' if user_profile.get('main_goal') == '체중 감량' else '근육증가' if user_profile.get('main_goal') == '근육 증가' else '체중유지',
+                'budget': user_profile.get('daily_budget', 10000) / 3,  # 1끼 예산
+                'allergies': user_profile.get('allergies', []),
+                'preferences': ['단백질 위주', '간편식'],
+                'diseases': []
+            }
+            
+            # AI 추천 실행
+            recommendations = recommend(profile_for_recommend)
+            
+            if recommendations:
+                set_session_value('recommend_result', recommendations)
+                st.success("✅ 맞춤 식단이 생성되었습니다!")
+            else:
+                st.error("조건에 맞는 음식을 찾을 수 없습니다. 조건을 조정해주세요.")
+                return
+                
+        except Exception as e:
+            st.error(f"추천 생성 중 오류가 발생했습니다: {str(e)}")
+            return
+    
+    # 추천 결과 표시
+    if recommendations:
+        st.subheader("🎯 맞춤 추천 결과")
+        
+        # 추천 카드 형태로 표시
+        for i, food in enumerate(recommendations):
+            with st.container():
+                st.markdown("---")
+                
+                col1, col2, col3 = st.columns([2, 2, 1])
+                
+                with col1:
+                    st.markdown(f"### 🍽️ {food.get('name', '음식명 없음')}")
+                    if food.get('brand'):
+                        st.caption(f"브랜드: {food['brand']}")
+                    if food.get('category'):
+                        st.caption(f"카테고리: {food['category']}")
+                    st.caption(f"추천 이유: {food.get('match_reason', '맞춤 추천')}")
+                
+                with col2:
+                    # 영양 정보
+                    st.markdown("**📊 영양 정보**")
+                    nutr_col1, nutr_col2 = st.columns(2)
+                    with nutr_col1:
+                        st.metric("칼로리", f"{food.get('calories', 0)} kcal")
+                        st.metric("단백질", f"{food.get('protein', 0)} g")
+                    with nutr_col2:
+                        st.metric("지방", f"{food.get('fat', 0)} g") 
+                        st.metric("탄수화물", f"{food.get('carbs', 0)} g")
+                    
+                    # 가격 정보
+                    price = food.get('price', 0)
+                    st.metric("💰 가격", f"{price:,}원")
+                
+                with col3:
+                    # 평가 버튼
+                    st.markdown("**⭐ 평가하기**")
+                    rating_key = f"rating_{i}"
+                    
+                    rating = st.radio(
+                        "점수 선택",
+                        options=[1, 2, 3, 4, 5],
+                        index=2,  # 기본값 3점
+                        key=rating_key,
+                        horizontal=True,
+                        label_visibility="collapsed"
+                    )
+                    
+                    # 평점 세션에 저장
+                    if 'ratings' not in st.session_state:
+                        st.session_state['ratings'] = {}
+                    st.session_state['ratings'][food.get('name', f'food_{i}')] = rating
+        
+        # 영양소 요약 시각화
+        st.markdown("---")
+        st.subheader("📈 영양소 분석")
+        
+        try:
+            from utils.nutrition_visualizer import calculate_nutrition_summary, create_nutrition_bar_chart, create_nutrition_radar_chart
+            
+            # 영양소 요약 계산
+            nutrition_summary = calculate_nutrition_summary(recommendations, profile_for_recommend)
+            
+            # 시각화 표시
+            vis_col1, vis_col2 = st.columns(2)
+            
+            with vis_col1:
+                bar_chart = create_nutrition_bar_chart(nutrition_summary)
+                st.plotly_chart(bar_chart, use_container_width=True)
+            
+            with vis_col2:
+                radar_chart = create_nutrition_radar_chart(nutrition_summary)
+                st.plotly_chart(radar_chart, use_container_width=True)
+            
+            # 영양 조언
+            achievement_rates = nutrition_summary['achievement_rates']
+            if achievement_rates['protein'] < 70:
+                st.info("💡 단백질 섭취를 늘려보세요!")
+            if achievement_rates['sodium'] > 120:
+                st.warning("⚠️ 나트륨 섭취를 줄이는 것을 권장합니다.")
+                
+        except ImportError:
+            st.info("영양소 시각화를 위해 Plotly가 필요합니다.")
+        except Exception as e:
+            st.warning(f"영양소 분석 중 오류가 발생했습니다: {str(e)}")
+    
+    # 하단 버튼들
+    st.markdown("---")
+    button_col1, button_col2, button_col3 = st.columns(3)
+    
+    with button_col1:
+        if st.button("🔁 입력값 수정하기", use_container_width=True):
+            set_session_value('page', 'input')
+            st.rerun()
+    
+    with button_col2:
+        if st.button("🗑 Reset All", use_container_width=True):
+            # 세션 초기화
+            for key in list(st.session_state.keys()):
+                if key.startswith(('user_profile', 'recommend_result', 'ratings')):
+                    del st.session_state[key]
+            set_session_value('page', 'input')
+            st.rerun()
+    
+    with button_col3:
+        if st.button("📊 상세 분석 보기", use_container_width=True):
+            set_session_value('page', 'analysis')
+            st.rerun()
         
         # 알레르기 및 선호도 정보
         col_left, col_right = st.columns(2)

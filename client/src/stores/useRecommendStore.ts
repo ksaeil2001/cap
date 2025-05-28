@@ -24,6 +24,11 @@ export interface RecommendStore {
     lunch: FoodItem[];
     dinner: FoodItem[];
   };
+  selectedPerMeal: {
+    breakfast: FoodItem[];
+    lunch: FoodItem[];
+    dinner: FoodItem[];
+  };
   allFoods: FoodItem[];
   filteredFoods: FoodItem[];
   currentMealType: MealTime;
@@ -40,6 +45,9 @@ export interface RecommendStore {
   filterByPrice: (min: number, max: number) => void;
   clearFilters: () => void;
   getCurrentMealFoods: () => FoodItem[];
+  addFoodToMeal: (mealType: MealTime, food: FoodItem) => void;
+  removeFoodFromMeal: (mealType: MealTime, foodId: string) => void;
+  clearSelectedMeals: () => void;
 }
 
 export const useRecommendStore = create<RecommendStore>((set, get) => ({
@@ -49,14 +57,16 @@ export const useRecommendStore = create<RecommendStore>((set, get) => ({
     lunch: [],
     dinner: []
   },
+  selectedPerMeal: {
+    breakfast: [],
+    lunch: [],
+    dinner: []
+  },
   allFoods: [],
   filteredFoods: [],
   currentMealType: 'breakfast',
   summary: null,
   fallback: false,
-  
-  // 더 이상 이 스토어에서 선택된 음식을 관리하지 않습니다
-  // (MealSelectionStore로 이동)
   
   // Set recommended foods from API response
   setRecommendedFoods: (foodsByMeal: FoodItem[][]) => {
@@ -122,43 +132,6 @@ export const useRecommendStore = create<RecommendStore>((set, get) => ({
     });
   },
   
-  // 끼니별 음식 선택 기능 (새로 추가)
-  addFoodToMeal: (mealType: MealTime, food: FoodItem) => {
-    set((state) => {
-      // 이미 선택된 음식인지 확인
-      const isAlreadySelected = state.selectedPerMeal[mealType].some(item => item.id === food.id);
-      if (isAlreadySelected) return state; // 이미 있으면 추가하지 않음
-      
-      return {
-        selectedPerMeal: {
-          ...state.selectedPerMeal,
-          [mealType]: [...state.selectedPerMeal[mealType], food]
-        }
-      };
-    });
-  },
-  
-  // 끼니별 음식 제거 기능 (새로 추가)
-  removeFoodFromMeal: (mealType: MealTime, foodId: string) => {
-    set((state) => ({
-      selectedPerMeal: {
-        ...state.selectedPerMeal,
-        [mealType]: state.selectedPerMeal[mealType].filter(item => item.id !== foodId)
-      }
-    }));
-  },
-  
-  // 모든 선택된 음식 초기화 (새로 추가)
-  clearSelectedMeals: () => {
-    set({
-      selectedPerMeal: {
-        breakfast: [],
-        lunch: [],
-        dinner: []
-      }
-    });
-  },
-  
   // 현재 선택된 끼니 타입 설정
   setCurrentMealType: (mealType: MealTime) => {
     set({ currentMealType: mealType });
@@ -219,5 +192,45 @@ export const useRecommendStore = create<RecommendStore>((set, get) => ({
   clearFilters: () => {
     const { currentMealType, mealsFoods } = get();
     set({ filteredFoods: mealsFoods[currentMealType] || [] });
+  },
+
+  // 끼니별 음식 선택 기능
+  addFoodToMeal: (mealType: MealTime, food: FoodItem) => {
+    set((state) => {
+      // 이미 선택된 음식인지 확인
+      const isAlreadySelected = state.selectedPerMeal[mealType].some(item => item.id === food.id);
+      if (isAlreadySelected) return state; // 이미 있으면 추가하지 않음
+      
+      return {
+        ...state,
+        selectedPerMeal: {
+          ...state.selectedPerMeal,
+          [mealType]: [...state.selectedPerMeal[mealType], food]
+        }
+      };
+    });
+  },
+  
+  // 끼니별 음식 제거 기능
+  removeFoodFromMeal: (mealType: MealTime, foodId: string) => {
+    set((state) => ({
+      ...state,
+      selectedPerMeal: {
+        ...state.selectedPerMeal,
+        [mealType]: state.selectedPerMeal[mealType].filter(item => item.id !== foodId)
+      }
+    }));
+  },
+  
+  // 모든 선택된 음식 초기화
+  clearSelectedMeals: () => {
+    set((state) => ({
+      ...state,
+      selectedPerMeal: {
+        breakfast: [],
+        lunch: [],
+        dinner: []
+      }
+    }));
   }
 }));

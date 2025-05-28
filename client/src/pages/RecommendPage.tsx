@@ -26,12 +26,15 @@ const RecommendPage: React.FC = () => {
   const { 
     filteredFoods,
     currentMealType,
+    selectedPerMeal,
     summary, 
     fallback,
     setRecommendedFoods, 
     setSummary,
     setFallback,
-    setCurrentMealType
+    setCurrentMealType,
+    addFoodToMeal,
+    removeFoodFromMeal
   } = useRecommendStore();
   
   // 로컬 상태

@@ -15,15 +15,34 @@ export const nutrients = pgTable("nutrients", {
   unit: text("unit").notNull().default("g"),
 });
 
-// Define food table with enhanced nutrient tracking
+// Define food table with Korean food data structure
 export const foods = pgTable("foods", {
-  id: serial("id").primaryKey(),
+  id: text("id").primaryKey(), // 문자열 ID 지원 (fd-301 형태)
   name: text("name").notNull(),
+  type: text("type"),
   category: text("category").notNull(),
-  calories: integer("calories").notNull(),
-  price: integer("price").notNull(), // Stored in cents
-  image: text("image"),
-  mainNutrientId: integer("main_nutrient_id").references(() => nutrients.id),
+  cuisine: text("cuisine"),
+  calories: real("calories").notNull(),
+  protein: real("protein"),
+  fat: real("fat"),
+  carbs: real("carbs"),
+  sodium: real("sodium"),
+  sugar: real("sugar"),
+  fiber: real("fiber"),
+  saturatedFat: real("saturated_fat"),
+  cholesterol: real("cholesterol"),
+  transFat: real("trans_fat"),
+  calcium: real("calcium"),
+  iron: real("iron"),
+  vitaminC: real("vitamin_c"),
+  ingredients: text("ingredients").array(), // 배열 형태 지원
+  tags: text("tags").array(),
+  allergies: text("allergies").array(),
+  price: integer("price").notNull(),
+  score: real("score"),
+  popularity: integer("popularity"),
+  rating: real("rating"),
+  brand: text("brand"),
 });
 
 // Define food nutrients relationship table

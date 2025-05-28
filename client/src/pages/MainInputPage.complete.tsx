@@ -38,9 +38,9 @@ const formSchema = z.object({
   healthGoal: z.enum(['weight-loss', 'weight-maintenance', 'muscle-gain'], {
     required_error: '건강 목표를 선택해주세요',
   }),
-  budgetPerMeal: z.coerce.number().min(1000).max(20000).int()
-    .refine(val => val >= 1000 && val <= 20000, {
-      message: '1회 식사 예산은 1,000원에서 20,000원 사이여야 합니다',
+  budgetPerMeal: z.coerce.number().min(1000).max(100000).int()
+    .refine(val => val >= 1000 && val <= 100000, {
+      message: '1회 식사 예산은 1,000원에서 100,000원 사이여야 합니다',
     }),
   allergies: z.array(z.string()).max(7, {
     message: '알레르기는 최대 7개까지 선택할 수 있습니다',
@@ -463,8 +463,8 @@ const MainInputPage = () => {
                         <Slider
                           defaultValue={[field.value || 10000]}
                           min={1000}
-                          max={20000}
-                          step={500}
+                          max={100000}
+                          step={1000}
                           onValueChange={(vals) => field.onChange(vals[0])}
                         />
                         <div className="flex justify-between mt-2">
@@ -472,7 +472,7 @@ const MainInputPage = () => {
                           <span className="text-sm font-medium">
                             {(field.value || 10000).toLocaleString()}원
                           </span>
-                          <span className="text-xs text-neutral-500">20,000원</span>
+                          <span className="text-xs text-neutral-500">100,000원</span>
                         </div>
                       </div>
                     </FormControl>

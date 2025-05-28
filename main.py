@@ -494,12 +494,23 @@ def render_recommendation_page():
                 'diseases': []
             }
             
-            # AI 추천 실행
-            recommendations = recommend(profile_for_recommend)
+            # AI 추천 실행 (끼니별 2-3개씩)
+            meal_recommendations = recommend(profile_for_recommend)
             
-            if recommendations:
-                set_session_value('recommend_result', recommendations)
-                st.success("✅ 맞춤 식단이 생성되었습니다!")
+            if meal_recommendations and any(len(meals) > 0 for meals in meal_recommendations.values()):
+                set_session_value('recommend_result', meal_recommendations)
+                st.success("✅ 끼니별 맞춤 식단이 생성되었습니다!")
+                
+                # 끼니별 추천 개수 안내
+                breakfast_count = len(meal_recommendations.get('breakfast', []))
+                lunch_count = len(meal_recommendations.get('lunch', []))
+                dinner_count = len(meal_recommendations.get('dinner', []))
+                st.info(f"🍽️ 아침 {breakfast_count}개 | 점심 {lunch_count}개 | 저녁 {dinner_count}개 추천")
+                
+                # 전체 추천 리스트로 변환 (시각화용)
+                recommendations = []
+                for meal_time, foods in meal_recommendations.items():
+                    recommendations.extend(foods)
             else:
                 st.error("조건에 맞는 음식을 찾을 수 없습니다. 조건을 조정해주세요.")
                 return
@@ -508,58 +519,76 @@ def render_recommendation_page():
             st.error(f"추천 생성 중 오류가 발생했습니다: {str(e)}")
             return
     
-    # 추천 결과 표시
-    if recommendations:
-        st.subheader("🎯 맞춤 추천 결과")
+    # 끼니별 추천 결과 표시
+    meal_recommendations = get_session_value('recommend_result', {})
+    if meal_recommendations:
+        st.subheader("🎯 끼니별 맞춤 추천 결과")
         
-        # 추천 카드 형태로 표시
-        for i, food in enumerate(recommendations):
-            with st.container():
-                st.markdown("---")
+        # 끼니별 탭 생성
+        meal_tabs = {
+            'breakfast': '🌅 아침',
+            'lunch': '🌞 점심', 
+            'dinner': '🌆 저녁'
+        }
+        
+        tab_cols = st.columns(len(meal_tabs))
+        
+        for idx, (meal_key, meal_label) in enumerate(meal_tabs.items()):
+            with tab_cols[idx]:
+                st.markdown(f"### {meal_label}")
+                meal_foods = meal_recommendations.get(meal_key, [])
                 
-                col1, col2, col3 = st.columns([2, 2, 1])
-                
-                with col1:
-                    st.markdown(f"### 🍽️ {food.get('name', '음식명 없음')}")
-                    if food.get('brand'):
-                        st.caption(f"브랜드: {food['brand']}")
-                    if food.get('category'):
-                        st.caption(f"카테고리: {food['category']}")
-                    st.caption(f"추천 이유: {food.get('match_reason', '맞춤 추천')}")
-                
-                with col2:
-                    # 영양 정보
-                    st.markdown("**📊 영양 정보**")
-                    nutr_col1, nutr_col2 = st.columns(2)
-                    with nutr_col1:
-                        st.metric("칼로리", f"{food.get('calories', 0)} kcal")
-                        st.metric("단백질", f"{food.get('protein', 0)} g")
-                    with nutr_col2:
-                        st.metric("지방", f"{food.get('fat', 0)} g") 
-                        st.metric("탄수화물", f"{food.get('carbs', 0)} g")
-                    
-                    # 가격 정보
-                    price = food.get('price', 0)
-                    st.metric("💰 가격", f"{price:,}원")
-                
-                with col3:
-                    # 평가 버튼
-                    st.markdown("**⭐ 평가하기**")
-                    rating_key = f"rating_{i}"
-                    
-                    rating = st.radio(
-                        "점수 선택",
-                        options=[1, 2, 3, 4, 5],
-                        index=2,  # 기본값 3점
-                        key=rating_key,
-                        horizontal=True,
-                        label_visibility="collapsed"
-                    )
-                    
-                    # 평점 세션에 저장
-                    if 'ratings' not in st.session_state:
-                        st.session_state['ratings'] = {}
-                    st.session_state['ratings'][food.get('name', f'food_{i}')] = rating
+                if meal_foods:
+                    for i, food in enumerate(meal_foods):
+                        with st.container():
+                            st.markdown("---")
+                            
+                            # 음식 정보 표시
+                            st.markdown(f"#### 🍽️ {food.get('name', '음식명 없음')}")
+                            
+                            if food.get('brand'):
+                                st.caption(f"브랜드: {food.get('brand')}")
+                            if food.get('category'):
+                                st.caption(f"카테고리: {food.get('category')}")
+                            st.caption(f"추천 이유: {food.get('match_reason', '맞춤 추천')}")
+                            
+                            # 영양 정보
+                            col1, col2 = st.columns(2)
+                            with col1:
+                                st.metric("칼로리", f"{food.get('calories', 0)} kcal")
+                                st.metric("단백질", f"{food.get('protein', 0)} g")
+                            with col2:
+                                st.metric("지방", f"{food.get('fat', 0)} g") 
+                                st.metric("탄수화물", f"{food.get('carbs', 0)} g")
+                            
+                            # 가격 정보
+                            price = food.get('price', 0)
+                            st.metric("💰 가격", f"{price:,}원")
+                            
+                            # 평가 버튼
+                            st.markdown("**⭐ 평가하기**")
+                            rating_key = f"rating_{meal_key}_{i}"
+                            
+                            rating = st.radio(
+                                "점수 선택",
+                                options=[1, 2, 3, 4, 5],
+                                index=2,  # 기본값 3점
+                                key=rating_key,
+                                horizontal=True,
+                                label_visibility="collapsed"
+                            )
+                            
+                            # 평점 세션에 저장
+                            if 'ratings' not in st.session_state:
+                                st.session_state['ratings'] = {}
+                            st.session_state['ratings'][f"{meal_key}_{food.get('name', f'food_{i}')}"] = rating
+                else:
+                    st.info(f"{meal_label}에 대한 추천 음식이 없습니다.")
+        
+        # 전체 추천 리스트 생성 (영양 분석용)
+        recommendations = []
+        for meal_time, foods in meal_recommendations.items():
+            recommendations.extend(foods)
         
         # 영양소 요약 시각화
         st.markdown("---")

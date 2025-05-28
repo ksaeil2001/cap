@@ -7,15 +7,20 @@ import json
 import pandas as pd
 from typing import Dict, List, Any
 
-def recommend(user_profile: Dict[str, Any]) -> List[Dict[str, Any]]:
+def recommend(user_profile: Dict[str, Any]) -> Dict[str, List[Dict[str, Any]]]:
     """
-    사용자 프로필 기반 개인 맞춤 한국 음식 추천
+    사용자 프로필 기반 개인 맞춤 한국 음식 추천 (끼니별 2-3개씩)
     
     Args:
         user_profile: 사용자 정보 딕셔너리
         
     Returns:
-        추천 음식 리스트 (상위 5~10개)
+        끼니별 추천 음식 딕셔너리 
+        {
+            "breakfast": [...],
+            "lunch": [...], 
+            "dinner": [...]
+        }
     """
     
     # 🔒 정제된 한국 음식 데이터만 로드
@@ -33,7 +38,7 @@ def recommend(user_profile: Dict[str, Any]) -> List[Dict[str, Any]]:
     
     if len(filtered_df) == 0:
         print("⚠️ 필터링 조건에 맞는 음식이 없습니다.")
-        return []
+        return {"breakfast": [], "lunch": [], "dinner": []}
     
     # 2️⃣ Step 2: 영양 기준 점수 계산
     scored_df = calculate_nutrition_scores(filtered_df, user_profile)
@@ -41,11 +46,17 @@ def recommend(user_profile: Dict[str, Any]) -> List[Dict[str, Any]]:
     # 3️⃣ Step 3: 선호도 반영
     final_df = apply_preference_bonus(scored_df, user_profile)
     
-    # 4️⃣ Step 4: 정렬 및 상위 추천 반환
-    recommendations = generate_final_recommendations(final_df, limit=8)
+    # 4️⃣ Step 4: 끼니별로 분류하여 추천
+    meal_recommendations = generate_meal_based_recommendations(final_df, user_profile)
     
-    print(f"🎯 최종 추천: {len(recommendations)}개 음식")
-    return recommendations
+    # 각 끼니별 추천 개수 출력
+    total_count = sum(len(meals) for meals in meal_recommendations.values())
+    print(f"🎯 최종 추천: 총 {total_count}개 음식")
+    print(f"   - 아침: {len(meal_recommendations['breakfast'])}개")
+    print(f"   - 점심: {len(meal_recommendations['lunch'])}개") 
+    print(f"   - 저녁: {len(meal_recommendations['dinner'])}개")
+    
+    return meal_recommendations
 
 
 def apply_basic_filters(df: pd.DataFrame, user_profile: Dict[str, Any]) -> pd.DataFrame:
@@ -154,8 +165,115 @@ def apply_preference_bonus(df: pd.DataFrame, user_profile: Dict[str, Any]) -> pd
     return final_df
 
 
+def generate_meal_based_recommendations(df: pd.DataFrame, user_profile: Dict[str, Any]) -> Dict[str, List[Dict[str, Any]]]:
+    """끼니별 추천 리스트 생성"""
+    
+    # 끼니별 분류 기준 정의
+    meal_categories = {
+        'breakfast': ['아침', '간편식', '도시락', '즉석밥', '시리얼', '빵', '유제품'],
+        'lunch': ['점심', '밥', '국', '찌개', '덮밥', '비빔밥', '도시락', '정식'],
+        'dinner': ['저녁', '밥', '국', '찌개', '구이', '볶음', '전골', '정식', '반찬']
+    }
+    
+    # 끼니별 추천 결과 초기화
+    meal_recommendations = {
+        'breakfast': [],
+        'lunch': [],
+        'dinner': []
+    }
+    
+    # 점수 순으로 정렬
+    sorted_df = df.sort_values('final_score', ascending=False)
+    
+    # 각 끼니별로 2-3개씩 추천
+    for meal_time, keywords in meal_categories.items():
+        # 해당 끼니에 적합한 음식 필터링
+        meal_suitable = sorted_df[
+            sorted_df['type'].str.contains('|'.join(keywords), case=False, na=False) |
+            sorted_df['category'].str.contains('|'.join(keywords), case=False, na=False) |
+            sorted_df['name'].str.contains('|'.join(keywords), case=False, na=False)
+        ]
+        
+        # 끼니에 특화된 음식이 부족하면 전체에서 선택
+        if len(meal_suitable) < 2:
+            meal_suitable = sorted_df
+        
+        # 각 끼니별로 최대 3개 추천
+        target_count = 3
+        selected_foods = meal_suitable.head(target_count)
+        
+        for _, row in selected_foods.iterrows():
+            # 이미 다른 끼니에 추가된 음식은 제외
+            food_name = row['name']
+            already_added = any(
+                food_name in [food['name'] for food in meals] 
+                for meals in meal_recommendations.values()
+            )
+            
+            if not already_added and len(meal_recommendations[meal_time]) < target_count:
+                # 추천 이유 생성
+                match_reason = generate_match_reason(row)
+                
+                recommendation = {
+                    'name': row['name'],
+                    'brand': row.get('brand', ''),
+                    'calories': int(row['calories']),
+                    'protein': float(row['protein']),
+                    'carbs': float(row.get('carbs', 0)),
+                    'fat': float(row.get('fat', 0)),
+                    'price': int(row['price']),
+                    'tags': row.get('tags', []),
+                    'score': round(float(row['final_score']), 2),
+                    'match_reason': match_reason,
+                    'type': row.get('type', ''),
+                    'category': row.get('category', ''),
+                    'meal_time': meal_time  # 끼니 정보 추가
+                }
+                
+                meal_recommendations[meal_time].append(recommendation)
+    
+    # 끼니별 최소 2개씩 보장 (전체 데이터에서 추가 선택)
+    for meal_time in meal_recommendations:
+        while len(meal_recommendations[meal_time]) < 2 and len(sorted_df) > 0:
+            # 아직 선택되지 않은 음식 중에서 추가
+            for _, row in sorted_df.iterrows():
+                food_name = row['name']
+                already_added = any(
+                    food_name in [food['name'] for food in meals] 
+                    for meals in meal_recommendations.values()
+                )
+                
+                if not already_added:
+                    match_reason = generate_match_reason(row)
+                    
+                    recommendation = {
+                        'name': row['name'],
+                        'brand': row.get('brand', ''),
+                        'calories': int(row['calories']),
+                        'protein': float(row['protein']),
+                        'carbs': float(row.get('carbs', 0)),
+                        'fat': float(row.get('fat', 0)),
+                        'price': int(row['price']),
+                        'tags': row.get('tags', []),
+                        'score': round(float(row['final_score']), 2),
+                        'match_reason': match_reason,
+                        'type': row.get('type', ''),
+                        'category': row.get('category', ''),
+                        'meal_time': meal_time
+                    }
+                    
+                    meal_recommendations[meal_time].append(recommendation)
+                    break
+            
+            # 무한 루프 방지
+            if len(meal_recommendations[meal_time]) >= len(sorted_df):
+                break
+    
+    return meal_recommendations
+
+
 def generate_final_recommendations(df: pd.DataFrame, limit: int = 8) -> List[Dict[str, Any]]:
-    """최종 추천 리스트 생성"""
+    """최종 추천 리스트 생성 (하위 호환성 유지)"""
     
     # 점수 순으로 정렬
     sorted_df = df.sort_values('final_score', ascending=False).head(limit)

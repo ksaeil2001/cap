@@ -2,6 +2,7 @@ import React from 'react';
 import { FoodItem } from '@/api/mockRecommend';
 import { formatCurrency } from '@/lib/utils';
 import { X, Coffee, Utensils, UtensilsCrossed } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
 
 interface DraggableMealProps {
   food: FoodItem;
@@ -33,32 +34,73 @@ const DraggableMeal: React.FC<DraggableMealProps> = ({
   return (
     <div 
       className={`
-        flex items-center justify-between p-2 rounded-md bg-white border 
-        ${iconType === 'primary' ? 'border-blue-100' : 
-          iconType === 'secondary' ? 'border-orange-100' : 
-          'border-purple-100'}
-        shadow-sm hover:shadow transition-all ${className}
+        p-3 rounded-lg bg-white border-2 
+        ${iconType === 'primary' ? 'border-blue-100 bg-blue-50/30' : 
+          iconType === 'secondary' ? 'border-orange-100 bg-orange-50/30' : 
+          'border-purple-100 bg-purple-50/30'}
+        shadow-sm hover:shadow-md transition-all duration-200 ${className}
       `}
     >
-      <div className="flex items-center space-x-2">
-        {renderIcon()}
-        <div>
-          <p className="text-sm font-medium line-clamp-1">{food.name}</p>
-          <div className="flex space-x-3 text-xs text-gray-500">
-            <span>{food.kcal} kcal</span>
-            <span>{formatCurrency(food.price)}</span>
-          </div>
+      {/* Header with icon and name */}
+      <div className="flex items-start justify-between mb-2">
+        <div className="flex items-center space-x-2">
+          {renderIcon()}
+          <h4 className="text-sm font-semibold text-gray-800 line-clamp-1">{food.name}</h4>
         </div>
+        
+        {onRemove && (
+          <button 
+            onClick={onRemove}
+            className="p-1 rounded-full hover:bg-red-100 transition-colors group"
+            aria-label="Remove food"
+          >
+            <X className="h-4 w-4 text-gray-400 group-hover:text-red-500" />
+          </button>
+        )}
       </div>
-      
-      {onRemove && (
-        <button 
-          onClick={onRemove}
-          className="p-1 rounded-full hover:bg-gray-100 transition-colors"
-          aria-label="Remove food"
-        >
-          <X className="h-4 w-4 text-gray-400" />
-        </button>
+
+      {/* Nutrition info */}
+      <div className="grid grid-cols-2 gap-2 mb-2 text-xs">
+        <div className="flex justify-between">
+          <span className="text-gray-600">칼로리:</span>
+          <span className="font-medium">{food.kcal} kcal</span>
+        </div>
+        <div className="flex justify-between">
+          <span className="text-gray-600">가격:</span>
+          <span className="font-medium text-green-600">{formatCurrency(food.price)}</span>
+        </div>
+        {food.protein && (
+          <div className="flex justify-between">
+            <span className="text-gray-600">단백질:</span>
+            <span className="font-medium">{food.protein}g</span>
+          </div>
+        )}
+        {food.carbs && (
+          <div className="flex justify-between">
+            <span className="text-gray-600">탄수화물:</span>
+            <span className="font-medium">{food.carbs}g</span>
+          </div>
+        )}
+      </div>
+
+      {/* Tags */}
+      {food.tags && food.tags.length > 0 && (
+        <div className="flex flex-wrap gap-1">
+          {food.tags.slice(0, 3).map((tag, index) => (
+            <Badge 
+              key={index} 
+              variant="secondary" 
+              className="text-xs px-2 py-0.5 bg-gray-100 text-gray-600 hover:bg-gray-200"
+            >
+              {tag}
+            </Badge>
+          ))}
+          {food.tags.length > 3 && (
+            <Badge variant="outline" className="text-xs px-2 py-0.5">
+              +{food.tags.length - 3}
+            </Badge>
+          )}
+        </div>
       )}
     </div>
   );

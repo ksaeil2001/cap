@@ -21,19 +21,16 @@ class KoreanFoodRecommender:
         self.load_food_data()
     
     def load_food_data(self):
-        """새로운 정제 데이터셋 로드"""
+        """오직 /data/정제 데이터.json 파일만 사용하는 고정된 로더"""
         try:
+            # 고정된 단일 경로만 사용
             file_path = 'data/정제 데이터.json'
-            if not os.path.exists(file_path):
-                raise FileNotFoundError(f"정제 데이터 파일을 찾을 수 없습니다: {file_path}")
             
             with open(file_path, 'r', encoding='utf-8') as f:
                 food_list = json.load(f)
             
-            if not food_list or not isinstance(food_list, list):
-                raise ValueError("데이터가 비어있거나 올바른 형식이 아닙니다.")
-            
             self.food_data = pd.DataFrame(food_list)
+            print(f"🍲 Streamlit 추천 엔진: /data/정제 데이터.json 로드 성공 ({len(food_list)}개 음식)")
             
             # 필수 컬럼 확인
             required_columns = ['id', 'name', 'calories', 'price', 'tags', 'allergies']

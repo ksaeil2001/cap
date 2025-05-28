@@ -192,93 +192,88 @@ const MealConfigPage: React.FC = () => {
           )}
         </div>
         
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-          {/* Left Column - Selected Meals */}
-          <div className="col-span-1 lg:col-span-2">
-            <Card>
-              <CardHeader>
-                <CardTitle>내 식단 계획</CardTitle>
-                <CardDescription>
-                  음식 항목을 추가하거나 제거하여 일일 식단을 구성하세요
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {mealTypes.map((mealType) => (
-                    <MealSlot
-                      key={mealType.id}
-                      title={mealType.label}
-                      foods={meals[mealType.id]}
-                      onAddFood={(food) => handleAddFood(mealType.id, food)}
-                      onRemoveFood={(foodId) => handleRemoveFood(mealType.id, foodId)}
-                      totalCalories={getMealTotalCalories(mealType.id)}
-                      totalCost={getMealTotalCost(mealType.id)}
-                      iconType={mealType.iconType}
-                    />
-                  ))}
+        {/* Selected Meals */}
+        <Card>
+          <CardHeader>
+            <CardTitle>내 식단 계획</CardTitle>
+            <CardDescription>
+              음식 항목을 추가하거나 제거하여 일일 식단을 구성하세요
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {mealTypes.map((mealType) => (
+                <MealSlot
+                  key={mealType.id}
+                  title={mealType.label}
+                  foods={meals[mealType.id]}
+                  onAddFood={(food) => handleAddFood(mealType.id, food)}
+                  onRemoveFood={(foodId) => handleRemoveFood(mealType.id, foodId)}
+                  totalCalories={getMealTotalCalories(mealType.id)}
+                  totalCost={getMealTotalCost(mealType.id)}
+                  iconType={mealType.iconType}
+                />
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+        
+        {/* Nutrition Summary */}
+        <Card className="mt-6">
+          <CardHeader>
+            <CardTitle>영양 요약</CardTitle>
+            <CardDescription>
+              영양 목표와 예산 현황을 확인하세요
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <NutritionProgressBar
+                label="칼로리"
+                current={nutritionSummary.calories.actual}
+                target={nutritionSummary.calories.target}
+                unit="kcal"
+                color="blue"
+              />
+              
+              <NutritionProgressBar
+                label="단백질"
+                current={nutritionSummary.protein.actual}
+                target={nutritionSummary.protein.target}
+                unit="g"
+                color="purple"
+              />
+              
+              <NutritionProgressBar
+                label="탄수화물"
+                current={nutritionSummary.carbs.actual}
+                target={nutritionSummary.carbs.target}
+                unit="g"
+                color="orange"
+              />
+              
+              <NutritionProgressBar
+                label="지방"
+                current={nutritionSummary.fat.actual}
+                target={nutritionSummary.fat.target}
+                unit="g"
+                color="yellow"
+              />
+            </div>
+            
+            <div className="mt-6 pt-4 border-t border-gray-200">
+              <div className="flex justify-between items-center">
+                <h3 className="font-medium">일일 예산</h3>
+                <div className={`flex items-center ${nutritionSummary.budget.actual > nutritionSummary.budget.target ? 'text-red-500' : 'text-green-500'}`}>
+                  <Wallet className="h-4 w-4 mr-1" />
+                  <span>
+                    {formatCurrency(nutritionSummary.budget.actual)} / {formatCurrency(nutritionSummary.budget.target)}
+                  </span>
                 </div>
-              </CardContent>
-            </Card>
-          </div>
-          
-          {/* Right Column - Nutrition Summary */}
-          <div className="col-span-1">
-            <Card>
-              <CardHeader>
-                <CardTitle>영양 요약</CardTitle>
-                <CardDescription>
-                  영양 목표와 예산 현황을 확인하세요
-                </CardDescription>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <NutritionProgressBar
-                  label="칼로리"
-                  current={nutritionSummary.calories.actual}
-                  target={nutritionSummary.calories.target}
-                  unit="kcal"
-                  color="blue"
-                />
-                
-                <NutritionProgressBar
-                  label="단백질"
-                  current={nutritionSummary.protein.actual}
-                  target={nutritionSummary.protein.target}
-                  unit="g"
-                  color="purple"
-                />
-                
-                <NutritionProgressBar
-                  label="탄수화물"
-                  current={nutritionSummary.carbs.actual}
-                  target={nutritionSummary.carbs.target}
-                  unit="g"
-                  color="orange"
-                />
-                
-                <NutritionProgressBar
-                  label="지방"
-                  current={nutritionSummary.fat.actual}
-                  target={nutritionSummary.fat.target}
-                  unit="g"
-                  color="yellow"
-                />
-                
-                <div className="mt-6 pt-4 border-t border-gray-200">
-                  <div className="flex justify-between items-center">
-                    <h3 className="font-medium">일일 예산</h3>
-                    <div className={`flex items-center ${nutritionSummary.budget.actual > nutritionSummary.budget.target ? 'text-red-500' : 'text-green-500'}`}>
-                      <Wallet className="h-4 w-4 mr-1" />
-                      <span>
-                        {formatCurrency(nutritionSummary.budget.actual)} / {formatCurrency(nutritionSummary.budget.target)}
-                      </span>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-
-          </div>
-        </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
       </div>
     </div>
   );

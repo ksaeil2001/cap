@@ -7,6 +7,10 @@ import pandas as pd
 import numpy as np
 import os
 from typing import Dict, List, Any
+from settings import (
+    MEDICAL_CONDITIONS, DIETARY_RESTRICTIONS, 
+    DISEASE_RESTRICTIONS, DIET_RESTRICTIONS_RULES
+)
 
 class KoreanFoodRecommender:
     """새로운 정제 데이터 기반 AI 추천 시스템"""
@@ -127,6 +131,91 @@ class KoreanFoodRecommender:
         except Exception as e:
             print(f"❌ 건강 목표 필터링 오류: {e}")
             return data.copy()
+
+    def filter_by_medical_conditions(self, data: pd.DataFrame, conditions: List[str]) -> pd.DataFrame:
+        """의학적 조건에 따른 필터링"""
+        try:
+            if data is None or data.empty or not conditions or "없음" in conditions:
+                return data
+            
+            filtered_data = data.copy()
+            
+            for condition in conditions:
+                if condition in DISEASE_RESTRICTIONS:
+                    restrictions = DISEASE_RESTRICTIONS[condition]
+                    
+                    # 금지 태그가 있는 음식 제외
+                    if 'forbidden_tags' in restrictions and 'tags' in filtered_data.columns:
+                        forbidden_tags = restrictions['forbidden_tags']
+                        
+                        def has_forbidden_tag(tags):
+                            if not isinstance(tags, list):
+                                return False
+                            return any(forbidden_tag in tags for forbidden_tag in forbidden_tags)
+                        
+                        filtered_data = filtered_data[~filtered_data['tags'].apply(has_forbidden_tag)]
+                    
+                    # 권장 태그가 있는 음식 우선순위 부여
+                    if 'recommended_tags' in restrictions and 'tags' in filtered_data.columns:
+                        recommended_tags = restrictions['recommended_tags']
+                        
+                        def has_recommended_tag(tags):
+                            if not isinstance(tags, list):
+                                return False
+                            return any(rec_tag in tags for rec_tag in recommended_tags)
+                        
+                        # 권장 음식을 앞쪽으로 정렬
+                        recommended_foods = filtered_data[filtered_data['tags'].apply(has_recommended_tag)]
+                        other_foods = filtered_data[~filtered_data['tags'].apply(has_recommended_tag)]
+                        filtered_data = pd.concat([recommended_foods, other_foods], ignore_index=True)
+            
+            return filtered_data if not filtered_data.empty else data.copy()
+            
+        except Exception as e:
+            print(f"❌ 의학적 조건 필터링 오류: {e}")
+            return data.copy()
+
+    def filter_by_dietary_restrictions(self, data: pd.DataFrame, restrictions: List[str]) -> pd.DataFrame:
+        """식단 제한에 따른 필터링"""
+        try:
+            if data is None or data.empty or not restrictions or "없음" in restrictions:
+                return data
+            
+            filtered_data = data.copy()
+            
+            for restriction in restrictions:
+                if restriction in DIET_RESTRICTIONS_RULES:
+                    rules = DIET_RESTRICTIONS_RULES[restriction]
+                    
+                    # 금지 태그가 있는 음식 제외
+                    if 'forbidden_tags' in rules and 'tags' in filtered_data.columns:
+                        forbidden_tags = rules['forbidden_tags']
+                        
+                        def has_forbidden_tag(tags):
+                            if not isinstance(tags, list):
+                                return False
+                            return any(forbidden_tag in tags for forbidden_tag in forbidden_tags)
+                        
+                        filtered_data = filtered_data[~filtered_data['tags'].apply(has_forbidden_tag)]
+                    
+                    # 허용 태그만 포함하는 음식으로 제한 (더 엄격한 필터링)
+                    if 'allowed_tags' in rules and 'tags' in filtered_data.columns:
+                        allowed_tags = rules['allowed_tags']
+                        
+                        def has_allowed_tag(tags):
+                            if not isinstance(tags, list):
+                                return False
+                            return any(allowed_tag in tags for allowed_tag in allowed_tags)
+                        
+                        allowed_foods = filtered_data[filtered_data['tags'].apply(has_allowed_tag)]
+                        if not allowed_foods.empty:
+                            filtered_data = allowed_foods
+            
+            return filtered_data if not filtered_data.empty else data.copy()
+            
+        except Exception as e:
+            print(f"❌ 식단 제한 필터링 오류: {e}")
+            return data.copy()
     
     def calculate_nutrition_score(self, data: pd.DataFrame, user_profile: Dict) -> pd.DataFrame:
         """영양 점수 계산"""
@@ -191,11 +280,19 @@ class KoreanFoodRecommender:
             budget = user_profile.get('budget_per_meal', 10000)
             filtered_data = self.filter_by_budget(filtered_data, budget)
             
-            # 3. 건강 목표 필터링
+            # 3. 의학적 조건 필터링
+            medical_conditions = user_profile.get('medical_conditions', [])
+            filtered_data = self.filter_by_medical_conditions(filtered_data, medical_conditions)
+            
+            # 4. 식단 제한 필터링
+            dietary_restrictions = user_profile.get('dietary_restrictions', [])
+            filtered_data = self.filter_by_dietary_restrictions(filtered_data, dietary_restrictions)
+            
+            # 5. 건강 목표 필터링
             goal = user_profile.get('health_goal', '체중유지')
             filtered_data = self.filter_by_health_goal(filtered_data, goal)
             
-            # 4. 영양 점수 계산
+            # 6. 영양 점수 계산
             scored_data = self.calculate_nutrition_score(filtered_data, user_profile)
             
             # 5. 점수 순으로 정렬 및 상위 추천

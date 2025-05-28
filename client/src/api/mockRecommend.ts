@@ -50,29 +50,149 @@ export interface RecommendResponse {
   fallback: boolean;
 }
 
-// 추가한 한국어 음식 데이터만 사용
-// 전체 음식 데이터베이스 - food_items.json 파일에서 가져옴
-const foodDatabase: FoodItem[] = sampleFoodItems;
+// 실제 데이터베이스의 authentic 한국 음식 데이터
+const koreanFoodDatabase: FoodItem[] = [
+  {
+    foodId: 1,
+    id: "fd-110",
+    name: "소불고기",
+    kcal: 750,
+    protein: 25,
+    fat: 20,
+    carbs: 90,
+    price: 5700,
+    tags: ["dinner", "한식", "고단백"],
+    category: "곡류 및 밥"
+  },
+  {
+    foodId: 2,
+    id: "fd-111",
+    name: "돈까스도련님",
+    kcal: 700,
+    protein: 22,
+    fat: 19,
+    carbs: 88,
+    price: 4900,
+    tags: ["lunch", "dinner", "한식"],
+    category: "곡류 및 밥"
+  },
+  {
+    foodId: 3,
+    id: "fd-121",
+    name: "김치볶음밥",
+    kcal: 650,
+    protein: 18,
+    fat: 15,
+    carbs: 85,
+    price: 4100,
+    tags: ["lunch", "dinner", "한식", "김치"],
+    category: "곡류 및 밥"
+  },
+  {
+    foodId: 4,
+    id: "fd-122",
+    name: "스팸 철판볶음밥",
+    kcal: 700,
+    protein: 22,
+    fat: 20,
+    carbs: 88,
+    price: 4900,
+    tags: ["lunch", "dinner", "한식"],
+    category: "곡류 및 밥"
+  },
+  {
+    foodId: 5,
+    id: "fd-279",
+    name: "CU 두부샐러드 도시락",
+    kcal: 220,
+    protein: 17,
+    fat: 8,
+    carbs: 16,
+    price: 4300,
+    tags: ["breakfast", "lunch", "한식", "건강식"],
+    category: "채소류"
+  },
+  {
+    foodId: 6,
+    id: "fd-280",
+    name: "GS25 오곡잡곡밥 김치볶음 도시락",
+    kcal: 470,
+    protein: 11,
+    fat: 7,
+    carbs: 88,
+    price: 4300,
+    tags: ["lunch", "한식", "잡곡"],
+    category: "곡류 및 밥"
+  },
+  {
+    foodId: 7,
+    id: "fd-281",
+    name: "세븐일레븐 불고기치즈 롤",
+    kcal: 335,
+    protein: 12,
+    fat: 10,
+    carbs: 45,
+    price: 3200,
+    tags: ["breakfast", "lunch", "한식"],
+    category: "육류 가공품"
+  },
+  {
+    foodId: 8,
+    id: "fd-282",
+    name: "이마트24 갈릭버터 닭가슴살볼",
+    kcal: 230,
+    protein: 22,
+    fat: 10,
+    carbs: 9,
+    price: 2800,
+    tags: ["breakfast", "한식", "고단백", "저탄수"],
+    category: "육류 가공품"
+  },
+  {
+    foodId: 9,
+    id: "fd-283",
+    name: "한솥 데리야끼연어 스테이크",
+    kcal: 510,
+    protein: 21,
+    fat: 13,
+    carbs: 67,
+    price: 5700,
+    tags: ["dinner", "한식", "연어"],
+    category: "어류 및 수산가공품"
+  },
+  {
+    foodId: 10,
+    id: "fd-284",
+    name: "GS25 콩불 도시락",
+    kcal: 520,
+    protein: 18,
+    fat: 10,
+    carbs: 85,
+    price: 4100,
+    tags: ["lunch", "dinner", "한식"],
+    category: "두류"
+  }
+];
 
 // 아침 식사용 음식 (300kcal 미만 또는 breakfast 태그가 있는 음식)
-const breakfastFoods: FoodItem[] = foodDatabase.filter(food => 
+const breakfastFoods: FoodItem[] = koreanFoodDatabase.filter(food => 
   food.tags.includes("breakfast") || 
   (food.kcal < 300) || 
-  (food.category && ['fruit', 'dairy'].includes(food.category))
+  (food.category && ['삼각김밥', '샐러드'].includes(food.category))
 );
 
 // 점심 식사용 음식 (250-500kcal 또는 lunch 태그가 있는 음식)
-const lunchFoods: FoodItem[] = foodDatabase.filter(food => 
+const lunchFoods: FoodItem[] = koreanFoodDatabase.filter(food => 
   food.tags.includes("lunch") || 
   (food.kcal >= 250 && food.kcal <= 500) || 
-  (food.category && ['burger', 'salad', 'soup'].includes(food.category))
+  (food.category && ['도시락', '볶음밥', '덮밥'].includes(food.category))
 );
 
 // 저녁 식사용 음식 (400kcal 이상 또는 dinner 태그가 있는 음식)
-const dinnerFoods: FoodItem[] = foodDatabase.filter(food => 
+const dinnerFoods: FoodItem[] = koreanFoodDatabase.filter(food => 
   food.tags.includes("dinner") || 
   (food.kcal >= 400) || 
-  (food.category && ['meat', 'seafood', 'burger'].includes(food.category))
+  (food.category && ['도시락', '덮밥', '볶음밥'].includes(food.category))
 );
 
 // Helper function to create compatible food objects

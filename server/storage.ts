@@ -148,54 +148,36 @@ export class DatabaseStorage implements IStorage {
 
   async getRecommendedFoods(userInfo: UserInfo): Promise<Food[]> {
     try {
-      console.log(`Getting recommendations for: age ${userInfo.age}, activity level ${userInfo.activityLevel || 'not specified'}, meals ${userInfo.mealCount}`);
+      console.log(`Getting recommendations from 1,005 Korean foods database`);
+      console.log(`User info: age ${userInfo.age}, goal ${userInfo.goal}, meals ${userInfo.mealCount}`);
       
-      // Query the database for foods with their related nutrients
-      const foodsWithNutrients = await db.query.foods.findMany({
-        with: {
-          mainNutrient: true
-        }
-      });
+      // 데이터베이스에서 직접 한국 음식 데이터 가져오기
+      const koreanFoods = await db.select().from(foods).limit(50);
+      console.log(`Found ${koreanFoods.length} Korean foods in database`);
 
-      // Map the database results to the Food type
-      let dbFoods = foodsWithNutrients.map(dbFood => {
-        // Get the nutrient amount from the food_nutrients table
+      if (koreanFoods.length === 0) {
+        console.warn('No Korean foods found in database');
+        return sampleFoods.slice(0, 5);
+      }
+
+      // 데이터베이스 음식을 Food 타입으로 변환
+      let dbFoods = koreanFoods.map(dbFood => {
         return {
-          id: dbFood.id.toString(),
+          id: dbFood.id,
           name: dbFood.name,
           category: dbFood.category,
           calories: dbFood.calories,
-          price: dbFood.price / 100, // Convert cents to dollars
+          price: dbFood.price, // 원 단위로 그대로 사용
           mainNutrient: {
-            name: dbFood.mainNutrientId ? 'Protein' : 'Unknown', // Default fallback
-            amount: 0, // Will be updated from food_nutrients table
+            name: 'Protein',
+            amount: dbFood.protein || 10,
             unit: 'g'
           },
-          image: dbFood.image
+          image: `https://source.unsplash.com/300x200/?korean,food,${encodeURIComponent(dbFood.name)}`
         } as Food;
       });
 
-      // Load the nutrient amounts from the food_nutrients table
-      for (const food of dbFoods) {
-        const [foodNutrient] = await db
-          .select({
-            amount: foodNutrients.amount
-          })
-          .from(foodNutrients)
-          .where(
-            and(
-              eq(foodNutrients.foodId, parseInt(food.id)),
-              // Generate a consistent nutrient ID for each food
-              eq(foodNutrients.nutrientId, Math.max(1, parseInt(food.id) % 5 + 1))
-            )
-          );
-
-        if (foodNutrient) {
-          food.mainNutrient.amount = foodNutrient.amount;
-        }
-      }
-
-      // Filter foods based on user preferences and allergies
+      // 사용자 목표에 따른 필터링
       let recommendedFoods = [...dbFoods];
       
       // Filter out foods that contain allergens

@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
@@ -294,61 +294,60 @@ const RecommendPage: React.FC = () => {
         </div>
         
         {/* 선택된 음식 요약 */}
-          {Array.isArray(selectedFoods) && selectedFoods.length > 0 && (
-            <div className="mb-6 p-4 bg-primary-50 rounded-lg border border-primary-200">
-              <h3 className="text-lg font-medium mb-2 text-primary-700">선택한 식품 ({selectedFoods.length})</h3>
-              <div className="flex flex-wrap gap-2">
-                {selectedFoods.map(food => (
-                  <Card key={food.id} className="bg-white flex-grow-0">
-                    <CardContent className="p-2 flex items-center justify-between">
-                      <span className="text-sm font-medium">{food.name}</span>
-                      <Button 
-                        size="sm" 
-                        variant="ghost" 
-                        onClick={() => setSelectedFoods(prev => prev.filter(item => item.id !== food.id))}
-                        className="h-6 w-6 p-0"
-                      >
-                        ✕
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+        {Array.isArray(selectedFoods) && selectedFoods.length > 0 && (
+          <div className="mb-6 p-4 bg-primary-50 rounded-lg border border-primary-200">
+            <h3 className="text-lg font-medium mb-2 text-primary-700">선택한 식품 ({selectedFoods.length})</h3>
+            <div className="flex flex-wrap gap-2">
+              {selectedFoods.map(food => (
+                <Card key={food.id} className="bg-white flex-grow-0">
+                  <CardContent className="p-2 flex items-center justify-between">
+                    <span className="text-sm font-medium">{food.name}</span>
+                    <Button 
+                      size="sm" 
+                      variant="ghost" 
+                      onClick={() => setSelectedFoods(prev => prev.filter(item => item.id !== food.id))}
+                      className="h-6 w-6 p-0"
+                    >
+                      ✕
+                    </Button>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
+        
+        {/* 음식 카드 목록 */}
+        <div className="mb-6">
+          {filteredFoods && filteredFoods.length > 0 ? (
+            <FoodCardList 
+              foods={filteredFoods}
+              userInfo={userInfo || {
+                gender: 'male',
+                age: 30,
+                height: 175,
+                weight: 70,
+                goal: 'weight-loss',
+                activityLevel: 'medium',
+                mealCount: 3,
+                allergies: [],
+                isAgreementChecked: true,
+                budget: 15000
+              }}
+              selectedFoods={selectedFoods}
+              onSelectFood={handleSelectFood}
+              onViewDetails={handleViewDetails}
+            />
+          ) : (
+            <div className="text-center py-12 bg-gray-50 rounded-lg">
+              <h3 className="text-xl font-medium text-gray-500 mb-2">
+                현재 선택한 끼니에 대한 추천 음식이 없습니다
+              </h3>
+              <p className="text-gray-400">
+                다른 끼니를 선택하거나 프로필 정보를 업데이트하세요
+              </p>
             </div>
           )}
-          
-          {/* 음식 카드 목록 */}
-          <div className="mb-6">
-            {filteredFoods && filteredFoods.length > 0 ? (
-              <FoodCardList 
-                foods={filteredFoods}
-                userInfo={userInfo || {
-                  gender: 'male',
-                  age: 30,
-                  height: 175,
-                  weight: 70,
-                  goal: 'weight-loss',
-                  activityLevel: 'medium',
-                  mealCount: 3,
-                  allergies: [],
-                  isAgreementChecked: true,
-                  budget: 15000
-                }}
-                selectedFoods={selectedFoods}
-                onSelectFood={handleSelectFood}
-                onViewDetails={handleViewDetails}
-              />
-            ) : (
-              <div className="text-center py-12 bg-gray-50 rounded-lg">
-                <h3 className="text-xl font-medium text-gray-500 mb-2">
-                  현재 선택한 끼니에 대한 추천 음식이 없습니다
-                </h3>
-                <p className="text-gray-400">
-                  다른 끼니를 선택하거나 프로필 정보를 업데이트하세요
-                </p>
-              </div>
-            )}
-          </div>
         </div>
       </div>
       

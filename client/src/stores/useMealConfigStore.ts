@@ -174,7 +174,7 @@ export const useMealConfigStore = create<MealConfigStore>((set, get) => ({
       proteinTarget = recommendStore.summary.protein.target;
       fatTarget = recommendStore.summary.fat.target;
       carbsTarget = recommendStore.summary.carbs.target;
-      budgetTarget = recommendStore.summary.budget.target;
+      // budgetTarget는 사용자 입력값 유지 (recommendStore에서 덮어쓰지 않음)
     }
     
     // Create updated nutrition summary

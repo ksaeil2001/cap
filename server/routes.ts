@@ -5,20 +5,28 @@ import { z } from "zod";
 import fetch from "node-fetch";
 import { spawn } from "child_process";
 
-// Validation schema for user info
+// 더 유연한 사용자 정보 검증 스키마
 const userInfoSchema = z.object({
   gender: z.enum(["male", "female"]),
   age: z.number().min(10).max(120),
   height: z.number().min(100).max(250),
   weight: z.number().min(30).max(250),
   bodyFatPercent: z.number().min(5).max(50).optional(),
-  goal: z.enum(["weight-loss", "muscle-gain"]),
-  activityLevel: z.enum(["low", "medium", "high"]).optional(),
-  budget: z.number().min(20),
-  mealCount: z.number().min(2).max(6),
-  allergies: z.array(z.string()).default([]),
-  isAgreementChecked: z.boolean().optional().default(true), // Make optional for API calls
-});
+  goal: z.enum(["weight-loss", "muscle-gain", "maintenance"]).optional().default("weight-loss"),
+  activityLevel: z.enum(["low", "medium", "high"]).optional().default("medium"),
+  budget: z.number().min(20).optional().default(70000),
+  mealCount: z.number().min(2).max(6).optional().default(3),
+  allergies: z.array(z.string()).optional().default([]),
+  isAgreementChecked: z.boolean().optional().default(true),
+}).transform(data => ({
+  ...data,
+  // 기본값 보장
+  goal: data.goal || "weight-loss",
+  activityLevel: data.activityLevel || "medium", 
+  budget: data.budget || 70000,
+  mealCount: data.mealCount || 3,
+  allergies: data.allergies || []
+}));
 
 // Start the FastAPI server
 function startFastAPIServer() {

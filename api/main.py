@@ -50,61 +50,72 @@ async def get_all_foods():
 
 @app.post("/api/recommend")
 async def recommend(user_info: UserInfo):
-    """Generate personalized Korean meal recommendations based on user info"""
+    """Generate personalized Korean meal recommendations using authentic data"""
     try:
-        if not food_database:
-            raise HTTPException(status_code=500, detail="Korean food database not available")
+        # 정제된 한국 음식 데이터로 추천 생성
+        from utils.recommender import recommend as get_recommendations
         
-        # Filter by budget (convert weekly to daily)
-        daily_budget = user_info.budget / 7
-        affordable_foods = [food for food in food_database if food.price <= daily_budget]
+        # 사용자 프로필 변환
+        user_profile = {
+            "gender": "남성" if user_info.gender == "male" else "여성",
+            "age": user_info.age,
+            "height": user_info.height,
+            "weight": user_info.weight,
+            "goal": "체중감량" if user_info.goal == "weight-loss" else "근육증가" if user_info.goal == "muscle-gain" else "체중유지",
+            "budget": user_info.budget / 7,  # 주간 예산을 일간으로 변환
+            "allergies": user_info.allergies,
+            "preferences": ["단백질 위주", "간편식"],  # 기본 선호도
+            "diseases": []  # 추후 확장 가능
+        }
         
-        if not affordable_foods:
-            affordable_foods = food_database[:20]  # Take first 20 as fallback
+        # 추천 실행
+        recommendations = get_recommendations(user_profile)
         
-        # Filter by allergies
-        if user_info.allergies:
-            safe_foods = []
-            for food in affordable_foods:
-                is_safe = True
-                for allergy in user_info.allergies:
-                    if allergy.lower() in [a.lower() for a in food.allergies]:
-                        is_safe = False
-                        break
-                if is_safe:
-                    safe_foods.append(food)
-            if safe_foods:
-                affordable_foods = safe_foods
+        if not recommendations:
+            raise HTTPException(status_code=404, detail="추천 가능한 음식이 없습니다")
         
-        # Select foods based on health goals
-        if user_info.goal == "muscle-gain":
-            # Prioritize high-protein foods
-            affordable_foods.sort(key=lambda x: x.protein, reverse=True)
-        elif user_info.goal == "weight-loss":
-            # Prioritize low-calorie foods
-            affordable_foods.sort(key=lambda x: x.calories)
+        # 추천 결과를 FoodItem 형태로 변환
+        recommended_foods = []
+        for rec in recommendations:
+            food_item = FoodItem(
+                id=f"rec-{len(recommended_foods)}",
+                name=rec['name'],
+                type=rec.get('type', ''),
+                category=rec.get('category', ''),
+                cuisine='한식',
+                calories=rec['calories'],
+                protein=rec['protein'],
+                fat=0,  # 기본값
+                carbs=0,  # 기본값
+                sodium=0,  # 기본값
+                sugar=0,  # 기본값
+                fiber=0,  # 기본값
+                ingredients=[],
+                tags=rec.get('tags', []),
+                allergies=[],
+                price=rec['price'],
+                score=rec['score']
+            )
+            recommended_foods.append(food_item)
         
-        # Create meals (distribute foods across meals)
-        meal_count = min(user_info.mealCount, len(affordable_foods))
-        selected_foods = affordable_foods[:meal_count]
-        meals = [[food] for food in selected_foods]
+        # 식사별로 분배 (각 식사에 1개씩)
+        meal_count = min(user_info.mealCount, len(recommended_foods))
+        meals = [[food] for food in recommended_foods[:meal_count]]
         
-        # Calculate nutrition summary
-        total_calories = sum(food.calories for food in selected_foods)
-        total_protein = sum(food.protein for food in selected_foods)
-        total_fat = sum(food.fat for food in selected_foods)
-        total_carbs = sum(food.carbs for food in selected_foods)
-        total_cost = sum(food.price for food in selected_foods)
+        # 영양 요약 계산
+        total_calories = sum(food.calories for food in recommended_foods[:meal_count])
+        total_protein = sum(food.protein for food in recommended_foods[:meal_count])
+        total_cost = sum(food.price for food in recommended_foods[:meal_count])
         
-        # Calculate targets based on user profile
-        target_calories = 2000 + (100 if user_info.goal == "muscle-gain" else -200)
+        target_calories = 2000 if user_info.goal == "weight-loss" else 2200
         target_protein = 120 if user_info.goal == "muscle-gain" else 80
+        daily_budget = user_info.budget / 7
         
         summary = NutritionSummary(
             calories={"current": total_calories, "target": target_calories, "percentage": (total_calories/target_calories)*100},
             protein={"current": total_protein, "target": target_protein, "percentage": (total_protein/target_protein)*100},
-            fat={"current": total_fat, "target": 60, "percentage": (total_fat/60)*100},
-            carbs={"current": total_carbs, "target": 200, "percentage": (total_carbs/200)*100},
+            fat={"current": 0, "target": 60, "percentage": 0},
+            carbs={"current": 0, "target": 200, "percentage": 0},
             budget={"current": total_cost, "target": daily_budget, "percentage": (total_cost/daily_budget)*100},
             allergy=len(user_info.allergies) > 0
         )
@@ -112,11 +123,11 @@ async def recommend(user_info: UserInfo):
         return RecommendResponse(
             meals=meals,
             summary=summary,
-            fallback=len(affordable_foods) < user_info.mealCount
+            fallback=False
         )
         
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Error generating Korean meal recommendations: {str(e)}")
+        raise HTTPException(status_code=500, detail=f"추천 생성 오류: {str(e)}")
 
 # For local development
 if __name__ == "__main__":

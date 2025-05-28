@@ -1,7 +1,7 @@
 import React from 'react';
 import { FoodItem } from '@/stores/useRecommendStore';
 import { UserInfo } from '@/types';
-import FoodCard from './FoodCard';
+import FoodCard from './Food/FoodCard';
 
 interface FoodCardListProps {
   foods: FoodItem[];

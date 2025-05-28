@@ -1,7 +1,7 @@
 import React from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import DraggableMeal from './DraggableMeal';
+import FoodCard from './Food/FoodCard';
 import { FoodItem } from '@/api/mockRecommend';
 import { formatCurrency } from '@/lib/utils';
 import { Trash2 } from 'lucide-react';
@@ -43,16 +43,18 @@ const MealSlot: React.FC<MealSlotProps> = ({
         <div className="space-y-2 min-h-[100px]">
           {foods.length === 0 ? (
             <div className="flex items-center justify-center h-24 border-2 border-dashed rounded-md border-gray-200 bg-gray-50">
-              <p className="text-gray-400 text-sm">Drop food items here</p>
+              <p className="text-gray-400 text-sm">음식을 추가해주세요</p>
             </div>
           ) : (
-            <div className="space-y-2">
+            <div className="grid grid-cols-1 gap-3">
               {foods.map((food) => (
-                <DraggableMeal
+                <FoodCard
                   key={food.id}
                   food={food}
-                  onRemove={() => onRemoveFood(food.id)}
-                  iconType={iconType}
+                  variant="display-only"
+                  showActions={true}
+                  onSelect={() => onRemoveFood(food.id)}
+                  isSelected={false}
                 />
               ))}
             </div>

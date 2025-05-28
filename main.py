@@ -158,264 +158,294 @@ def main():
         st.write("오류 세부 정보:", str(e))
 
 def render_input_page():
-    """완전한 사용자 정보 입력 페이지"""
-    st.title("🍽️ 개인 맞춤 식단 추천 시스템")
-    st.markdown("### 건강한 한국 음식 추천을 위해 정보를 입력해주세요")
+    """맞춤형 식단 플래너 - 사양 준수 구현"""
+    st.title("맞춤형 식단 플래너")
+    st.markdown("프로필을 작성하여 목표, 식단 선호도, 예산에 맞춘 개인화된 식단 추천을 받으세요.")
     st.markdown("---")
     
     # 현재 프로필 데이터 안전하게 가져오기
     current_profile = get_session_value('user_profile', {})
     
+    # 알레르기 관리용 세션 상태 초기화
+    if 'allergy_list' not in st.session_state:
+        st.session_state.allergy_list = []
+    
     # 입력 폼 생성
-    with st.form("comprehensive_user_input_form"):
-        # 1. 기본 정보 섹션
-        st.subheader("👤 기본 정보")
-        col1, col2 = st.columns(2)
+    with st.form("meal_planner_form"):
+        # 1. 개인 정보 섹션
+        st.subheader("개인 정보")
+        st.write("정확한 영양소 추천을 위해 신체 정보를 입력해주세요.")
         
+        # 성별 (라디오 버튼)
+        gender = st.radio(
+            "성별",
+            options=["남성", "여성"],
+            index=0 if current_profile.get('gender', '남성') == '남성' else 1,
+            horizontal=True
+        )
+        
+        # 기본 정보 입력
+        col1, col2 = st.columns(2)
         with col1:
-            gender = st.selectbox(
-                "성별 *", 
-                ["남성", "여성"], 
-                index=0 if current_profile.get('gender', '남성') == '남성' else 1,
-                help="필수 입력 항목입니다"
-            )
             age = st.number_input(
-                "나이 *", 
-                min_value=10, 
-                max_value=120, 
-                value=current_profile.get('age', 25), 
-                step=1,
-                help="10세 ~ 120세 사이로 입력해주세요"
+                "나이 (세)", 
+                min_value=1, 
+                max_value=99, 
+                value=current_profile.get('age', 25),
+                step=1
+            )
+            height = st.number_input(
+                "키 (cm)", 
+                min_value=100, 
+                max_value=250, 
+                value=current_profile.get('height', 170),
+                step=1
             )
         
         with col2:
-            height = st.number_input(
-                "키 (cm) *", 
-                min_value=100, 
-                max_value=250, 
-                value=current_profile.get('height', 170), 
-                step=1,
-                help="100cm ~ 250cm 사이로 입력해주세요"
-            )
             weight = st.number_input(
-                "몸무게 (kg) *", 
-                min_value=30, 
+                "몸무게 (kg)", 
+                min_value=20, 
                 max_value=200, 
-                value=current_profile.get('weight', 70), 
-                step=1,
-                help="30kg ~ 200kg 사이로 입력해주세요"
+                value=current_profile.get('weight', 70),
+                step=1
             )
+        
+        # 체지방률 (슬라이더)
+        body_fat = st.slider(
+            "체지방률 (%)",
+            min_value=5,
+            max_value=60,
+            value=current_profile.get('body_fat', 20),
+            step=1
+        )
+        st.caption("대략적인 체지방률은 영양소 비율을 조정하는 데 도움이 됩니다.")
         
         st.markdown("---")
         
-        # 2. 건강 목표 및 활동 섹션
-        st.subheader("🎯 건강 목표 및 활동 수준")
-        col3, col4 = st.columns(2)
+        # 2. 목표 및 선호도 섹션
+        st.subheader("목표 및 선호도")
+        st.write("영양 목표와 식단 선호도를 설정하세요.")
         
-        with col3:
-            health_goal = st.selectbox(
-                "건강 목표 *", 
-                ["체중감량", "체중유지", "근육증가"], 
-                index=["체중감량", "체중유지", "근육증가"].index(
-                    current_profile.get('health_goal', '체중감량')
-                ),
-                help="현재 목표를 선택해주세요"
-            )
-            activity_level = st.selectbox(
-                "활동 수준", 
-                ["낮음", "보통", "높음"], 
-                index=["낮음", "보통", "높음"].index(
-                    current_profile.get('activity_level', '보통')
-                ),
-                help="낮음: 사무직, 보통: 가벼운 운동, 높음: 격한 운동"
-            )
-        
-        with col4:
-            budget_per_meal = st.slider(
-                "1회 식사 예산 (원) *", 
-                min_value=1000, 
-                max_value=20000, 
-                value=current_profile.get('budget_per_meal', 8000), 
-                step=500,
-                help="한 끼 식사에 사용할 수 있는 예산을 설정해주세요"
-            )
-            st.write(f"선택된 예산: {budget_per_meal:,}원")
-        
-        st.markdown("---")
-        
-        # 3. 알레르기 정보 섹션
-        st.subheader("🚫 알레르기 정보")
-        st.write("알레르기가 있는 항목을 선택해주세요 (최대 7개)")
-        
-        allergy_options = ["견과류", "갑각류", "유제품", "계란", "밀가루", "콩", "생선", "조개류"]
-        current_allergies = current_profile.get('allergies', [])
-        
-        allergies = st.multiselect(
-            "알레르기 항목",
-            options=allergy_options,
-            default=current_allergies,
-            help="해당하는 알레르기를 모두 선택해주세요"
+        # 주요 목표 (라디오 버튼)
+        main_goal = st.radio(
+            "주요 목표",
+            options=["체중 감량", "유지", "증가"],
+            index=["체중 감량", "유지", "증가"].index(current_profile.get('main_goal', '체중 감량')),
+            horizontal=True
         )
         
-        st.markdown("---")
-        
-        # 4. 식습관/선호도 섹션
-        st.subheader("🥗 식습관 및 선호도")
-        st.write("선호하는 식습관을 선택해주세요 (최대 5개)")
-        
-        preference_options = ["저염식", "저당식", "고단백", "채식위주", "키토", "비건", "일반식"]
-        current_preferences = current_profile.get('preferences', [])
-        
-        preferences = st.multiselect(
-            "식습관/선호도",
-            options=preference_options,
-            default=current_preferences,
-            help="원하는 식습관이나 다이어트 방식을 선택해주세요"
+        # 활동 수준 (드롭다운)
+        activity_level = st.selectbox(
+            "활동 수준",
+            options=["운동 없음", "주 1~2회", "주 3~5회", "매일"],
+            index=["운동 없음", "주 1~2회", "주 3~5회", "매일"].index(current_profile.get('activity_level', '주 1~2회'))
         )
         
-        st.markdown("---")
-        
-        # 5. 질환 정보 섹션 (선택사항)
-        st.subheader("⚕️ 건강 상태 (선택사항)")
-        st.write("현재 관리 중인 질환이 있다면 선택해주세요 (최대 5개)")
-        
-        disease_options = ["당뇨", "고혈압", "고지혈증", "위장장애", "신장질환"]
-        current_diseases = current_profile.get('diseases', [])
-        
-        diseases = st.multiselect(
-            "질환 정보",
-            options=disease_options,
-            default=current_diseases,
-            help="식단 추천 시 고려할 질환을 선택해주세요"
+        # 하루 식사 횟수 (라디오 버튼)
+        meal_count = st.radio(
+            "하루 식사 횟수",
+            options=["2끼", "3끼"],
+            index=0 if current_profile.get('meal_count', '3끼') == '2끼' else 1,
+            horizontal=True
         )
+        st.caption("식사 횟수에 따라 끼니당 영양소 및 예산이 조정됩니다.")
         
         st.markdown("---")
         
-        # 6. 약관 동의 섹션
-        st.subheader("📋 약관 동의")
+        # 3. 알레르기 및 식이 제한 섹션
+        st.subheader("알레르기 및 식이 제한")
+        st.write("피하고 싶은 알레르기 식품이나 음식을 입력하세요. (최대 5개)")
         
-        col5, col6 = st.columns([3, 1])
-        with col5:
-            privacy_agreement = st.checkbox(
-                "개인정보 수집 및 이용에 동의합니다",
-                value=current_profile.get('privacy_agreement', False),
-                help="입력하신 정보는 식단 추천 목적으로만 사용됩니다"
-            )
-            service_agreement = st.checkbox(
-                "서비스 이용약관에 동의합니다",
-                value=current_profile.get('service_agreement', False),
-                help="추천 서비스 이용을 위해 동의가 필요합니다"
-            )
+        # 알레르기 입력창
+        allergy_input = st.text_input("알레르기 항목 입력 또는 선택")
         
-        # 폼 제출 버튼
-        st.markdown("---")
-        submitted = st.form_submit_button(
-            "🔍 맞춤 식단 추천받기", 
-            type="primary", 
-            use_container_width=True
-        )
+        # 자주 사용되는 알레르기 항목 (버튼으로 선택)
+        st.write("자주 사용되는 알레르기 항목:")
+        common_allergies = ["우유", "대두(콩)", "땅콩", "밀", "달걀 흰자", "새우", "고등어"]
         
-        # 폼 제출 처리
-        if submitted:
-            try:
-                # 약관 동의 확인
-                if not privacy_agreement or not service_agreement:
-                    st.error("❌ 서비스 이용을 위해 약관 동의가 필요합니다.")
-                    return
-                
-                # 사용자 프로필 구성
-                user_profile = {
-                    'gender': gender,
-                    'age': age,
-                    'height': height,
-                    'weight': weight,
-                    'health_goal': health_goal,
-                    'activity_level': activity_level,
-                    'budget_per_meal': budget_per_meal,
-                    'allergies': allergies,
-                    'preferences': preferences,
-                    'diseases': diseases,
-                    'privacy_agreement': privacy_agreement,
-                    'service_agreement': service_agreement
-                }
-                
-                # 입력값 검증
-                from utils.validators import (
-                    validate_user_profile, 
-                    validate_selection_limits,
-                    validate_age,
-                    validate_height_weight,
-                    validate_budget
-                )
-                
-                # 개별 검증
-                age_valid, age_error = validate_age(age)
-                if not age_valid:
-                    st.error(f"❌ {age_error}")
-                    return
-                
-                height_weight_valid, hw_errors = validate_height_weight(height, weight)
-                if not height_weight_valid:
-                    for error in hw_errors:
-                        st.error(f"❌ {error}")
-                    return
-                
-                budget_valid, budget_error = validate_budget(budget_per_meal)
-                if not budget_valid:
-                    st.error(f"❌ {budget_error}")
-                    return
-                
-                selection_valid, selection_errors = validate_selection_limits(allergies, preferences, diseases)
-                if not selection_valid:
-                    for error in selection_errors:
-                        st.error(f"❌ {error}")
-                    return
-                
-                # 전체 프로필 검증
-                profile_valid, profile_errors = validate_user_profile(user_profile)
-                if not profile_valid:
-                    st.error("❌ 입력값 검증 실패:")
-                    for error in profile_errors:
-                        st.error(f"• {error}")
-                    return
-                
-                # 세션에 안전하게 저장
-                if set_session_value('user_profile', user_profile):
-                    # 추천 시스템 연동 준비
-                    if set_session_value('page', 'recommend'):
-                        st.success("✅ 정보가 저장되었습니다! 맞춤 식단을 생성하고 있습니다...")
-                        st.balloons()  # 성공 시 축하 효과
+        allergy_cols = st.columns(len(common_allergies))
+        for i, allergy in enumerate(common_allergies):
+            with allergy_cols[i]:
+                if st.button(allergy, key=f"allergy_{i}"):
+                    if allergy not in st.session_state.allergy_list and len(st.session_state.allergy_list) < 5:
+                        st.session_state.allergy_list.append(allergy)
+        
+        # 등록된 알레르기 항목 표시
+        if st.session_state.allergy_list:
+            st.write("등록된 알레르기 항목:")
+            for i, allergy in enumerate(st.session_state.allergy_list):
+                col_a, col_b = st.columns([3, 1])
+                with col_a:
+                    st.write(f"• {allergy}")
+                with col_b:
+                    if st.button("삭제", key=f"delete_allergy_{i}"):
+                        st.session_state.allergy_list.remove(allergy)
                         st.rerun()
+        else:
+            st.info("등록된 알레르기 항목이 없습니다. 위 입력창에 알레르기 항목을 입력하거나 추천 목록에서 선택하세요.")
+        
+        st.markdown("---")
+        
+        # 4. 일일 예산 섹션
+        st.subheader("일일 예산")
+        st.write("식단 계획을 위한 일일 식료품 예산을 설정하세요.")
+        
+        # 예산 입력 (입력창 + 슬라이더)
+        col_budget1, col_budget2 = st.columns(2)
+        with col_budget1:
+            budget_input = st.number_input(
+                "일일 예산 (원)",
+                min_value=1000,
+                max_value=60000,
+                value=current_profile.get('daily_budget', 15000),
+                step=1000
+            )
+        
+        with col_budget2:
+            budget_slider = st.slider(
+                "예산 슬라이더",
+                min_value=1000,
+                max_value=60000,
+                value=current_profile.get('daily_budget', 15000),
+                step=1000
+            )
+        
+        # 두 입력값 동기화
+        daily_budget = max(budget_input, budget_slider)
+        st.write(f"최소: ₩1,000, 최대: ₩60,000")
+        st.caption("이 예산 범위 내에서 하루 식단을 최적화합니다.")
+        
+        st.markdown("---")
+        
+        # 5. 약관 동의 섹션
+        st.subheader("약관 동의")
+        terms_agreement = st.checkbox(
+            "I understand that this application provides recommendations only and not professional medical or nutrition advice.",
+            value=current_profile.get('terms_agreement', False)
+        )
+        
+        st.markdown("---")
+        
+        # 폼 제출 버튼들
+        col_btn1, col_btn2 = st.columns(2)
+        
+        with col_btn1:
+            reset_form = st.form_submit_button(
+                "양식 초기화",
+                use_container_width=True
+            )
+        
+        with col_btn2:
+            submit_form = st.form_submit_button(
+                "추천 받기",
+                type="primary",
+                use_container_width=True
+            )
+        
+        # 텍스트 입력에서 알레르기 추가
+        if allergy_input and allergy_input not in st.session_state.allergy_list and len(st.session_state.allergy_list) < 5:
+            st.session_state.allergy_list.append(allergy_input)
+            st.rerun()
+        
+        # 양식 초기화 처리
+        if reset_form:
+            # 모든 세션 상태 초기화
+            st.session_state.allergy_list = []
+            for key in ['user_profile']:
+                if key in st.session_state:
+                    del st.session_state[key]
+            st.success("양식이 초기화되었습니다.")
+            st.rerun()
+        
+        # 추천 받기 처리
+        if submit_form:
+            # 실시간 입력값 검증
+            validation_errors = []
+            
+            # 필수 항목 검증
+            if age < 1 or age > 99:
+                validation_errors.append("나이는 1세에서 99세 사이여야 합니다.")
+            
+            if height < 100 or height > 250:
+                validation_errors.append("키는 100cm에서 250cm 사이여야 합니다.")
+            
+            if weight < 20 or weight > 200:
+                validation_errors.append("몸무게는 20kg에서 200kg 사이여야 합니다.")
+            
+            if daily_budget < 1000 or daily_budget > 60000:
+                validation_errors.append("일일 예산은 1,000원에서 60,000원 사이여야 합니다.")
+            
+            if len(st.session_state.allergy_list) > 5:
+                validation_errors.append("알레르기 항목은 최대 5개까지만 등록할 수 있습니다.")
+            
+            # 약관 동의 확인
+            if not terms_agreement:
+                validation_errors.append("서비스 이용을 위해 약관에 동의해주세요.")
+            
+            # 검증 오류가 있으면 표시
+            if validation_errors:
+                st.error("❌ 입력값 검증 실패:")
+                for error in validation_errors:
+                    st.error(f"• {error}")
+            else:
+                try:
+                    # 사용자 프로필 구성
+                    user_profile = {
+                        'gender': gender,
+                        'age': age,
+                        'height': height,
+                        'weight': weight,
+                        'body_fat': body_fat,
+                        'main_goal': main_goal,
+                        'activity_level': activity_level,
+                        'meal_count': meal_count,
+                        'daily_budget': daily_budget,
+                        'allergies': st.session_state.allergy_list.copy(),
+                        'terms_agreement': terms_agreement
+                    }
+                    
+                    # 세션에 안전하게 저장
+                    if set_session_value('user_profile', user_profile):
+                        st.success("✅ 정보가 저장되었습니다! 맞춤 식단을 생성하고 있습니다...")
+                        st.balloons()
+                        
+                        # 추천 페이지로 이동
+                        if set_session_value('page', 'recommend'):
+                            st.rerun()
+                        else:
+                            st.error("❌ 페이지 이동에 실패했습니다.")
                     else:
-                        st.error("❌ 페이지 이동에 실패했습니다.")
-                else:
-                    st.error("❌ 프로필 저장에 실패했습니다.")
-                
-            except Exception as e:
-                st.error(f"❌ 정보 처리 중 오류가 발생했습니다: {e}")
-                # 에러 로그 저장
-                error_logs = get_session_value('error_logs', [])
-                if error_logs is not None:
-                    error_logs.append(f"사용자 입력 처리 오류: {e}")
-                    set_session_value('error_logs', error_logs)
+                        st.error("❌ 프로필 저장에 실패했습니다.")
+                        
+                except Exception as e:
+                    st.error(f"❌ 정보 처리 중 오류가 발생했습니다: {str(e)}")
+                    # 에러 로그 저장
+                    error_logs = get_session_value('error_logs', [])
+                    if error_logs is not None:
+                        error_logs.append(f"사용자 입력 처리 오류: {e}")
+                        set_session_value('error_logs', error_logs)
     
-    # 입력 도움말
-    with st.expander("💡 입력 도움말"):
-        st.markdown("""
-        **필수 항목 (*)**: 정확한 추천을 위해 반드시 입력해주세요.
+    # 현재 입력값 확인 (디버깅용)
+    if st.checkbox("🔧 입력값 확인 (개발자용)"):
+        if st.session_state.allergy_list:
+            st.write("**등록된 알레르기:**", st.session_state.allergy_list)
+        else:
+            st.write("**등록된 알레르기:** 없음")
         
-        **건강 목표**:
-        - 체중감량: 칼로리 제한 및 저염식 위주 추천
-        - 체중유지: 균형 잡힌 영양소 구성 추천  
-        - 근육증가: 고단백 식품 위주 추천
-        
-        **활동 수준**:
-        - 낮음: 주로 앉아서 생활 (사무직 등)
-        - 보통: 주 1-3회 가벼운 운동
-        - 높음: 주 4회 이상 격한 운동
-        
-        **예산**: 설정한 예산 내에서 최적의 음식을 추천해드립니다.
-        """)
+        current_data = {
+            '성별': gender if 'gender' in locals() else 'N/A',
+            '나이': age if 'age' in locals() else 'N/A',
+            '키': f"{height}cm" if 'height' in locals() else 'N/A',
+            '몸무게': f"{weight}kg" if 'weight' in locals() else 'N/A',
+            '체지방률': f"{body_fat}%" if 'body_fat' in locals() else 'N/A',
+            '목표': main_goal if 'main_goal' in locals() else 'N/A',
+            '활동수준': activity_level if 'activity_level' in locals() else 'N/A',
+            '식사횟수': meal_count if 'meal_count' in locals() else 'N/A',
+            '예산': f"{daily_budget:,}원" if 'daily_budget' in locals() else 'N/A',
+            '약관동의': terms_agreement if 'terms_agreement' in locals() else 'N/A'
+        }
+        st.json(current_data)
 
 def user_input_page():
     """호환성을 위한 래퍼 함수"""

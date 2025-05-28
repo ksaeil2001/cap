@@ -55,9 +55,9 @@ const formSchema = z.object({
     message: '식사 횟수는 2 또는 3이어야 합니다',
   })),
   allergies: z.array(z.string()).default([]),
-  budgetPerMeal: z.coerce.number().min(1000).max(20000).int()
-    .refine(val => val >= 1000 && val <= 20000, {
-      message: '1회 식사 예산은 1,000원에서 20,000원 사이여야 합니다',
+  budgetPerMeal: z.coerce.number().min(MIN_BUDGET).max(MAX_BUDGET).int()
+    .refine(val => val >= MIN_BUDGET && val <= MAX_BUDGET, {
+      message: BUDGET_ERROR_MSG,
     }),
   preferences: z.array(z.string()).default([]),
   diseases: z.array(z.string()).default([]),

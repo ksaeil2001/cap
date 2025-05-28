@@ -1,5 +1,6 @@
 from pydantic import BaseModel, Field
 from typing import List, Optional, Literal
+from settings import MIN_BUDGET_WEEKLY, MAX_BUDGET_WEEKLY
 
 class UserInfo(BaseModel):
     """User profile data model for meal recommendations"""
@@ -12,7 +13,7 @@ class UserInfo(BaseModel):
     activityLevel: Literal['low', 'medium', 'high']
     mealCount: int = Field(..., ge=3, le=6)
     allergies: List[str] = []
-    budget: float = Field(..., ge=20, le=300)  # Weekly budget
+    budget: float = Field(..., ge=MIN_BUDGET_WEEKLY, le=MAX_BUDGET_WEEKLY)  # Weekly budget
 
 class FoodItem(BaseModel):
     """Food item data model"""

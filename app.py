@@ -7,6 +7,7 @@ import os
 import plotly.express as px
 import plotly.graph_objects as go
 from food_recommender import KoreanFoodRecommender
+from settings import MIN_BUDGET, MAX_BUDGET, DEFAULT_BUDGET
 
 # 페이지 설정
 st.set_page_config(
@@ -89,9 +90,9 @@ def user_input_page():
             # 1회 식사 예산 슬라이더
             budget_per_meal = st.slider(
                 "1회 식사 예산 (원)",
-                min_value=1000,
-                max_value=20000,
-                value=10000,
+                min_value=MIN_BUDGET,
+                max_value=MAX_BUDGET,
+                value=DEFAULT_BUDGET,
                 step=500,
                 help="설정한 예산 내에서 식단을 추천합니다"
             )

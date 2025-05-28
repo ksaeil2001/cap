@@ -8,7 +8,8 @@ import { X, Plus } from 'lucide-react';
 import { 
   MIN_BUDGET, MAX_BUDGET, DEFAULT_BUDGET, MIN_AGE, MAX_AGE, 
   MIN_HEIGHT, MAX_HEIGHT, MIN_WEIGHT, MAX_WEIGHT, MAX_ALLERGIES, 
-  BUDGET_ERROR_MSG, BUDGET_MIN_DISPLAY, BUDGET_MAX_DISPLAY 
+  BUDGET_ERROR_MSG, BUDGET_MIN_DISPLAY, BUDGET_MAX_DISPLAY,
+  MEDICAL_CONDITIONS, DIETARY_RESTRICTIONS
 } from '@/constants/budget';
 
 import { Button } from '@/components/ui/button';
@@ -60,6 +61,8 @@ const formSchema = z.object({
     }),
   preferences: z.array(z.string()).default([]),
   diseases: z.array(z.string()).default([]),
+  medicalConditions: z.array(z.string()).default([]),
+  dietaryRestrictions: z.array(z.string()).default([]),
   isAgreementChecked: z.literal(true, {
     invalid_type_error: '이용 약관에 동의해주세요',
   }),
@@ -149,6 +152,8 @@ const MainInputPage = () => {
       budgetPerMeal: userState.budgetPerMeal,
       preferences: userState.preferences || [],
       diseases: userState.diseases || [],
+      medicalConditions: [],
+      dietaryRestrictions: [],
       isAgreementChecked: true, // 필수 동의 체크
     },
   });
@@ -665,6 +670,116 @@ const MainInputPage = () => {
                     </FormItem>
                   );
                 }}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Medical Conditions Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle>의학적 조건/질환</CardTitle>
+              <CardDescription>
+                안전한 식단 추천을 위해 현재 앓고 계신 질환이나 의학적 조건을 선택해주세요.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <FormField
+                control={form.control}
+                name="medicalConditions"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>의학적 조건 선택 (다중 선택 가능)</FormLabel>
+                    <FormControl>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        {MEDICAL_CONDITIONS.map((condition) => (
+                          <div key={condition} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`condition-${condition}`}
+                              checked={field.value.includes(condition)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  if (condition === "없음") {
+                                    field.onChange(["없음"]);
+                                  } else {
+                                    const newValue = field.value.filter(v => v !== "없음");
+                                    field.onChange([...newValue, condition]);
+                                  }
+                                } else {
+                                  field.onChange(field.value.filter(v => v !== condition));
+                                }
+                              }}
+                            />
+                            <label
+                              htmlFor={`condition-${condition}`}
+                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                            >
+                              {condition}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </FormControl>
+                    <FormDescription>
+                      선택된 질환에 따라 부적합한 음식은 자동으로 제외됩니다.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+            </CardContent>
+          </Card>
+
+          {/* Dietary Restrictions Card */}
+          <Card>
+            <CardHeader>
+              <CardTitle>특이 식단/종교적 제한</CardTitle>
+              <CardDescription>
+                개인적인 식단 선호도나 종교적 제한사항을 선택해주세요.
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <FormField
+                control={form.control}
+                name="dietaryRestrictions"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>식단 제한 선택 (다중 선택 가능)</FormLabel>
+                    <FormControl>
+                      <div className="grid grid-cols-2 md:grid-cols-3 gap-3">
+                        {DIETARY_RESTRICTIONS.map((restriction) => (
+                          <div key={restriction} className="flex items-center space-x-2">
+                            <Checkbox
+                              id={`restriction-${restriction}`}
+                              checked={field.value.includes(restriction)}
+                              onCheckedChange={(checked) => {
+                                if (checked) {
+                                  if (restriction === "없음") {
+                                    field.onChange(["없음"]);
+                                  } else {
+                                    const newValue = field.value.filter(v => v !== "없음");
+                                    field.onChange([...newValue, restriction]);
+                                  }
+                                } else {
+                                  field.onChange(field.value.filter(v => v !== restriction));
+                                }
+                              }}
+                            />
+                            <label
+                              htmlFor={`restriction-${restriction}`}
+                              className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                            >
+                              {restriction}
+                            </label>
+                          </div>
+                        ))}
+                      </div>
+                    </FormControl>
+                    <FormDescription>
+                      선택된 제한사항에 맞는 음식만 추천됩니다.
+                    </FormDescription>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
             </CardContent>
           </Card>

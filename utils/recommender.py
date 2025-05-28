@@ -170,22 +170,25 @@ def generate_meal_based_recommendations(df: pd.DataFrame, user_profile: Dict[str
     
     import random
     
-    # 끼니별 분류 기준 정의 (더 구체적이고 배타적)
+    # 실제 데이터 기반 끼니별 분류 기준 정의
     meal_categories = {
         'breakfast': {
-            'keywords': ['아침', '샌드위치', '빵', '토스트', '시리얼', '우유', '요거트', '간편식'],
-            'types': ['간편식', '빵류', '유제품', '샌드위치'],
-            'avoid_keywords': ['밥', '국', '찌개', '볶음', '구이']
+            'types': ['샌드위치', '삼각김밥'],  # 간편한 아침 메뉴
+            'keywords': ['아침', '샌드위치', '토스트', '간편'],
+            'avoid_types': ['볶음밥', '초밥'],  # 아침에 부적합한 메뉴
+            'fallback_types': ['김밥', '롤/김밥']  # 부족할 때 사용
         },
         'lunch': {
-            'keywords': ['점심', '밥', '덮밥', '비빔밥', '정식', '면', '국수', '라면'],
-            'types': ['정식', '덮밥', '면류', '밥류'],
-            'avoid_keywords': ['빵', '토스트', '시리얼', '야식']
+            'types': ['도시락', '볶음밥', '김밥', '롤/김밥'],  # 점심 메인 메뉴
+            'keywords': ['점심', '밥', '덮밥', '정식', '볶음'],
+            'avoid_types': ['샐러드', '스낵'],  # 점심에 부족한 메뉴
+            'fallback_types': ['삼각김밥', '냉동식품']
         },
         'dinner': {
-            'keywords': ['저녁', '구이', '볶음', '전골', '찜', '탕', '반찬', '야식'],
-            'types': ['구이', '볶음', '전골', '탕류', '반찬'],
-            'avoid_keywords': ['빵', '토스트', '시리얼', '간편식']
+            'types': ['초밥', '샐러드', '냉동식품'],  # 저녁 메뉴
+            'keywords': ['저녁', '초밥', '샐러드', '냉동'],
+            'avoid_types': ['삼각김밥', '스낵'],  # 저녁에 부적합한 메뉴
+            'fallback_types': ['도시락', '김밥']
         }
     }
     
@@ -204,43 +207,58 @@ def generate_meal_based_recommendations(df: pd.DataFrame, user_profile: Dict[str
     for meal_time, criteria in meal_categories.items():
         keywords = criteria['keywords']
         types = criteria['types']
-        avoid_keywords = criteria['avoid_keywords']
+        avoid_types = criteria['avoid_types']
+        fallback_types = criteria['fallback_types']
         
         # 1단계: 끼니별 특화 음식 필터링
-        meal_suitable = sorted_df[
-            # 긍정적 매칭 (이름, 타입, 카테고리에서 끼니 관련 키워드 포함)
-            (sorted_df['name'].str.contains('|'.join(keywords), case=False, na=False) |
-             sorted_df['type'].str.contains('|'.join(types), case=False, na=False) |
-             sorted_df['category'].str.contains('|'.join(keywords), case=False, na=False)) &
-            # 부정적 매칭 (피해야 할 키워드 제외)
-            (~sorted_df['name'].str.contains('|'.join(avoid_keywords), case=False, na=False)) &
-            (~sorted_df['type'].str.contains('|'.join(avoid_keywords), case=False, na=False))
+        # 우선 조건: 해당 끼니 타입에 맞는 음식
+        primary_suitable = sorted_df[
+            (sorted_df['type'].isin(types) |
+             sorted_df['name'].str.contains('|'.join(keywords), case=False, na=False)) &
+            (~sorted_df['type'].isin(avoid_types))
         ].copy()
         
         # 이미 사용된 음식 제외
-        meal_suitable = meal_suitable[~meal_suitable['name'].isin(used_foods)]
+        primary_suitable = primary_suitable[~primary_suitable['name'].isin(used_foods)]
         
-        print(f"🍽️ {meal_time}: 적합한 음식 {len(meal_suitable)}개 발견")
+        print(f"🍽️ {meal_time}: 우선 적합한 음식 {len(primary_suitable)}개 발견")
         
-        # 2단계: 다양성을 위한 랜덤 샘플링
+        # 2단계: 우선 후보가 부족하면 fallback 타입 추가
+        if len(primary_suitable) < 3:
+            fallback_suitable = sorted_df[
+                (sorted_df['type'].isin(fallback_types)) &
+                (~sorted_df['type'].isin(avoid_types)) &
+                (~sorted_df['name'].isin(used_foods))
+            ].copy()
+            
+            # 우선 후보와 fallback 후보 결합
+            meal_suitable = pd.concat([primary_suitable, fallback_suitable]).drop_duplicates().reset_index(drop=True)
+            print(f"⚠️ {meal_time}: fallback 추가 후 {len(meal_suitable)}개 후보")
+        else:
+            meal_suitable = primary_suitable
+        
+        # 3단계: 다양성을 위한 랜덤 샘플링
         target_count = 3
         if len(meal_suitable) >= target_count:
             # 상위 점수 음식들 중에서 랜덤하게 선택 (다양성 확보)
-            top_candidates = meal_suitable.head(min(10, len(meal_suitable)))  # 상위 10개 중에서
+            top_candidates = meal_suitable.head(min(8, len(meal_suitable)))  # 상위 8개 중에서
             if len(top_candidates) >= target_count:
                 selected_indices = random.sample(range(len(top_candidates)), target_count)
                 selected_foods = top_candidates.iloc[selected_indices]
             else:
                 selected_foods = top_candidates
         else:
-            # 끼니별 특화 음식이 부족한 경우 전체에서 선택 (사용되지 않은 것만)
-            available_foods = sorted_df[~sorted_df['name'].isin(used_foods)]
+            # 그래도 부족하면 전체에서 선택 (피해야 할 타입만 제외)
+            available_foods = sorted_df[
+                (~sorted_df['type'].isin(avoid_types)) &
+                (~sorted_df['name'].isin(used_foods))
+            ]
             if len(available_foods) >= target_count:
                 selected_foods = available_foods.head(target_count)
             else:
                 selected_foods = available_foods
             
-            print(f"⚠️ {meal_time}: 특화 음식 부족, 전체에서 {len(selected_foods)}개 선택")
+            print(f"⚠️ {meal_time}: 최종 보완 후 {len(selected_foods)}개 선택")
         
         # 3단계: 추천 객체 생성
         for _, row in selected_foods.iterrows():

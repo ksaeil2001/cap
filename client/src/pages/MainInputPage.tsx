@@ -687,14 +687,14 @@ const MainInputPage = () => {
                           {...field} 
                           onChange={(e) => field.onChange(parseInt(e.target.value || "0"))}
                           min={1}
-                          max={60000}
+                          max={100000}
                           step={1}
                           placeholder="일일 식단 예산을 입력하세요"
                         />
                         <div className="flex justify-between mt-2">
                           <span className="text-xs text-neutral-500">최소: ₩1</span>
                           <span className="text-xs font-medium">₩{(field.value || 0).toLocaleString()}</span>
-                          <span className="text-xs text-neutral-500">최대: ₩60,000</span>
+                          <span className="text-xs text-neutral-500">최대: ₩100,000</span>
                         </div>
                       </div>
                     </FormControl>

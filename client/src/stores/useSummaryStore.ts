@@ -60,8 +60,6 @@ export const useSummaryStore = create<SummaryStore>((set, get) => ({
   // Generate a week-long meal plan based on current configuration
   generateWeekPlan: () => {
     const { weekPlan } = get();
-    const mealConfigStore = require('./useMealConfigStore').useMealConfigStore.getState();
-    const userInfo = useUserStore.getState();
     
     // If we already have a week plan, don't regenerate
     if (weekPlan.length > 0) return;
@@ -69,8 +67,15 @@ export const useSummaryStore = create<SummaryStore>((set, get) => ({
     // Create 7 days of meal plans with slight variations
     const newWeekPlan: DayPlan[] = [];
     
+    // Create empty meal structure for each day
+    const emptyMeals = {
+      breakfast: [] as FoodItem[],
+      lunch: [] as FoodItem[],
+      dinner: [] as FoodItem[]
+    };
+    
     for (let i = 0; i < 7; i++) {
-      const baseMeals = mealConfigStore.meals;
+      const baseMeals = emptyMeals;
       
       // Create a slightly varied version of meals for each day
       // (In a real app, this would use the AI to generate truly different meals)

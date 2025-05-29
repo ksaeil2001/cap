@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Dialog, DialogContent } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogTitle, DialogDescription } from '@/components/ui/dialog';
 import { Progress } from '@/components/ui/progress';
 
 interface AILoadingModalProps {
@@ -65,6 +65,10 @@ export const AILoadingModal = ({ isOpen, onComplete }: AILoadingModalProps) => {
   return (
     <Dialog open={isOpen} onOpenChange={() => {}}>
       <DialogContent className="sm:max-w-md">
+        <DialogTitle className="sr-only">AI 맞춤 식단 구성 중</DialogTitle>
+        <DialogDescription className="sr-only">
+          입력하신 정보를 기반으로 AI가 최적의 식단을 구성하고 있습니다.
+        </DialogDescription>
         <div className="flex flex-col items-center space-y-6 py-8">
           {/* AI 아이콘 애니메이션 */}
           <div className="relative">

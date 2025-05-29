@@ -53,6 +53,9 @@ async def recommend(user_info: UserInfo):
     """Generate personalized Korean meal recommendations using authentic data"""
     try:
         # 정제된 한국 음식 데이터로 추천 생성
+        import sys
+        import os
+        sys.path.append(os.path.dirname(os.path.dirname(__file__)))
         from utils.recommender import recommend as get_recommendations
         
         # 사용자 프로필 변환

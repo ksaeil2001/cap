@@ -289,78 +289,80 @@ const SummaryPage = () => {
         </Card>
         
         {/* 예산 및 건강 목표 통합 카드 */}
-        <Card>
-          <CardHeader>
-            <CardTitle>📊 예산 및 건강 목표</CardTitle>
-            <CardDescription>일일 예산 현황과 설정된 건강 목표</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
-              {/* 예산 정보 섹션 */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 text-lg font-semibold">
-                  💰 일일 예산: {formatCurrency(budgetInfo.totalBudget)}
-                </div>
-                <div className="flex justify-between items-center">
-                  <span className="text-sm">사용 금액: {formatCurrency(budgetInfo.usedBudget)} ({budgetInfo.budgetPercentage.toFixed(1)}%)</span>
-                </div>
-                <Progress 
-                  value={Math.min(budgetInfo.budgetPercentage, 100)} 
-                  className={`h-3 ${budgetInfo.isOverBudget ? 'bg-red-100' : 'bg-green-100'}`}
-                />
-                {budgetInfo.isOverBudget && (
-                  <div className="text-sm text-red-600 bg-red-50 p-2 rounded flex items-center gap-2">
-                    ⚠️ 예산을 {formatCurrency(budgetInfo.usedBudget - budgetInfo.totalBudget)} 초과했습니다.
+        <div className="w-full max-w-4xl mx-auto">
+          <Card className="shadow-lg border-0 bg-gradient-to-r from-blue-50 to-indigo-50">
+            <CardHeader className="pb-6">
+              <CardTitle className="text-xl">📊 예산 및 건강 목표</CardTitle>
+              <CardDescription className="text-base">일일 예산 현황과 설정된 건강 목표</CardDescription>
+            </CardHeader>
+            <CardContent className="px-8 pb-8">
+              <div className="space-y-8">
+                {/* 예산 정보 섹션 */}
+                <div className="space-y-5">
+                  <div className="flex items-center gap-3 text-xl font-semibold text-gray-800">
+                    💰 일일 예산: {formatCurrency(budgetInfo.totalBudget)}
                   </div>
-                )}
-                {hasAllergies && (
-                  <div className="text-sm text-red-600 bg-red-50 p-2 rounded flex items-center gap-2">
-                    🚫 현재 식단에 알레르기 유발 성분이 포함되어 있습니다.
+                  <div className="flex justify-between items-center mb-4">
+                    <span className="text-base text-gray-600">사용 금액: {formatCurrency(budgetInfo.usedBudget)} ({budgetInfo.budgetPercentage.toFixed(1)}%)</span>
                   </div>
-                )}
-              </div>
-
-              {/* 구분선 */}
-              <div className="border-t border-gray-200"></div>
-
-              {/* 사용자 목표 섹션 */}
-              <div className="space-y-4">
-                <div className="flex items-center gap-2 text-lg font-semibold">
-                  👤 {userStore.goal === 'weight-loss' ? '체중 감량' : '근육 증가'} 계획 ({userStore.gender === 'male' ? 'M' : 'F'})
+                  <Progress 
+                    value={Math.min(budgetInfo.budgetPercentage, 100)} 
+                    className={`h-4 ${budgetInfo.isOverBudget ? 'bg-red-100' : 'bg-green-100'}`}
+                  />
+                  {budgetInfo.isOverBudget && (
+                    <div className="text-sm text-red-600 bg-red-50 p-4 rounded-lg flex items-center gap-3 border border-red-200">
+                      ⚠️ 예산을 {formatCurrency(budgetInfo.usedBudget - budgetInfo.totalBudget)} 초과했습니다.
+                    </div>
+                  )}
+                  {hasAllergies && (
+                    <div className="text-sm text-red-600 bg-red-50 p-4 rounded-lg flex items-center gap-3 border border-red-200">
+                      🚫 현재 식단에 알레르기 유발 성분이 포함되어 있습니다.
+                    </div>
+                  )}
                 </div>
-                
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm">📏 키/몸무게:</span>
-                      <span className="font-medium">{userStore.height}cm / {userStore.weight}kg</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm">🏃‍♂️ 활동 수준:</span>
-                      <Badge variant="secondary" className="text-xs">
-                        {userStore.activityLevel === 'low' ? '낮은 활동량' : 
-                         userStore.activityLevel === 'medium' ? '보통 활동량' : '높은 활동량'}
-                      </Badge>
-                    </div>
+
+                {/* 구분선 */}
+                <div className="border-t border-gray-300 my-6"></div>
+
+                {/* 사용자 목표 섹션 */}
+                <div className="space-y-5">
+                  <div className="flex items-center gap-3 text-xl font-semibold text-gray-800 mb-6">
+                    👤 {userStore.goal === 'weight-loss' ? '체중 감량' : '근육 증가'} 계획 ({userStore.gender === 'male' ? 'M' : 'F'})
                   </div>
                   
-                  <div className="space-y-3">
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm">🍽️ 식사 횟수:</span>
-                      <span className="font-medium">{userStore.mealCount}회</span>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3 py-2">
+                        <span className="text-base text-gray-600 min-w-[100px]">📏 키/몸무게:</span>
+                        <span className="font-medium text-gray-800">{userStore.height}cm / {userStore.weight}kg</span>
+                      </div>
+                      <div className="flex items-center gap-3 py-2">
+                        <span className="text-base text-gray-600 min-w-[100px]">🏃‍♂️ 활동 수준:</span>
+                        <Badge variant="secondary" className="text-sm px-3 py-1">
+                          {userStore.activityLevel === 'low' ? '낮은 활동량' : 
+                           userStore.activityLevel === 'medium' ? '보통 활동량' : '높은 활동량'}
+                        </Badge>
+                      </div>
                     </div>
-                    <div className="flex items-center gap-2">
-                      <span className="text-sm">🚫 알레르기:</span>
-                      <span className="font-medium">
-                        {!userStore.allergies || userStore.allergies.length === 0 ? '없음' : userStore.allergies.join(', ')}
-                      </span>
+                    
+                    <div className="space-y-4">
+                      <div className="flex items-center gap-3 py-2">
+                        <span className="text-base text-gray-600 min-w-[100px]">🍽️ 식사 횟수:</span>
+                        <span className="font-medium text-gray-800">{userStore.mealCount}회</span>
+                      </div>
+                      <div className="flex items-center gap-3 py-2">
+                        <span className="text-base text-gray-600 min-w-[100px]">🚫 알레르기:</span>
+                        <span className="font-medium text-gray-800">
+                          {!userStore.allergies || userStore.allergies.length === 0 ? '없음' : userStore.allergies.join(', ')}
+                        </span>
+                      </div>
                     </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       </div>
       
       {/* 5️⃣ 식사별 구성 */}

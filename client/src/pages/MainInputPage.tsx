@@ -5,6 +5,7 @@ import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import AlertCustom from '@/components/ui/alert-custom';
 import { X, Plus } from 'lucide-react';
+import AILoadingModal from '@/components/AILoadingModal';
 import { 
   MIN_BUDGET, MAX_BUDGET, DEFAULT_BUDGET, MIN_AGE, MAX_AGE, 
   MIN_HEIGHT, MAX_HEIGHT, MIN_WEIGHT, MAX_WEIGHT, MAX_ALLERGIES, 
@@ -136,6 +137,9 @@ const MainInputPage = () => {
   // Get user store state and actions
   const userState = useUserStore();
   
+  // AI Loading Modal state
+  const [showAILoading, setShowAILoading] = useState(false);
+  
   // Initialize form with existing user info
   const form = useForm<FormValues>({
     resolver: zodResolver(formSchema),
@@ -170,8 +174,8 @@ const MainInputPage = () => {
         description: '프로필이 성공적으로 저장되었습니다.',
       });
       
-      // Navigate to recommendation page
-      navigate('/recommend');
+      // Show AI loading modal before navigating
+      setShowAILoading(true);
     } catch (error) {
       console.error('Form submission error:', error);
       toast({

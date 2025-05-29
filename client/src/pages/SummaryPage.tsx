@@ -292,15 +292,15 @@ const SummaryPage = () => {
         <div className="w-full max-w-6xl mx-auto min-w-[400px]">
           <Card className="shadow-lg border-0 bg-gradient-to-r from-blue-50 to-indigo-50">
             <CardHeader className="pb-6 px-10">
-              <CardTitle className="text-xl">📊 예산 및 건강 목표</CardTitle>
+              <CardTitle className="text-xl">예산 및 건강 목표</CardTitle>
               <CardDescription className="text-base">일일 예산 현황과 설정된 건강 목표</CardDescription>
             </CardHeader>
             <CardContent className="px-10 pb-10">
               <div className="space-y-10">
                 {/* 예산 정보 섹션 */}
                 <div className="space-y-6">
-                  <div className="flex items-center gap-3 text-xl font-semibold text-gray-800">
-                    💰 일일 예산: {formatCurrency(budgetInfo.totalBudget)}
+                  <div className="text-xl font-semibold text-gray-800">
+                    일일 예산: {formatCurrency(budgetInfo.totalBudget)}
                   </div>
                   <div className="flex justify-between items-center mb-4">
                     <span className="text-base text-gray-600">사용 금액: {formatCurrency(budgetInfo.usedBudget)} ({budgetInfo.budgetPercentage.toFixed(1)}%)</span>
@@ -310,13 +310,13 @@ const SummaryPage = () => {
                     className={`h-4 ${budgetInfo.isOverBudget ? 'bg-red-100' : 'bg-green-100'}`}
                   />
                   {budgetInfo.isOverBudget && (
-                    <div className="text-sm text-red-600 bg-red-50 p-4 rounded-lg flex items-center gap-3 border border-red-200">
-                      ⚠️ 예산을 {formatCurrency(budgetInfo.usedBudget - budgetInfo.totalBudget)} 초과했습니다.
+                    <div className="text-sm text-red-600 bg-red-50 p-4 rounded-lg border border-red-200">
+                      예산을 {formatCurrency(budgetInfo.usedBudget - budgetInfo.totalBudget)} 초과했습니다.
                     </div>
                   )}
                   {hasAllergies && (
-                    <div className="text-sm text-red-600 bg-red-50 p-4 rounded-lg flex items-center gap-3 border border-red-200">
-                      🚫 현재 식단에 알레르기 유발 성분이 포함되어 있습니다.
+                    <div className="text-sm text-red-600 bg-red-50 p-4 rounded-lg border border-red-200">
+                      현재 식단에 알레르기 유발 성분이 포함되어 있습니다.
                     </div>
                   )}
                 </div>
@@ -326,55 +326,37 @@ const SummaryPage = () => {
 
                 {/* 사용자 목표 섹션 */}
                 <div className="space-y-6">
-                  <div className="flex items-center gap-3 text-xl font-semibold text-gray-800 mb-8">
-                    👤 {userStore.goal === 'weight-loss' ? '체중 감량' : '근육 증가'} 계획 ({userStore.gender === 'male' ? 'M' : 'F'})
+                  <div className="text-xl font-semibold text-gray-800 mb-8">
+                    {userStore.goal === 'weight-loss' ? '체중 감량' : '근육 증가'} 계획 ({userStore.gender === 'male' ? 'M' : 'F'})
                   </div>
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
-                    <div className="space-y-8">
-                      <div className="flex items-center justify-between py-2 min-h-[40px]">
-                        <span className="text-base text-gray-600 flex items-center gap-2">
-                          📏 키/몸무게:
-                        </span>
-                        <span className="font-medium text-gray-800 text-right ml-4">
+                    <div className="space-y-6">
+                      <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                        <span className="text-base text-gray-600">키/몸무게</span>
+                        <span className="font-medium text-gray-800">
                           {userStore.height}cm / {userStore.weight}kg
                         </span>
                       </div>
-                      <div className="flex items-center justify-between py-2 min-h-[40px]">
-                        <span className="text-base text-gray-600 flex items-center gap-2">
-                          🏃‍♂️ 활동 수준:
-                        </span>
-                        <div className="ml-4">
-                          <Badge 
-                            variant="secondary" 
-                            className="text-sm px-4 py-2 text-center min-w-[100px] whitespace-nowrap inline-block"
-                            style={{
-                              whiteSpace: 'nowrap',
-                              textAlign: 'center',
-                              display: 'inline-block'
-                            }}
-                          >
-                            {userStore.activityLevel === 'low' ? '낮은 활동량' : 
-                             userStore.activityLevel === 'medium' ? '보통 활동량' : '높은 활동량'}
-                          </Badge>
+                      <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                        <span className="text-base text-gray-600">활동 수준</span>
+                        <div className="inline-flex items-center px-3 py-1 rounded-full bg-gray-200 text-sm font-medium text-gray-700">
+                          {userStore.activityLevel === 'low' ? '낮은 활동량' : 
+                           userStore.activityLevel === 'medium' ? '보통 활동량' : '높은 활동량'}
                         </div>
                       </div>
                     </div>
                     
-                    <div className="space-y-8">
-                      <div className="flex items-center justify-between py-2 min-h-[40px]">
-                        <span className="text-base text-gray-600 flex items-center gap-2">
-                          🍽️ 식사 횟수:
-                        </span>
-                        <span className="font-medium text-gray-800 text-right ml-4">
+                    <div className="space-y-6">
+                      <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                        <span className="text-base text-gray-600">식사 횟수</span>
+                        <span className="font-medium text-gray-800">
                           {userStore.mealCount}회
                         </span>
                       </div>
-                      <div className="flex items-center justify-between py-2 min-h-[40px]">
-                        <span className="text-base text-gray-600 flex items-center gap-2">
-                          🚫 알레르기:
-                        </span>
-                        <span className="font-medium text-gray-800 text-right ml-4">
+                      <div className="flex justify-between items-center py-2 border-b border-gray-100">
+                        <span className="text-base text-gray-600">알레르기</span>
+                        <span className="font-medium text-gray-800">
                           {!userStore.allergies || userStore.allergies.length === 0 ? '없음' : userStore.allergies.join(', ')}
                         </span>
                       </div>

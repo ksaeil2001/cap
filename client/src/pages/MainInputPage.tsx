@@ -186,6 +186,12 @@ const MainInputPage = () => {
     }
   };
 
+  // Handle AI loading completion
+  const handleAILoadingComplete = () => {
+    setShowAILoading(false);
+    navigate('/recommend');
+  };
+
   // Handle reset form
   const handleReset = () => {
     userState.resetUserInfo();
@@ -869,6 +875,12 @@ const MainInputPage = () => {
           </div>
         </form>
       </Form>
+
+      {/* AI Loading Modal */}
+      <AILoadingModal 
+        isOpen={showAILoading}
+        onComplete={handleAILoadingComplete}
+      />
     </div>
   );
 };

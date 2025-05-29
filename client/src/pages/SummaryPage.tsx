@@ -330,29 +330,41 @@ const SummaryPage = () => {
                     👤 {userStore.goal === 'weight-loss' ? '체중 감량' : '근육 증가'} 계획 ({userStore.gender === 'male' ? 'M' : 'F'})
                   </div>
                   
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-3 py-2">
-                        <span className="text-base text-gray-600 min-w-[100px]">📏 키/몸무게:</span>
-                        <span className="font-medium text-gray-800">{userStore.height}cm / {userStore.weight}kg</span>
+                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                    <div className="space-y-6">
+                      <div className="flex items-center justify-between py-3">
+                        <span className="text-base text-gray-600 flex items-center gap-2">
+                          📏 키/몸무게:
+                        </span>
+                        <span className="font-medium text-gray-800 text-right">
+                          {userStore.height}cm / {userStore.weight}kg
+                        </span>
                       </div>
-                      <div className="flex items-center gap-3 py-2">
-                        <span className="text-base text-gray-600 min-w-[100px]">🏃‍♂️ 활동 수준:</span>
-                        <Badge variant="secondary" className="text-sm px-3 py-1">
+                      <div className="flex items-center justify-between py-3">
+                        <span className="text-base text-gray-600 flex items-center gap-2">
+                          🏃‍♂️ 활동 수준:
+                        </span>
+                        <Badge variant="secondary" className="text-sm px-4 py-2 whitespace-nowrap min-w-fit">
                           {userStore.activityLevel === 'low' ? '낮은 활동량' : 
                            userStore.activityLevel === 'medium' ? '보통 활동량' : '높은 활동량'}
                         </Badge>
                       </div>
                     </div>
                     
-                    <div className="space-y-4">
-                      <div className="flex items-center gap-3 py-2">
-                        <span className="text-base text-gray-600 min-w-[100px]">🍽️ 식사 횟수:</span>
-                        <span className="font-medium text-gray-800">{userStore.mealCount}회</span>
+                    <div className="space-y-6">
+                      <div className="flex items-center justify-between py-3">
+                        <span className="text-base text-gray-600 flex items-center gap-2">
+                          🍽️ 식사 횟수:
+                        </span>
+                        <span className="font-medium text-gray-800 text-right">
+                          {userStore.mealCount}회
+                        </span>
                       </div>
-                      <div className="flex items-center gap-3 py-2">
-                        <span className="text-base text-gray-600 min-w-[100px]">🚫 알레르기:</span>
-                        <span className="font-medium text-gray-800">
+                      <div className="flex items-center justify-between py-3">
+                        <span className="text-base text-gray-600 flex items-center gap-2">
+                          🚫 알레르기:
+                        </span>
+                        <span className="font-medium text-gray-800 text-right">
                           {!userStore.allergies || userStore.allergies.length === 0 ? '없음' : userStore.allergies.join(', ')}
                         </span>
                       </div>

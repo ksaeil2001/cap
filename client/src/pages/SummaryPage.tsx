@@ -388,14 +388,7 @@ const SummaryPage = () => {
               allOtherFoods.some(otherFood => otherFood.id === food.id)
             );
             
-            // AI 코멘트 생성
-            const getAIComment = () => {
-              if (mealFoods.length === 0) return "식단을 구성해주세요.";
-              if (totalProtein < 15) return "단백질이 다소 부족한 식단입니다. 달걀 또는 두부 추가를 고려해보세요.";
-              if (totalCarbs < 20) return "에너지원이 부족합니다. 토스트나 시리얼을 추가해보세요.";
-              if (totalCalories < 200) return "아침 식사량이 부족합니다. 조금 더 충실하게 드세요.";
-              return "균형 잡힌 아침 식단입니다.";
-            };
+
             
             // 영양소 비율 계산
             const totalMacros = totalProtein + totalCarbs + totalFat;
@@ -484,11 +477,6 @@ const SummaryPage = () => {
                             />
                           </div>
                         </div>
-                        
-                        {/* AI 코멘트 */}
-                        <div className="bg-blue-50 p-3 rounded-lg border-l-4 border-blue-400">
-                          <p className="text-sm text-blue-800">{getAIComment()}</p>
-                        </div>
                       </>
                     )}
                   </div>
@@ -511,15 +499,6 @@ const SummaryPage = () => {
             const duplicateFoods = mealFoods.filter(food => 
               allOtherFoods.some(otherFood => otherFood.id === food.id)
             );
-            
-            // AI 코멘트 생성
-            const getAIComment = () => {
-              if (mealFoods.length === 0) return "식단을 구성해주세요.";
-              if (totalProtein < 20) return "점심 단백질이 부족합니다. 고기나 생선 요리를 추가해보세요.";
-              if (totalCarbs > 80) return "탄수화물이 과다합니다. 밥량을 조절하거나 샐러드를 추가해보세요.";
-              if (totalCalories > 800) return "점심 칼로리가 높습니다. 적당한 양을 유지해보세요.";
-              return "균형 잡힌 점심 식단입니다.";
-            };
             
             // 영양소 비율 계산
             const totalMacros = totalProtein + totalCarbs + totalFat;
@@ -609,10 +588,6 @@ const SummaryPage = () => {
                           </div>
                         </div>
                         
-                        {/* AI 코멘트 */}
-                        <div className="bg-blue-50 p-3 rounded-lg border-l-4 border-blue-400">
-                          <p className="text-sm text-blue-800">{getAIComment()}</p>
-                        </div>
                       </>
                     )}
                   </div>
@@ -636,14 +611,7 @@ const SummaryPage = () => {
               allOtherFoods.some(otherFood => otherFood.id === food.id)
             );
             
-            // AI 코멘트 생성
-            const getAIComment = () => {
-              if (mealFoods.length === 0) return "식단을 구성해주세요.";
-              if (totalCalories > 700) return "저녁 칼로리가 높습니다. 가벼운 식단으로 조절해보세요.";
-              if (totalFat > 25) return "저녁 지방 섭취가 많습니다. 구이나 찜 요리를 선택해보세요.";
-              if (totalProtein < 15) return "저녁 단백질이 부족합니다. 생선이나 두부를 추가해보세요.";
-              return "균형 잡힌 저녁 식단입니다.";
-            };
+
             
             // 영양소 비율 계산
             const totalMacros = totalProtein + totalCarbs + totalFat;

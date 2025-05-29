@@ -289,16 +289,16 @@ const SummaryPage = () => {
         </Card>
         
         {/* 예산 및 건강 목표 통합 카드 */}
-        <div className="w-full max-w-4xl mx-auto">
+        <div className="w-full max-w-6xl mx-auto min-w-[400px]">
           <Card className="shadow-lg border-0 bg-gradient-to-r from-blue-50 to-indigo-50">
-            <CardHeader className="pb-6">
+            <CardHeader className="pb-6 px-10">
               <CardTitle className="text-xl">📊 예산 및 건강 목표</CardTitle>
               <CardDescription className="text-base">일일 예산 현황과 설정된 건강 목표</CardDescription>
             </CardHeader>
-            <CardContent className="px-8 pb-8">
-              <div className="space-y-8">
+            <CardContent className="px-10 pb-10">
+              <div className="space-y-10">
                 {/* 예산 정보 섹션 */}
-                <div className="space-y-5">
+                <div className="space-y-6">
                   <div className="flex items-center gap-3 text-xl font-semibold text-gray-800">
                     💰 일일 예산: {formatCurrency(budgetInfo.totalBudget)}
                   </div>
@@ -322,49 +322,59 @@ const SummaryPage = () => {
                 </div>
 
                 {/* 구분선 */}
-                <div className="border-t border-gray-300 my-6"></div>
+                <div className="border-t border-gray-300 my-8"></div>
 
                 {/* 사용자 목표 섹션 */}
-                <div className="space-y-5">
-                  <div className="flex items-center gap-3 text-xl font-semibold text-gray-800 mb-6">
+                <div className="space-y-6">
+                  <div className="flex items-center gap-3 text-xl font-semibold text-gray-800 mb-8">
                     👤 {userStore.goal === 'weight-loss' ? '체중 감량' : '근육 증가'} 계획 ({userStore.gender === 'male' ? 'M' : 'F'})
                   </div>
                   
-                  <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-                    <div className="space-y-6">
-                      <div className="flex items-center justify-between py-3">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
+                    <div className="space-y-8">
+                      <div className="flex items-center justify-between py-2 min-h-[40px]">
                         <span className="text-base text-gray-600 flex items-center gap-2">
                           📏 키/몸무게:
                         </span>
-                        <span className="font-medium text-gray-800 text-right">
+                        <span className="font-medium text-gray-800 text-right ml-4">
                           {userStore.height}cm / {userStore.weight}kg
                         </span>
                       </div>
-                      <div className="flex items-center justify-between py-3">
+                      <div className="flex items-center justify-between py-2 min-h-[40px]">
                         <span className="text-base text-gray-600 flex items-center gap-2">
                           🏃‍♂️ 활동 수준:
                         </span>
-                        <Badge variant="secondary" className="text-sm px-4 py-2 whitespace-nowrap min-w-fit">
-                          {userStore.activityLevel === 'low' ? '낮은 활동량' : 
-                           userStore.activityLevel === 'medium' ? '보통 활동량' : '높은 활동량'}
-                        </Badge>
+                        <div className="ml-4">
+                          <Badge 
+                            variant="secondary" 
+                            className="text-sm px-4 py-2 text-center min-w-[100px] whitespace-nowrap inline-block"
+                            style={{
+                              whiteSpace: 'nowrap',
+                              textAlign: 'center',
+                              display: 'inline-block'
+                            }}
+                          >
+                            {userStore.activityLevel === 'low' ? '낮은 활동량' : 
+                             userStore.activityLevel === 'medium' ? '보통 활동량' : '높은 활동량'}
+                          </Badge>
+                        </div>
                       </div>
                     </div>
                     
-                    <div className="space-y-6">
-                      <div className="flex items-center justify-between py-3">
+                    <div className="space-y-8">
+                      <div className="flex items-center justify-between py-2 min-h-[40px]">
                         <span className="text-base text-gray-600 flex items-center gap-2">
                           🍽️ 식사 횟수:
                         </span>
-                        <span className="font-medium text-gray-800 text-right">
+                        <span className="font-medium text-gray-800 text-right ml-4">
                           {userStore.mealCount}회
                         </span>
                       </div>
-                      <div className="flex items-center justify-between py-3">
+                      <div className="flex items-center justify-between py-2 min-h-[40px]">
                         <span className="text-base text-gray-600 flex items-center gap-2">
                           🚫 알레르기:
                         </span>
-                        <span className="font-medium text-gray-800 text-right">
+                        <span className="font-medium text-gray-800 text-right ml-4">
                           {!userStore.allergies || userStore.allergies.length === 0 ? '없음' : userStore.allergies.join(', ')}
                         </span>
                       </div>

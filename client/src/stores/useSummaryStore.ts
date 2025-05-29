@@ -83,14 +83,14 @@ export const useSummaryStore = create<SummaryStore>((set, get) => ({
       // Calculate nutrition summary for this day
       const allFoods = [...dayMeals.breakfast, ...dayMeals.lunch, ...dayMeals.dinner];
       const nutritionSummary: NutritionSummary = {
-        calories: Math.round(allFoods.reduce((sum, food) => sum + food.kcal, 0)),
-        protein: Math.round(allFoods.reduce((sum, food) => sum + food.protein, 0)),
-        fat: Math.round(allFoods.reduce((sum, food) => sum + food.fat, 0)),
-        carbs: Math.round(allFoods.reduce((sum, food) => sum + food.carbs, 0))
+        calories: Math.round(allFoods.reduce((sum, food) => sum + (food.calories || food.kcal || 0), 0)),
+        protein: Math.round(allFoods.reduce((sum, food) => sum + (food.protein || 0), 0)),
+        fat: Math.round(allFoods.reduce((sum, food) => sum + (food.fat || 0), 0)),
+        carbs: Math.round(allFoods.reduce((sum, food) => sum + (food.carbs || 0), 0))
       };
       
       // Calculate budget for this day
-      const budgetUsed = Math.round(allFoods.reduce((sum, food) => sum + food.price, 0));
+      const budgetUsed = Math.round(allFoods.reduce((sum, food) => sum + (food.price || 0), 0));
       
       newWeekPlan.push({
         day: i + 1,

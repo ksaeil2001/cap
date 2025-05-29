@@ -700,11 +700,7 @@ const SummaryPage = () => {
                             />
                           </div>
                         </div>
-                        
-                        {/* AI 코멘트 */}
-                        <div className="bg-blue-50 p-3 rounded-lg border-l-4 border-blue-400">
-                          <p className="text-sm text-blue-800">{getAIComment()}</p>
-                        </div>
+
                       </>
                     )}
                   </div>

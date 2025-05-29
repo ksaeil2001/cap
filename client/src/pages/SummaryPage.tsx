@@ -387,94 +387,376 @@ const SummaryPage = () => {
         <h2 className="text-2xl font-bold mb-4">식사별 구성</h2>
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
           {/* 아침식사 */}
-          <Card>
-            <CardHeader>
-              <CardTitle>아침식사</CardTitle>
-              <CardDescription>
-                {selectedPerMeal.breakfast.reduce((sum, food) => sum + (food.calories || food.kcal || 0), 0)} kcal
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {selectedPerMeal.breakfast.length === 0 ? (
-                  <p className="text-muted-foreground text-sm">식단이 아직 구성되지 않았습니다</p>
-                ) : (
-                  selectedPerMeal.breakfast.map((food: FoodItem) => (
-                    <div key={food.id} className="p-2 border rounded-md">
-                      <div className="font-medium">{food.name}</div>
-                      <div className="text-sm text-muted-foreground flex justify-between">
-                        <span>{food.calories || food.kcal || 0} kcal</span>
-                        <span>{formatCurrency(food.price || 0)}</span>
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        단백질: {food.protein || 0}g | 탄수화물: {food.carbs || 0}g | 지방: {food.fat || 0}g
-                      </div>
+          {(() => {
+            const mealFoods = selectedPerMeal.breakfast;
+            const totalCalories = mealFoods.reduce((sum, food) => sum + (food.calories || food.kcal || 0), 0);
+            const totalPrice = mealFoods.reduce((sum, food) => sum + (food.price || 0), 0);
+            const totalProtein = mealFoods.reduce((sum, food) => sum + (food.protein || 0), 0);
+            const totalCarbs = mealFoods.reduce((sum, food) => sum + (food.carbs || 0), 0);
+            const totalFat = mealFoods.reduce((sum, food) => sum + (food.fat || 0), 0);
+            
+            // 중복 음식 체크
+            const allOtherFoods = [...selectedPerMeal.lunch, ...selectedPerMeal.dinner];
+            const duplicateFoods = mealFoods.filter(food => 
+              allOtherFoods.some(otherFood => otherFood.id === food.id)
+            );
+            
+            // AI 코멘트 생성
+            const getAIComment = () => {
+              if (mealFoods.length === 0) return "식단을 구성해주세요.";
+              if (totalProtein < 15) return "단백질이 다소 부족한 식단입니다. 달걀 또는 두부 추가를 고려해보세요.";
+              if (totalCarbs < 20) return "에너지원이 부족합니다. 토스트나 시리얼을 추가해보세요.";
+              if (totalCalories < 200) return "아침 식사량이 부족합니다. 조금 더 충실하게 드세요.";
+              return "균형 잡힌 아침 식단입니다.";
+            };
+            
+            // 영양소 비율 계산
+            const totalMacros = totalProtein + totalCarbs + totalFat;
+            const proteinRatio = totalMacros > 0 ? (totalProtein / totalMacros) * 100 : 0;
+            const carbsRatio = totalMacros > 0 ? (totalCarbs / totalMacros) * 100 : 0;
+            const fatRatio = totalMacros > 0 ? (totalFat / totalMacros) * 100 : 0;
+            
+            return (
+              <Card className="overflow-hidden">
+                <CardHeader className="bg-orange-50 border-b">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2 text-orange-700">
+                      🍳 아침식사
+                    </CardTitle>
+                  </div>
+                  <CardDescription className="text-orange-600 font-medium">
+                    총 {totalCalories} kcal / {formatCurrency(totalPrice)}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-4">
+                  <div className="space-y-4">
+                    {/* 음식 리스트 */}
+                    <div className="space-y-3">
+                      {mealFoods.length === 0 ? (
+                        <p className="text-muted-foreground text-sm text-center py-4">식단이 아직 구성되지 않았습니다</p>
+                      ) : (
+                        mealFoods.map((food: FoodItem) => (
+                          <div key={food.id} className="p-3 bg-gray-50 rounded-lg">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="font-medium flex items-center gap-2">
+                                  {food.name}
+                                  {duplicateFoods.some(df => df.id === food.id) && (
+                                    <Badge variant="secondary" className="text-xs">중복</Badge>
+                                  )}
+                                </div>
+                                <div className="text-sm text-muted-foreground mt-1">
+                                  {food.calories || food.kcal || 0} kcal | {formatCurrency(food.price || 0)}
+                                </div>
+                                <div className="text-xs text-muted-foreground mt-1">
+                                  단백질: {food.protein || 0}g | 탄수화물: {food.carbs || 0}g | 지방: {food.fat || 0}g
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
                     </div>
-                  ))
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                    
+                    {mealFoods.length > 0 && (
+                      <>
+                        {/* 총합 요약 */}
+                        <div className="bg-orange-50 p-3 rounded-lg">
+                          <h4 className="font-medium text-sm mb-2">영양소 총합</h4>
+                          <div className="grid grid-cols-3 gap-2 text-xs">
+                            <div className="text-center">
+                              <div className="font-bold text-blue-600">{totalProtein}g</div>
+                              <div className="text-muted-foreground">단백질</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="font-bold text-orange-600">{totalCarbs}g</div>
+                              <div className="text-muted-foreground">탄수화물</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="font-bold text-yellow-600">{totalFat}g</div>
+                              <div className="text-muted-foreground">지방</div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* 영양소 비율 시각화 */}
+                        <div className="space-y-2">
+                          <div className="text-xs font-medium">영양소 비율</div>
+                          <div className="flex h-2 rounded-full overflow-hidden bg-gray-200">
+                            <div 
+                              className="bg-blue-500" 
+                              style={{ width: `${proteinRatio}%` }}
+                            />
+                            <div 
+                              className="bg-orange-500" 
+                              style={{ width: `${carbsRatio}%` }}
+                            />
+                            <div 
+                              className="bg-yellow-500" 
+                              style={{ width: `${fatRatio}%` }}
+                            />
+                          </div>
+                        </div>
+                        
+                        {/* AI 코멘트 */}
+                        <div className="bg-blue-50 p-3 rounded-lg border-l-4 border-blue-400">
+                          <p className="text-sm text-blue-800">{getAIComment()}</p>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })()}
           
           {/* 점심식사 */}
-          <Card>
-            <CardHeader>
-              <CardTitle>점심식사</CardTitle>
-              <CardDescription>
-                {selectedPerMeal.lunch.reduce((sum, food) => sum + (food.calories || food.kcal || 0), 0)} kcal
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {selectedPerMeal.lunch.length === 0 ? (
-                  <p className="text-muted-foreground text-sm">식단이 아직 구성되지 않았습니다</p>
-                ) : (
-                  selectedPerMeal.lunch.map((food: FoodItem) => (
-                    <div key={food.id} className="p-2 border rounded-md">
-                      <div className="font-medium">{food.name}</div>
-                      <div className="text-sm text-muted-foreground flex justify-between">
-                        <span>{food.calories || food.kcal || 0} kcal</span>
-                        <span>{formatCurrency(food.price || 0)}</span>
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        단백질: {food.protein || 0}g | 탄수화물: {food.carbs || 0}g | 지방: {food.fat || 0}g
-                      </div>
+          {(() => {
+            const mealFoods = selectedPerMeal.lunch;
+            const totalCalories = mealFoods.reduce((sum, food) => sum + (food.calories || food.kcal || 0), 0);
+            const totalPrice = mealFoods.reduce((sum, food) => sum + (food.price || 0), 0);
+            const totalProtein = mealFoods.reduce((sum, food) => sum + (food.protein || 0), 0);
+            const totalCarbs = mealFoods.reduce((sum, food) => sum + (food.carbs || 0), 0);
+            const totalFat = mealFoods.reduce((sum, food) => sum + (food.fat || 0), 0);
+            
+            // 중복 음식 체크
+            const allOtherFoods = [...selectedPerMeal.breakfast, ...selectedPerMeal.dinner];
+            const duplicateFoods = mealFoods.filter(food => 
+              allOtherFoods.some(otherFood => otherFood.id === food.id)
+            );
+            
+            // AI 코멘트 생성
+            const getAIComment = () => {
+              if (mealFoods.length === 0) return "식단을 구성해주세요.";
+              if (totalProtein < 20) return "점심 단백질이 부족합니다. 고기나 생선 요리를 추가해보세요.";
+              if (totalCarbs > 80) return "탄수화물이 과다합니다. 밥량을 조절하거나 샐러드를 추가해보세요.";
+              if (totalCalories > 800) return "점심 칼로리가 높습니다. 적당한 양을 유지해보세요.";
+              return "균형 잡힌 점심 식단입니다.";
+            };
+            
+            // 영양소 비율 계산
+            const totalMacros = totalProtein + totalCarbs + totalFat;
+            const proteinRatio = totalMacros > 0 ? (totalProtein / totalMacros) * 100 : 0;
+            const carbsRatio = totalMacros > 0 ? (totalCarbs / totalMacros) * 100 : 0;
+            const fatRatio = totalMacros > 0 ? (totalFat / totalMacros) * 100 : 0;
+            
+            return (
+              <Card className="overflow-hidden">
+                <CardHeader className="bg-green-50 border-b">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2 text-green-700">
+                      🍽️ 점심식사
+                    </CardTitle>
+                  </div>
+                  <CardDescription className="text-green-600 font-medium">
+                    총 {totalCalories} kcal / {formatCurrency(totalPrice)}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-4">
+                  <div className="space-y-4">
+                    {/* 음식 리스트 */}
+                    <div className="space-y-3">
+                      {mealFoods.length === 0 ? (
+                        <p className="text-muted-foreground text-sm text-center py-4">식단이 아직 구성되지 않았습니다</p>
+                      ) : (
+                        mealFoods.map((food: FoodItem) => (
+                          <div key={food.id} className="p-3 bg-gray-50 rounded-lg">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="font-medium flex items-center gap-2">
+                                  {food.name}
+                                  {duplicateFoods.some(df => df.id === food.id) && (
+                                    <Badge variant="secondary" className="text-xs">중복</Badge>
+                                  )}
+                                </div>
+                                <div className="text-sm text-muted-foreground mt-1">
+                                  {food.calories || food.kcal || 0} kcal | {formatCurrency(food.price || 0)}
+                                </div>
+                                <div className="text-xs text-muted-foreground mt-1">
+                                  단백질: {food.protein || 0}g | 탄수화물: {food.carbs || 0}g | 지방: {food.fat || 0}g
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
                     </div>
-                  ))
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                    
+                    {mealFoods.length > 0 && (
+                      <>
+                        {/* 총합 요약 */}
+                        <div className="bg-green-50 p-3 rounded-lg">
+                          <h4 className="font-medium text-sm mb-2">영양소 총합</h4>
+                          <div className="grid grid-cols-3 gap-2 text-xs">
+                            <div className="text-center">
+                              <div className="font-bold text-blue-600">{totalProtein}g</div>
+                              <div className="text-muted-foreground">단백질</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="font-bold text-orange-600">{totalCarbs}g</div>
+                              <div className="text-muted-foreground">탄수화물</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="font-bold text-yellow-600">{totalFat}g</div>
+                              <div className="text-muted-foreground">지방</div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* 영양소 비율 시각화 */}
+                        <div className="space-y-2">
+                          <div className="text-xs font-medium">영양소 비율</div>
+                          <div className="flex h-2 rounded-full overflow-hidden bg-gray-200">
+                            <div 
+                              className="bg-blue-500" 
+                              style={{ width: `${proteinRatio}%` }}
+                            />
+                            <div 
+                              className="bg-orange-500" 
+                              style={{ width: `${carbsRatio}%` }}
+                            />
+                            <div 
+                              className="bg-yellow-500" 
+                              style={{ width: `${fatRatio}%` }}
+                            />
+                          </div>
+                        </div>
+                        
+                        {/* AI 코멘트 */}
+                        <div className="bg-blue-50 p-3 rounded-lg border-l-4 border-blue-400">
+                          <p className="text-sm text-blue-800">{getAIComment()}</p>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })()}
           
           {/* 저녁식사 */}
-          <Card>
-            <CardHeader>
-              <CardTitle>저녁식사</CardTitle>
-              <CardDescription>
-                {selectedPerMeal.dinner.reduce((sum, food) => sum + (food.calories || food.kcal || 0), 0)} kcal
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              <div className="space-y-3">
-                {selectedPerMeal.dinner.length === 0 ? (
-                  <p className="text-muted-foreground text-sm">식단이 아직 구성되지 않았습니다</p>
-                ) : (
-                  selectedPerMeal.dinner.map((food: FoodItem) => (
-                    <div key={food.id} className="p-2 border rounded-md">
-                      <div className="font-medium">{food.name}</div>
-                      <div className="text-sm text-muted-foreground flex justify-between">
-                        <span>{food.calories || food.kcal || 0} kcal</span>
-                        <span>{formatCurrency(food.price || 0)}</span>
-                      </div>
-                      <div className="text-xs text-muted-foreground mt-1">
-                        단백질: {food.protein || 0}g | 탄수화물: {food.carbs || 0}g | 지방: {food.fat || 0}g
-                      </div>
+          {(() => {
+            const mealFoods = selectedPerMeal.dinner;
+            const totalCalories = mealFoods.reduce((sum, food) => sum + (food.calories || food.kcal || 0), 0);
+            const totalPrice = mealFoods.reduce((sum, food) => sum + (food.price || 0), 0);
+            const totalProtein = mealFoods.reduce((sum, food) => sum + (food.protein || 0), 0);
+            const totalCarbs = mealFoods.reduce((sum, food) => sum + (food.carbs || 0), 0);
+            const totalFat = mealFoods.reduce((sum, food) => sum + (food.fat || 0), 0);
+            
+            // 중복 음식 체크
+            const allOtherFoods = [...selectedPerMeal.breakfast, ...selectedPerMeal.lunch];
+            const duplicateFoods = mealFoods.filter(food => 
+              allOtherFoods.some(otherFood => otherFood.id === food.id)
+            );
+            
+            // AI 코멘트 생성
+            const getAIComment = () => {
+              if (mealFoods.length === 0) return "식단을 구성해주세요.";
+              if (totalCalories > 700) return "저녁 칼로리가 높습니다. 가벼운 식단으로 조절해보세요.";
+              if (totalFat > 25) return "저녁 지방 섭취가 많습니다. 구이나 찜 요리를 선택해보세요.";
+              if (totalProtein < 15) return "저녁 단백질이 부족합니다. 생선이나 두부를 추가해보세요.";
+              return "균형 잡힌 저녁 식단입니다.";
+            };
+            
+            // 영양소 비율 계산
+            const totalMacros = totalProtein + totalCarbs + totalFat;
+            const proteinRatio = totalMacros > 0 ? (totalProtein / totalMacros) * 100 : 0;
+            const carbsRatio = totalMacros > 0 ? (totalCarbs / totalMacros) * 100 : 0;
+            const fatRatio = totalMacros > 0 ? (totalFat / totalMacros) * 100 : 0;
+            
+            return (
+              <Card className="overflow-hidden">
+                <CardHeader className="bg-purple-50 border-b">
+                  <div className="flex items-center justify-between">
+                    <CardTitle className="flex items-center gap-2 text-purple-700">
+                      🌙 저녁식사
+                    </CardTitle>
+                  </div>
+                  <CardDescription className="text-purple-600 font-medium">
+                    총 {totalCalories} kcal / {formatCurrency(totalPrice)}
+                  </CardDescription>
+                </CardHeader>
+                <CardContent className="p-4">
+                  <div className="space-y-4">
+                    {/* 음식 리스트 */}
+                    <div className="space-y-3">
+                      {mealFoods.length === 0 ? (
+                        <p className="text-muted-foreground text-sm text-center py-4">식단이 아직 구성되지 않았습니다</p>
+                      ) : (
+                        mealFoods.map((food: FoodItem) => (
+                          <div key={food.id} className="p-3 bg-gray-50 rounded-lg">
+                            <div className="flex items-start justify-between">
+                              <div className="flex-1">
+                                <div className="font-medium flex items-center gap-2">
+                                  {food.name}
+                                  {duplicateFoods.some(df => df.id === food.id) && (
+                                    <Badge variant="secondary" className="text-xs">중복</Badge>
+                                  )}
+                                </div>
+                                <div className="text-sm text-muted-foreground mt-1">
+                                  {food.calories || food.kcal || 0} kcal | {formatCurrency(food.price || 0)}
+                                </div>
+                                <div className="text-xs text-muted-foreground mt-1">
+                                  단백질: {food.protein || 0}g | 탄수화물: {food.carbs || 0}g | 지방: {food.fat || 0}g
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        ))
+                      )}
                     </div>
-                  ))
-                )}
-              </div>
-            </CardContent>
-          </Card>
+                    
+                    {mealFoods.length > 0 && (
+                      <>
+                        {/* 총합 요약 */}
+                        <div className="bg-purple-50 p-3 rounded-lg">
+                          <h4 className="font-medium text-sm mb-2">영양소 총합</h4>
+                          <div className="grid grid-cols-3 gap-2 text-xs">
+                            <div className="text-center">
+                              <div className="font-bold text-blue-600">{totalProtein}g</div>
+                              <div className="text-muted-foreground">단백질</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="font-bold text-orange-600">{totalCarbs}g</div>
+                              <div className="text-muted-foreground">탄수화물</div>
+                            </div>
+                            <div className="text-center">
+                              <div className="font-bold text-yellow-600">{totalFat}g</div>
+                              <div className="text-muted-foreground">지방</div>
+                            </div>
+                          </div>
+                        </div>
+                        
+                        {/* 영양소 비율 시각화 */}
+                        <div className="space-y-2">
+                          <div className="text-xs font-medium">영양소 비율</div>
+                          <div className="flex h-2 rounded-full overflow-hidden bg-gray-200">
+                            <div 
+                              className="bg-blue-500" 
+                              style={{ width: `${proteinRatio}%` }}
+                            />
+                            <div 
+                              className="bg-orange-500" 
+                              style={{ width: `${carbsRatio}%` }}
+                            />
+                            <div 
+                              className="bg-yellow-500" 
+                              style={{ width: `${fatRatio}%` }}
+                            />
+                          </div>
+                        </div>
+                        
+                        {/* AI 코멘트 */}
+                        <div className="bg-blue-50 p-3 rounded-lg border-l-4 border-blue-400">
+                          <p className="text-sm text-blue-800">{getAIComment()}</p>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </CardContent>
+              </Card>
+            );
+          })()}
         </div>
       </div>
       

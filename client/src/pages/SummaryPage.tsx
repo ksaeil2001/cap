@@ -332,15 +332,15 @@ const SummaryPage = () => {
                   
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-12">
                     <div className="space-y-6">
-                      <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                        <span className="text-base text-gray-600">키/몸무게</span>
+                      <div className="flex items-center py-2 border-b border-gray-100">
+                        <span className="text-base text-gray-600 pr-2">키/몸무게:</span>
                         <span className="font-medium text-gray-800">
                           {userStore.height}cm / {userStore.weight}kg
                         </span>
                       </div>
-                      <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                        <span className="text-base text-gray-600">활동 수준</span>
-                        <div className="inline-flex items-center px-3 py-1 rounded-full bg-gray-200 text-sm font-medium text-gray-700">
+                      <div className="flex items-center py-2 border-b border-gray-100">
+                        <span className="text-base text-gray-600 pr-2">활동 수준:</span>
+                        <div className="inline-flex items-center px-3 py-1 ml-2 rounded-full bg-gray-200 text-sm font-medium text-gray-700">
                           {userStore.activityLevel === 'low' ? '낮은 활동량' : 
                            userStore.activityLevel === 'medium' ? '보통 활동량' : '높은 활동량'}
                         </div>
@@ -348,14 +348,14 @@ const SummaryPage = () => {
                     </div>
                     
                     <div className="space-y-6">
-                      <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                        <span className="text-base text-gray-600">식사 횟수</span>
+                      <div className="flex items-center py-2 border-b border-gray-100">
+                        <span className="text-base text-gray-600 pr-2">식사 횟수:</span>
                         <span className="font-medium text-gray-800">
                           {userStore.mealCount}회
                         </span>
                       </div>
-                      <div className="flex justify-between items-center py-2 border-b border-gray-100">
-                        <span className="text-base text-gray-600">알레르기</span>
+                      <div className="flex items-center py-2 border-b border-gray-100">
+                        <span className="text-base text-gray-600 pr-2">알레르기:</span>
                         <span className="font-medium text-gray-800">
                           {!userStore.allergies || userStore.allergies.length === 0 ? '없음' : userStore.allergies.join(', ')}
                         </span>

@@ -436,6 +436,80 @@ const SummaryPage = () => {
           </Card>
         </div>
       </div>
+      
+      {/* Advanced Nutrition Analysis Section */}
+      <div className="mt-8">
+        <h2 className="text-2xl font-bold mb-4">상세 영양 분석</h2>
+        <Card>
+          <CardContent className="py-6">
+            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+              <div className="text-center">
+                <div className="text-2xl font-bold text-blue-600">{nutritionSummary.totalCalories}</div>
+                <div className="text-sm text-muted-foreground">총 칼로리</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-green-600">{nutritionSummary.totalProtein}g</div>
+                <div className="text-sm text-muted-foreground">단백질</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-orange-600">{nutritionSummary.totalCarbs}g</div>
+                <div className="text-sm text-muted-foreground">탄수화물</div>
+              </div>
+              <div className="text-center">
+                <div className="text-2xl font-bold text-yellow-600">{nutritionSummary.totalFat}g</div>
+                <div className="text-sm text-muted-foreground">지방</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+
+      {/* AI Recommendations Section */}
+      <div className="mt-8">
+        <h2 className="text-2xl font-bold mb-4">AI 식단 개선 제안</h2>
+        <Card>
+          <CardContent className="py-6">
+            <div className="space-y-4">
+              {budgetInfo.isOverBudget && (
+                <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+                  <h3 className="font-semibold text-red-800 mb-2">💰 예산 최적화 제안</h3>
+                  <p className="text-red-700 text-sm">
+                    현재 예산을 {formatCurrency(budgetInfo.usedBudget - budgetInfo.totalBudget)} 초과했습니다. 
+                    더 경제적인 대체 음식을 찾아보거나 일부 음식의 양을 조절해보세요.
+                  </p>
+                </div>
+              )}
+              
+              {nutritionSummary.totalProtein < 50 && (
+                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                  <h3 className="font-semibold text-blue-800 mb-2">🥩 단백질 보충 제안</h3>
+                  <p className="text-blue-700 text-sm">
+                    단백질 섭취가 부족합니다. 계란, 닭가슴살, 두부 등의 단백질 식품을 추가해보세요.
+                  </p>
+                </div>
+              )}
+              
+              {nutritionSummary.totalCalories < 1200 && (
+                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
+                  <h3 className="font-semibold text-yellow-800 mb-2">⚡ 칼로리 보충 제안</h3>
+                  <p className="text-yellow-700 text-sm">
+                    총 칼로리가 너무 낮습니다. 건강한 간식이나 견과류를 추가하여 영양을 보충해보세요.
+                  </p>
+                </div>
+              )}
+              
+              {!budgetInfo.isOverBudget && nutritionSummary.totalProtein >= 50 && nutritionSummary.totalCalories >= 1200 && (
+                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                  <h3 className="font-semibold text-green-800 mb-2">✅ 균형잡힌 식단</h3>
+                  <p className="text-green-700 text-sm">
+                    영양 균형과 예산이 잘 맞춰진 훌륭한 식단입니다! 이대로 유지하시면 좋겠습니다.
+                  </p>
+                </div>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     </div>
   );
 };

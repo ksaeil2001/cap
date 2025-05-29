@@ -147,12 +147,27 @@ export const useMealConfigStore = create<MealConfigStore>((set, get) => ({
       ...state.meals.dinner
     ];
     
-    // Calculate total nutrition values
-    const totalCalories = allFoods.reduce((sum, food) => sum + (food.kcal || 0), 0);
-    const totalProtein = allFoods.reduce((sum, food) => sum + (food.protein || 0), 0);
-    const totalFat = allFoods.reduce((sum, food) => sum + (food.fat || 0), 0);
-    const totalCarbs = allFoods.reduce((sum, food) => sum + (food.carbs || 0), 0);
-    const totalCost = allFoods.reduce((sum, food) => sum + (food.price || 0), 0);
+    // Calculate total nutrition values - fixed field mapping
+    const totalCalories = allFoods.reduce((sum, food) => {
+      const calories = typeof food.calories === 'number' ? food.calories : (food.kcal || 0);
+      return sum + calories;
+    }, 0);
+    const totalProtein = allFoods.reduce((sum, food) => {
+      const protein = typeof food.protein === 'number' ? food.protein : 0;
+      return sum + protein;
+    }, 0);
+    const totalFat = allFoods.reduce((sum, food) => {
+      const fat = typeof food.fat === 'number' ? food.fat : 0;
+      return sum + fat;
+    }, 0);
+    const totalCarbs = allFoods.reduce((sum, food) => {
+      const carbs = typeof food.carbs === 'number' ? food.carbs : 0;
+      return sum + carbs;
+    }, 0);
+    const totalCost = allFoods.reduce((sum, food) => {
+      const price = typeof food.price === 'number' ? food.price : 0;
+      return sum + price;
+    }, 0);
     
     // Check for allergies
     const hasAllergies = userInfo.allergies.length > 0 && 
@@ -167,7 +182,7 @@ export const useMealConfigStore = create<MealConfigStore>((set, get) => ({
     let proteinTarget = 150;
     let fatTarget = 70;
     let carbsTarget = 250;
-    let budgetTarget = userInfo.budgetPerMeal * userInfo.mealCount; // Daily budget (per meal × meal count)
+    let budgetTarget = (userInfo.budgetPerMeal || 10000) * (userInfo.mealCount || 3); // Daily budget calculation
     
     if (recommendStore.summary) {
       calorieTarget = recommendStore.summary.calories.target;
@@ -222,7 +237,10 @@ export const useMealConfigStore = create<MealConfigStore>((set, get) => ({
   // Calculate total calories for a specific meal
   getMealTotalCalories: (mealType: MealTime) => {
     const state = get();
-    return state.meals[mealType].reduce((sum, food) => sum + (food.kcal || 0), 0);
+    return state.meals[mealType].reduce((sum, food) => {
+      const calories = typeof food.calories === 'number' ? food.calories : (food.kcal || 0);
+      return sum + calories;
+    }, 0);
   },
   
   // Calculate total cost for a specific meal

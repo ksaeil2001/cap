@@ -28,7 +28,7 @@ const NutritionChart: React.FC<NutritionChartProps> = ({ nutritionData }) => {
       value: caloriePercentage,
       domain: { x: [0, 1], y: [0, 1] },
       title: { text: "칼로리 달성률 (%)", font: { size: 14 } },
-      delta: { reference: 100 },
+      delta: { reference: 100, increasing: { color: "#10B981" }, decreasing: { color: "#EF4444" } },
       gauge: {
         axis: { range: [null, 150] },
         bar: { color: caloriePercentage > 100 ? "#EF4444" : "#3B82F6" },
@@ -53,7 +53,7 @@ const NutritionChart: React.FC<NutritionChartProps> = ({ nutritionData }) => {
       value: proteinPercentage,
       domain: { x: [0, 1], y: [0, 1] },
       title: { text: "단백질 달성률 (%)", font: { size: 14 } },
-      delta: { reference: 100 },
+      delta: { reference: 100, increasing: { color: "#10B981" }, decreasing: { color: "#EF4444" } },
       gauge: {
         axis: { range: [null, 150] },
         bar: { color: proteinPercentage > 100 ? "#EF4444" : "#8B5CF6" },

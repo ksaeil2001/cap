@@ -104,12 +104,53 @@ const SummaryPage = () => {
     );
   }, [selectedPerMeal, userStore.allergies]);
   
-  // 3️⃣ 영양 요약 UI용 데이터 준비
+  // 3️⃣ 영양 목표 설정 (사용자의 목표에 따라 계산)
+  const nutritionTargets = useMemo(() => {
+    // 기본 목표 칼로리 (활동 수준과 목표에 따라)
+    const baseCalories = userStore.goal === 'weight-loss' ? 1800 : 2200;
+    const activityMultiplier = userStore.activityLevel === 'low' ? 0.9 : 
+                              userStore.activityLevel === 'high' ? 1.2 : 1.0;
+    const targetCalories = Math.round(baseCalories * activityMultiplier);
+    
+    // 목표 매크로 영양소 (칼로리 기준으로 계산)
+    const targetProtein = Math.round(targetCalories * 0.15 / 4); // 15% of calories, 4kcal per gram
+    const targetCarbs = Math.round(targetCalories * 0.55 / 4); // 55% of calories, 4kcal per gram  
+    const targetFat = Math.round(targetCalories * 0.30 / 9); // 30% of calories, 9kcal per gram
+    
+    return {
+      calories: targetCalories,
+      protein: targetProtein,
+      carbs: targetCarbs,
+      fat: targetFat
+    };
+  }, [userStore.goal, userStore.activityLevel]);
+
+  // 3️⃣ 영양 요약 UI용 데이터 준비 (목표 대비 달성률 포함)
   const nutritionData = [
     { name: '단백질', value: nutritionSummary.totalProtein, unit: 'g' },
     { name: '탄수화물', value: nutritionSummary.totalCarbs, unit: 'g' },
     { name: '지방', value: nutritionSummary.totalFat, unit: 'g' },
   ];
+
+  // 영양소별 달성률 계산
+  const nutritionProgress = useMemo(() => {
+    const calculateProgress = (current: number, target: number) => {
+      const percentage = target > 0 ? (current / target) * 100 : 0;
+      return {
+        current,
+        target,
+        percentage: Math.round(percentage * 10) / 10,
+        status: percentage < 80 ? 'insufficient' : percentage > 120 ? 'excess' : 'good'
+      };
+    };
+
+    return {
+      calories: calculateProgress(nutritionSummary.totalCalories, nutritionTargets.calories),
+      protein: calculateProgress(nutritionSummary.totalProtein, nutritionTargets.protein),
+      carbs: calculateProgress(nutritionSummary.totalCarbs, nutritionTargets.carbs),
+      fat: calculateProgress(nutritionSummary.totalFat, nutritionTargets.fat)
+    };
+  }, [nutritionSummary, nutritionTargets]);
 
   // Handle restart
   const handleRestart = () => {
@@ -440,28 +481,163 @@ const SummaryPage = () => {
       {/* Advanced Nutrition Analysis Section */}
       <div className="mt-8">
         <h2 className="text-2xl font-bold mb-4">상세 영양 분석</h2>
-        <Card>
-          <CardContent className="py-6">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-              <div className="text-center">
-                <div className="text-2xl font-bold text-blue-600">{nutritionSummary.totalCalories}</div>
-                <div className="text-sm text-muted-foreground">총 칼로리</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+          {/* 총 칼로리 */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-purple-600">총 칼로리</h3>
+                  <span className={`text-xs px-2 py-1 rounded-full ${
+                    nutritionProgress.calories.status === 'insufficient' ? 'bg-red-100 text-red-600' :
+                    nutritionProgress.calories.status === 'excess' ? 'bg-yellow-100 text-yellow-600' :
+                    'bg-green-100 text-green-600'
+                  }`}>
+                    {nutritionProgress.calories.status === 'insufficient' ? '부족' :
+                     nutritionProgress.calories.status === 'excess' ? '과다' : '적정'}
+                  </span>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>{nutritionProgress.calories.current} / {nutritionProgress.calories.target} kcal</span>
+                    <span className="font-medium">{nutritionProgress.calories.percentage}%</span>
+                  </div>
+                  <Progress 
+                    value={Math.min(nutritionProgress.calories.percentage, 100)} 
+                    className="h-2"
+                    style={{
+                      background: nutritionProgress.calories.status === 'insufficient' ? '#fee2e2' : 
+                                 nutritionProgress.calories.status === 'excess' ? '#fef3c7' : '#dcfce7'
+                    }}
+                  />
+                </div>
+                
+                <div className="text-center">
+                  <div className="text-xl font-bold text-purple-600">{nutritionProgress.calories.current}</div>
+                  <div className="text-xs text-muted-foreground">kcal</div>
+                </div>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-green-600">{nutritionSummary.totalProtein}g</div>
-                <div className="text-sm text-muted-foreground">단백질</div>
+            </CardContent>
+          </Card>
+
+          {/* 단백질 */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-blue-600">단백질</h3>
+                  <span className={`text-xs px-2 py-1 rounded-full ${
+                    nutritionProgress.protein.status === 'insufficient' ? 'bg-red-100 text-red-600' :
+                    nutritionProgress.protein.status === 'excess' ? 'bg-yellow-100 text-yellow-600' :
+                    'bg-green-100 text-green-600'
+                  }`}>
+                    {nutritionProgress.protein.status === 'insufficient' ? '부족' :
+                     nutritionProgress.protein.status === 'excess' ? '과다' : '적정'}
+                  </span>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>{nutritionProgress.protein.current} / {nutritionProgress.protein.target}g</span>
+                    <span className="font-medium">{nutritionProgress.protein.percentage}%</span>
+                  </div>
+                  <Progress 
+                    value={Math.min(nutritionProgress.protein.percentage, 100)} 
+                    className="h-2"
+                    style={{
+                      background: nutritionProgress.protein.status === 'insufficient' ? '#fee2e2' : 
+                                 nutritionProgress.protein.status === 'excess' ? '#fef3c7' : '#dcfce7'
+                    }}
+                  />
+                </div>
+                
+                <div className="text-center">
+                  <div className="text-xl font-bold text-blue-600">{nutritionProgress.protein.current}</div>
+                  <div className="text-xs text-muted-foreground">g</div>
+                </div>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-orange-600">{nutritionSummary.totalCarbs}g</div>
-                <div className="text-sm text-muted-foreground">탄수화물</div>
+            </CardContent>
+          </Card>
+
+          {/* 탄수화물 */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-orange-600">탄수화물</h3>
+                  <span className={`text-xs px-2 py-1 rounded-full ${
+                    nutritionProgress.carbs.status === 'insufficient' ? 'bg-red-100 text-red-600' :
+                    nutritionProgress.carbs.status === 'excess' ? 'bg-yellow-100 text-yellow-600' :
+                    'bg-green-100 text-green-600'
+                  }`}>
+                    {nutritionProgress.carbs.status === 'insufficient' ? '부족' :
+                     nutritionProgress.carbs.status === 'excess' ? '과다' : '적정'}
+                  </span>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>{nutritionProgress.carbs.current} / {nutritionProgress.carbs.target}g</span>
+                    <span className="font-medium">{nutritionProgress.carbs.percentage}%</span>
+                  </div>
+                  <Progress 
+                    value={Math.min(nutritionProgress.carbs.percentage, 100)} 
+                    className="h-2"
+                    style={{
+                      background: nutritionProgress.carbs.status === 'insufficient' ? '#fee2e2' : 
+                                 nutritionProgress.carbs.status === 'excess' ? '#fef3c7' : '#dcfce7'
+                    }}
+                  />
+                </div>
+                
+                <div className="text-center">
+                  <div className="text-xl font-bold text-orange-600">{nutritionProgress.carbs.current}</div>
+                  <div className="text-xs text-muted-foreground">g</div>
+                </div>
               </div>
-              <div className="text-center">
-                <div className="text-2xl font-bold text-yellow-600">{nutritionSummary.totalFat}g</div>
-                <div className="text-sm text-muted-foreground">지방</div>
+            </CardContent>
+          </Card>
+
+          {/* 지방 */}
+          <Card>
+            <CardContent className="p-4">
+              <div className="space-y-3">
+                <div className="flex items-center justify-between">
+                  <h3 className="font-semibold text-yellow-600">지방</h3>
+                  <span className={`text-xs px-2 py-1 rounded-full ${
+                    nutritionProgress.fat.status === 'insufficient' ? 'bg-red-100 text-red-600' :
+                    nutritionProgress.fat.status === 'excess' ? 'bg-yellow-100 text-yellow-600' :
+                    'bg-green-100 text-green-600'
+                  }`}>
+                    {nutritionProgress.fat.status === 'insufficient' ? '부족' :
+                     nutritionProgress.fat.status === 'excess' ? '과다' : '적정'}
+                  </span>
+                </div>
+                
+                <div className="space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span>{nutritionProgress.fat.current} / {nutritionProgress.fat.target}g</span>
+                    <span className="font-medium">{nutritionProgress.fat.percentage}%</span>
+                  </div>
+                  <Progress 
+                    value={Math.min(nutritionProgress.fat.percentage, 100)} 
+                    className="h-2"
+                    style={{
+                      background: nutritionProgress.fat.status === 'insufficient' ? '#fee2e2' : 
+                                 nutritionProgress.fat.status === 'excess' ? '#fef3c7' : '#dcfce7'
+                    }}
+                  />
+                </div>
+                
+                <div className="text-center">
+                  <div className="text-xl font-bold text-yellow-600">{nutritionProgress.fat.current}</div>
+                  <div className="text-xs text-muted-foreground">g</div>
+                </div>
               </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       {/* AI Recommendations Section */}

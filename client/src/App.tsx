@@ -9,7 +9,6 @@ import RecommendPage from "@/pages/RecommendPage";
 import MealConfigPage from "@/pages/MealConfigPage";
 import SummaryPage from "@/pages/SummaryPage";
 import Header from "@/components/Header";
-import Footer from "@/components/Footer";
 
 function Router() {
   return (
@@ -24,7 +23,6 @@ function Router() {
           <Route path="*" element={<NotFound />} />
         </Routes>
       </main>
-      <Footer />
     </div>
   );
 }

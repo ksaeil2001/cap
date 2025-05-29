@@ -258,12 +258,12 @@ const SummaryPage = () => {
                 </CardFooter>
               </Card>
               
-              {/* Goal Card */}
+              {/* 목표 카드 */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Your Goal</CardTitle>
+                  <CardTitle>나의 목표</CardTitle>
                   <CardDescription>
-                    Weight Loss
+                    체중 감량
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -275,7 +275,7 @@ const SummaryPage = () => {
                       </Avatar>
                       <div>
                         <div className="font-medium">
-                          Weight Loss Plan
+                          체중 감량 계획
                         </div>
                         <div className="text-sm text-muted-foreground">
                           175cm, 70kg
@@ -286,31 +286,31 @@ const SummaryPage = () => {
                     <Separator />
                     
                     <div>
-                      <div className="mb-2 font-medium">Activity Level</div>
+                      <div className="mb-2 font-medium">활동 수준</div>
                       <Badge variant="outline">
-                        Medium Activity
+                        보통 활동량
                       </Badge>
                     </div>
                     
                     <div>
-                      <div className="mb-2 font-medium">Allergies</div>
-                      <div className="text-sm text-muted-foreground">No allergies</div>
+                      <div className="mb-2 font-medium">알레르기</div>
+                      <div className="text-sm text-muted-foreground">알레르기 없음</div>
                     </div>
                   </div>
                 </CardContent>
               </Card>
             </div>
             
-            {/* Meal Breakdown */}
+            {/* 식사별 구성 */}
             <div className="mt-8">
-              <h2 className="text-2xl font-bold mb-4">Meal Breakdown</h2>
+              <h2 className="text-2xl font-bold mb-4">식사별 구성</h2>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* Breakfast */}
+                {/* 아침식사 */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>Breakfast</CardTitle>
+                    <CardTitle>아침식사</CardTitle>
                     <CardDescription>
-                      {selectedDayPlan.meals.breakfast.reduce((sum, food) => sum + food.kcal, 0)} kcal
+                      {selectedDayPlan.meals.breakfast.reduce((sum, food) => sum + food.calories, 0)} kcal
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -331,12 +331,12 @@ const SummaryPage = () => {
                   </CardContent>
                 </Card>
                 
-                {/* Lunch */}
+                {/* 점심식사 */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>Lunch</CardTitle>
+                    <CardTitle>점심식사</CardTitle>
                     <CardDescription>
-                      {selectedDayPlan.meals.lunch.reduce((sum, food) => sum + food.kcal, 0)} kcal
+                      {selectedDayPlan.meals.lunch.reduce((sum, food) => sum + food.calories, 0)} kcal
                     </CardDescription>
                   </CardHeader>
                   <CardContent>
@@ -357,12 +357,12 @@ const SummaryPage = () => {
                   </CardContent>
                 </Card>
                 
-                {/* Dinner */}
+                {/* 저녁식사 */}
                 <Card>
                   <CardHeader>
-                    <CardTitle>Dinner</CardTitle>
+                    <CardTitle>저녁식사</CardTitle>
                     <CardDescription>
-                      {selectedDayPlan.meals.dinner.reduce((sum, food) => sum + food.kcal, 0)} kcal
+                      {selectedDayPlan.meals.dinner.reduce((sum, food) => sum + food.calories, 0)} kcal
                     </CardDescription>
                   </CardHeader>
                   <CardContent>

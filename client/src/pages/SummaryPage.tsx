@@ -99,11 +99,11 @@ const SummaryPage = () => {
     }
   };
   
-  // Prepare chart data
+  // 차트 데이터 준비
   const nutritionData = [
-    { name: 'Protein', value: selectedDayPlan.nutritionSummary.protein, unit: 'g' },
-    { name: 'Carbs', value: selectedDayPlan.nutritionSummary.carbs, unit: 'g' },
-    { name: 'Fat', value: selectedDayPlan.nutritionSummary.fat, unit: 'g' },
+    { name: '단백질', value: selectedDayPlan.nutritionSummary.protein, unit: 'g' },
+    { name: '탄수화물', value: selectedDayPlan.nutritionSummary.carbs, unit: 'g' },
+    { name: '지방', value: selectedDayPlan.nutritionSummary.fat, unit: 'g' },
   ];
   
   // Budget percentage
@@ -118,21 +118,21 @@ const SummaryPage = () => {
     navigate('/');
   };
   
-  // Daily tabs
-  const weekDays = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+  // 요일별 탭
+  const weekDays = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
   
   return (
     <div className="container py-6 max-w-4xl">
       <div className="flex items-center justify-between mb-6">
-        <h1 className="text-3xl font-bold">Your Meal Plan Summary</h1>
+        <h1 className="text-3xl font-bold">식단 계획 요약</h1>
         <div className="flex gap-2">
           <Button variant="outline" size="sm" onClick={() => navigate('/meal-config')}>
             <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Config
+            구성으로 돌아가기
           </Button>
           <Button variant="outline" size="sm" onClick={handleRestart}>
             <Home className="mr-2 h-4 w-4" />
-            Start Over
+            처음부터 시작
           </Button>
         </div>
       </div>
@@ -146,7 +146,7 @@ const SummaryPage = () => {
         <TabsList className="grid grid-cols-7 w-full">
           {summaryStore.weekPlan.map((day, index) => (
             <TabsTrigger key={index} value={index.toString()}>
-              Day {day.day}
+              {day.day}일차
             </TabsTrigger>
           ))}
         </TabsList>
@@ -154,12 +154,12 @@ const SummaryPage = () => {
         {summaryStore.weekPlan.map((day, index) => (
           <TabsContent key={index} value={index.toString()}>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* Nutrition Summary Card */}
+              {/* 영양 요약 카드 */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Nutrition Summary</CardTitle>
+                  <CardTitle>영양 요약</CardTitle>
                   <CardDescription>
-                    {selectedDayPlan.nutritionSummary.calories} kcal total
+                    총 {selectedDayPlan.nutritionSummary.calories} kcal
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -188,21 +188,21 @@ const SummaryPage = () => {
                   
                   <div className="space-y-2 mt-4">
                     <NutritionProgressBar 
-                      label="Protein" 
+                      label="단백질" 
                       current={selectedDayPlan.nutritionSummary.protein}
                       target={nutritionSummary.protein.target}
                       unit="g"
                       color="#0088FE"
                     />
                     <NutritionProgressBar 
-                      label="Carbs" 
+                      label="탄수화물" 
                       current={selectedDayPlan.nutritionSummary.carbs}
                       target={nutritionSummary.carbs.target}
                       unit="g"
                       color="#00C49F"
                     />
                     <NutritionProgressBar 
-                      label="Fat" 
+                      label="지방" 
                       current={selectedDayPlan.nutritionSummary.fat}
                       target={nutritionSummary.fat.target}
                       unit="g"
@@ -212,19 +212,19 @@ const SummaryPage = () => {
                 </CardContent>
               </Card>
               
-              {/* Budget Card */}
+              {/* 예산 카드 */}
               <Card>
                 <CardHeader>
-                  <CardTitle>Budget</CardTitle>
+                  <CardTitle>예산</CardTitle>
                   <CardDescription>
-                    Daily budget: {formatCurrency(100 / 7)}
+                    일일 예산: {formatCurrency(100 / 7)}
                   </CardDescription>
                 </CardHeader>
                 <CardContent>
                   <div className="space-y-4">
                     <div>
                       <div className="flex justify-between mb-1">
-                        <span>Used: {formatCurrency(selectedDayPlan.budgetUsed)}</span>
+                        <span>사용: {formatCurrency(selectedDayPlan.budgetUsed)}</span>
                         <span className={budgetPercentage > 100 ? "text-red-500" : "text-green-500"}>
                           {budgetPercentage}%
                         </span>
@@ -253,7 +253,7 @@ const SummaryPage = () => {
                 <CardFooter>
                   <Button className="w-full" onClick={handleSharePlan}>
                     <Copy className="mr-2 h-4 w-4" />
-                    Share Plan
+                    식단 공유
                   </Button>
                 </CardFooter>
               </Card>

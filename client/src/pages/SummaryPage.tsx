@@ -1,24 +1,18 @@
-import React, { useEffect } from 'react';
+import React, { useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useMealConfigStore } from '@/stores/useMealConfigStore';
 import { useUserStore } from '@/stores/useUserStore';
-import { useSummaryStore } from '@/stores/useSummaryStore';
+import { useRecommendStore } from '@/stores/useRecommendStore';
 import { PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip } from 'recharts';
-import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { formatCurrency } from '@/lib/utils';
 import { FoodItem } from '@/api/mockRecommend';
-import { AlertCircle, AlertTriangle, ArrowLeft, Copy, Home, RefreshCw } from 'lucide-react';
-import NutritionProgressBar from '@/components/NutritionProgressBar';
+import { ArrowLeft, Home, Copy } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useToast } from '@/hooks/use-toast';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import DetailedNutritionAnalysis from '@/components/DetailedNutritionAnalysis';
-import AIRecommendations from '@/components/AIRecommendations';
 import AlertCustom from '@/components/ui/alert-custom';
 
 const COLORS = ['#0088FE', '#00C49F', '#FFBB28', '#FF8042'];
@@ -28,99 +22,165 @@ const SummaryPage = () => {
   const { toast } = useToast();
   
   // Get stores
-  const { meals, nutritionSummary, validationStatus } = useMealConfigStore();
   const userStore = useUserStore();
-  const summaryStore = useSummaryStore();
+  const recommendStore = useRecommendStore();
   
-  // For debugging
-  console.log("User store:", userStore);
+  // 1️⃣ 전역 상태에서 식단 정보 불러오기
+  const { selectedPerMeal } = recommendStore;
   
-  // Generate week plan on component mount
-  useEffect(() => {
-    summaryStore.generateWeekPlan();
-  }, []);
+  // 선택된 식단이 있는지 확인
+  const hasSelectedMeals = useMemo(() => {
+    return selectedPerMeal.breakfast.length > 0 || 
+           selectedPerMeal.lunch.length > 0 || 
+           selectedPerMeal.dinner.length > 0;
+  }, [selectedPerMeal]);
   
-  // Extract selected day plan
-  const { selectedDayPlan, selectedDay, setSelectedDay } = summaryStore;
-  
-  // Check if we have missing requirements
-  useEffect(() => {
-    // If validation fails or no meals, redirect back to meal config
-    if (validationStatus.missingMeals || 
-        Object.values(meals).every(mealItems => mealItems.length === 0)) {
-      toast({
-        title: "Missing meal information",
-        description: "Please complete your meal configuration first.",
-        variant: "destructive"
-      });
-      navigate('/meal-config');
+  // 2️⃣ 영양 요약 계산
+  const nutritionSummary = useMemo(() => {
+    if (!hasSelectedMeals) {
+      return {
+        totalCalories: 0,
+        totalProtein: 0,
+        totalCarbs: 0,
+        totalFat: 0,
+        totalPrice: 0
+      };
     }
-  }, [validationStatus, meals, navigate, toast]);
+    
+    // 모든 식단을 flatten하여 하나의 배열로 통합
+    const allFoods = [
+      ...selectedPerMeal.breakfast,
+      ...selectedPerMeal.lunch,
+      ...selectedPerMeal.dinner
+    ];
+    
+    // 각 영양소 누적 계산
+    const summary = allFoods.reduce((acc, food) => {
+      acc.totalCalories += food.calories || food.kcal || 0;
+      acc.totalProtein += food.protein || 0;
+      acc.totalCarbs += food.carbs || 0;
+      acc.totalFat += food.fat || 0;
+      acc.totalPrice += food.price || 0;
+      return acc;
+    }, {
+      totalCalories: 0,
+      totalProtein: 0,
+      totalCarbs: 0,
+      totalFat: 0,
+      totalPrice: 0
+    });
+    
+    return summary;
+  }, [selectedPerMeal, hasSelectedMeals]);
   
-  // Helper for calculating nutrition percentage
-  const calculatePercentage = (value: number, total: number) => {
-    return Math.round((value / total) * 100);
+  // 4️⃣ 예산 정보 계산
+  const budgetInfo = useMemo(() => {
+    const userBudget = userStore.budgetPerMeal * userStore.mealCount || 30000; // 일일 예산
+    const usedBudget = nutritionSummary.totalPrice;
+    const budgetPercentage = userBudget > 0 ? (usedBudget / userBudget) * 100 : 0;
+    
+    return {
+      totalBudget: userBudget,
+      usedBudget,
+      budgetPercentage: Math.round(budgetPercentage * 100) / 100,
+      isOverBudget: budgetPercentage > 100
+    };
+  }, [userStore.budgetPerMeal, userStore.mealCount, nutritionSummary.totalPrice]);
+
+  // 알레르기 체크
+  const hasAllergies = useMemo(() => {
+    if (!userStore.allergies || userStore.allergies.length === 0) return false;
+    
+    const allFoods = [
+      ...selectedPerMeal.breakfast,
+      ...selectedPerMeal.lunch,
+      ...selectedPerMeal.dinner
+    ];
+    
+    return allFoods.some(food => 
+      food.allergies && food.allergies.some(allergy => 
+        userStore.allergies.includes(allergy)
+      )
+    );
+  }, [selectedPerMeal, userStore.allergies]);
+  
+  // 3️⃣ 영양 요약 UI용 데이터 준비
+  const nutritionData = [
+    { name: '단백질', value: nutritionSummary.totalProtein, unit: 'g' },
+    { name: '탄수화물', value: nutritionSummary.totalCarbs, unit: 'g' },
+    { name: '지방', value: nutritionSummary.totalFat, unit: 'g' },
+  ];
+
+  // Handle restart
+  const handleRestart = () => {
+    recommendStore.clearSelectedMeals();
+    navigate('/');
   };
-  
+
   // Handle share plan
   const handleSharePlan = () => {
     try {
       const planData = {
-        weekPlan: summaryStore.weekPlan,
-        selectedDay: summaryStore.selectedDay,
+        selectedMeals: selectedPerMeal,
         nutritionSummary: nutritionSummary,
+        budgetInfo: budgetInfo,
         userInfo: {
-          goal: 'weight-loss',
-          budget: 100,
-          allergies: []
+          goal: userStore.goal,
+          budget: budgetInfo.totalBudget,
+          allergies: userStore.allergies
         }
       };
       
-      // Save to localStorage
-      localStorage.setItem('mealPlan', JSON.stringify(planData));
+      navigator.clipboard.writeText(JSON.stringify(planData, null, 2));
       
-      // Create a shareable link (in a real app, this would generate an actual link)
-      const demoShareableLink = `${window.location.origin}/shared-plan/${new Date().getTime()}`;
-      
-      // Copy to clipboard
-      navigator.clipboard.writeText(demoShareableLink).then(() => {
-        toast({
-          title: "Plan shared successfully!",
-          description: "A link to your meal plan has been copied to clipboard.",
-        });
+      toast({
+        title: "식단이 복사되었습니다",
+        description: "식단 정보가 클립보드에 복사되어 다른 곳에 붙여넣을 수 있습니다.",
       });
     } catch (error) {
-      console.error("Error sharing plan:", error);
       toast({
-        title: "Share failed",
-        description: "There was a problem sharing your meal plan.",
+        title: "공유 실패",
+        description: "식단 공유 중 오류가 발생했습니다.",
         variant: "destructive"
       });
     }
   };
-  
-  // 차트 데이터 준비
-  const nutritionData = [
-    { name: '단백질', value: selectedDayPlan.nutritionSummary.protein, unit: 'g' },
-    { name: '탄수화물', value: selectedDayPlan.nutritionSummary.carbs, unit: 'g' },
-    { name: '지방', value: selectedDayPlan.nutritionSummary.fat, unit: 'g' },
-  ];
-  
-  // Budget percentage
-  const budgetPercentage = calculatePercentage(
-    selectedDayPlan.budgetUsed, 
-    100 / 7 // Default daily budget
-  );
-  
-  // Handle restart
-  const handleRestart = () => {
-    summaryStore.reset();
-    navigate('/');
-  };
-  
-  // 요일별 탭
-  const weekDays = ['일요일', '월요일', '화요일', '수요일', '목요일', '금요일', '토요일'];
-  
+
+  // 선택된 식단이 없을 경우 메시지 표시
+  if (!hasSelectedMeals) {
+    return (
+      <div className="container py-6 max-w-4xl">
+        <div className="flex items-center justify-between mb-6">
+          <h1 className="text-3xl font-bold">식단 계획 요약</h1>
+          <div className="flex gap-2">
+            <Button variant="outline" size="sm" onClick={() => navigate('/meal-config')}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              구성으로 돌아가기
+            </Button>
+            <Button variant="outline" size="sm" onClick={handleRestart}>
+              <Home className="mr-2 h-4 w-4" />
+              처음부터 시작
+            </Button>
+          </div>
+        </div>
+        
+        <Card>
+          <CardContent className="py-12">
+            <div className="text-center">
+              <h2 className="text-xl font-semibold mb-2">선택된 식단이 없습니다</h2>
+              <p className="text-muted-foreground mb-4">
+                먼저 식단을 구성해주세요.
+              </p>
+              <Button onClick={() => navigate('/recommend')}>
+                식단 추천 받기
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="container py-6 max-w-4xl">
       <div className="flex items-center justify-between mb-6">
@@ -137,329 +197,245 @@ const SummaryPage = () => {
         </div>
       </div>
       
-      {/* Week day selector */}
-      <Tabs 
-        defaultValue={selectedDay.toString()} 
-        className="w-full mb-6"
-        onValueChange={(value) => setSelectedDay(parseInt(value))}
-      >
-        <TabsList className="grid grid-cols-7 w-full">
-          {summaryStore.weekPlan.map((day, index) => (
-            <TabsTrigger key={index} value={index.toString()}>
-              {day.day}일차
-            </TabsTrigger>
-          ))}
-        </TabsList>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+        {/* 영양 요약 카드 */}
+        <Card>
+          <CardHeader>
+            <CardTitle>영양 요약</CardTitle>
+            <CardDescription>
+              총 {nutritionSummary.totalCalories} kcal
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="h-[200px]">
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={nutritionData}
+                    cx="50%"
+                    cy="50%"
+                    innerRadius={60}
+                    outerRadius={80}
+                    paddingAngle={5}
+                    dataKey="value"
+                    label={({ name, value }) => `${name}: ${value}g`}
+                  >
+                    {nutritionData.map((entry, index) => (
+                      <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
+                    ))}
+                  </Pie>
+                  <Tooltip />
+                  <Legend />
+                </PieChart>
+              </ResponsiveContainer>
+            </div>
+            
+            <div className="space-y-2 mt-4">
+              <div className="flex justify-between">
+                <span>단백질:</span>
+                <span>{nutritionSummary.totalProtein}g</span>
+              </div>
+              <div className="flex justify-between">
+                <span>탄수화물:</span>
+                <span>{nutritionSummary.totalCarbs}g</span>
+              </div>
+              <div className="flex justify-between">
+                <span>지방:</span>
+                <span>{nutritionSummary.totalFat}g</span>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
         
-        {summaryStore.weekPlan.map((day, index) => (
-          <TabsContent key={index} value={index.toString()}>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {/* 영양 요약 카드 */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>영양 요약</CardTitle>
-                  <CardDescription>
-                    총 {selectedDayPlan.nutritionSummary.calories} kcal
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="h-[200px]">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <PieChart>
-                        <Pie
-                          data={nutritionData}
-                          cx="50%"
-                          cy="50%"
-                          innerRadius={60}
-                          outerRadius={80}
-                          paddingAngle={5}
-                          dataKey="value"
-                          label={({ name, value }) => `${name}: ${value}g`}
-                        >
-                          {nutritionData.map((entry, index) => (
-                            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-                          ))}
-                        </Pie>
-                        <Tooltip />
-                        <Legend />
-                      </PieChart>
-                    </ResponsiveContainer>
-                  </div>
-                  
-                  <div className="space-y-2 mt-4">
-                    <NutritionProgressBar 
-                      label="단백질" 
-                      current={selectedDayPlan.nutritionSummary.protein}
-                      target={nutritionSummary.protein.target}
-                      unit="g"
-                      color="#0088FE"
-                    />
-                    <NutritionProgressBar 
-                      label="탄수화물" 
-                      current={selectedDayPlan.nutritionSummary.carbs}
-                      target={nutritionSummary.carbs.target}
-                      unit="g"
-                      color="#00C49F"
-                    />
-                    <NutritionProgressBar 
-                      label="지방" 
-                      current={selectedDayPlan.nutritionSummary.fat}
-                      target={nutritionSummary.fat.target}
-                      unit="g"
-                      color="#FFBB28"
-                    />
-                  </div>
-                </CardContent>
-              </Card>
-              
-              {/* 예산 카드 */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>예산</CardTitle>
-                  <CardDescription>
-                    일일 예산: {formatCurrency(100 / 7)}
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div>
-                      <div className="flex justify-between mb-1">
-                        <span>사용: {formatCurrency(selectedDayPlan.budgetUsed)}</span>
-                        <span className={budgetPercentage > 100 ? "text-red-500" : "text-green-500"}>
-                          {budgetPercentage}%
-                        </span>
-                      </div>
-                      <Progress 
-                        value={Math.min(budgetPercentage, 100)} 
-                        className={budgetPercentage > 100 ? "bg-red-200" : ""}
-                      />
-                    </div>
-                    
-                    {budgetPercentage > 100 && (
-                      <AlertCustom type="danger" className="mb-2">
-                        <strong>예산 초과:</strong> 일일 예산을 {formatCurrency(selectedDayPlan.budgetUsed - (100 / 7))} 초과했습니다.
-                        식단 구성을 조정하거나 예산을 늘려보세요.
-                      </AlertCustom>
-                    )}
-                    
-                    {validationStatus.hasAllergies && (
-                      <AlertCustom type="danger" className="mb-2">
-                        <strong>알레르기 경고:</strong> 현재 식단에 알레르기 유발 성분이 포함되어 있습니다.
-                        신중하게 검토하고 필요시 조정해 주세요.
-                      </AlertCustom>
-                    )}
-                  </div>
-                </CardContent>
-                <CardFooter>
-                  <Button className="w-full" onClick={handleSharePlan}>
-                    <Copy className="mr-2 h-4 w-4" />
-                    식단 공유
-                  </Button>
-                </CardFooter>
-              </Card>
-              
-              {/* 목표 카드 */}
-              <Card>
-                <CardHeader>
-                  <CardTitle>나의 목표</CardTitle>
-                  <CardDescription>
-                    체중 감량
-                  </CardDescription>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    <div className="flex items-center gap-4">
-                      <Avatar className="h-12 w-12">
-                        <AvatarImage src="" />
-                        <AvatarFallback>M</AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <div className="font-medium">
-                          체중 감량 계획
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          175cm, 70kg
-                        </div>
-                      </div>
-                    </div>
-                    
-                    <Separator />
-                    
-                    <div>
-                      <div className="mb-2 font-medium">활동 수준</div>
-                      <Badge variant="outline">
-                        보통 활동량
-                      </Badge>
-                    </div>
-                    
-                    <div>
-                      <div className="mb-2 font-medium">알레르기</div>
-                      <div className="text-sm text-muted-foreground">알레르기 없음</div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            </div>
-            
-            {/* 식사별 구성 */}
-            <div className="mt-8">
-              <h2 className="text-2xl font-bold mb-4">식사별 구성</h2>
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {/* 아침식사 */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>아침식사</CardTitle>
-                    <CardDescription>
-                      {selectedDayPlan.meals.breakfast.reduce((sum, food) => sum + food.calories, 0)} kcal
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {selectedDayPlan.meals.breakfast.map((food: FoodItem) => (
-                        <div key={food.id} className="p-2 border rounded-md">
-                          <div className="font-medium">{food.name}</div>
-                          <div className="text-sm text-muted-foreground flex justify-between">
-                            <span>{food.kcal} kcal</span>
-                            <span>{formatCurrency(food.price)}</span>
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-1">
-                            P: {food.protein}g | C: {food.carbs}g | F: {food.fat}g
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                {/* 점심식사 */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>점심식사</CardTitle>
-                    <CardDescription>
-                      {selectedDayPlan.meals.lunch.reduce((sum, food) => sum + food.calories, 0)} kcal
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {selectedDayPlan.meals.lunch.map((food: FoodItem) => (
-                        <div key={food.id} className="p-2 border rounded-md">
-                          <div className="font-medium">{food.name}</div>
-                          <div className="text-sm text-muted-foreground flex justify-between">
-                            <span>{food.kcal} kcal</span>
-                            <span>{formatCurrency(food.price)}</span>
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-1">
-                            P: {food.protein}g | C: {food.carbs}g | F: {food.fat}g
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-                
-                {/* 저녁식사 */}
-                <Card>
-                  <CardHeader>
-                    <CardTitle>저녁식사</CardTitle>
-                    <CardDescription>
-                      {selectedDayPlan.meals.dinner.reduce((sum, food) => sum + food.calories, 0)} kcal
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="space-y-3">
-                      {selectedDayPlan.meals.dinner.map((food: FoodItem) => (
-                        <div key={food.id} className="p-2 border rounded-md">
-                          <div className="font-medium">{food.name}</div>
-                          <div className="text-sm text-muted-foreground flex justify-between">
-                            <span>{food.kcal} kcal</span>
-                            <span>{formatCurrency(food.price)}</span>
-                          </div>
-                          <div className="text-xs text-muted-foreground mt-1">
-                            P: {food.protein}g | C: {food.carbs}g | F: {food.fat}g
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-            </div>
-            
-            {/* Advanced Nutrition Analysis Section */}
-            <div className="mt-8">
-              <h2 className="text-2xl font-bold mb-4">Advanced Nutrition Analysis</h2>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <div>
-                  {selectedDayPlan && (
-                    <DetailedNutritionAnalysis 
-                      foods={[...selectedDayPlan.meals.breakfast, ...selectedDayPlan.meals.lunch, ...selectedDayPlan.meals.dinner]}
-                      nutritionData={{
-                        calories: {
-                          target: nutritionSummary.calories.target,
-                          actual: selectedDayPlan.nutritionSummary.calories
-                        },
-                        protein: {
-                          target: nutritionSummary.protein.target,
-                          actual: selectedDayPlan.nutritionSummary.protein
-                        },
-                        carbs: {
-                          target: nutritionSummary.carbs.target,
-                          actual: selectedDayPlan.nutritionSummary.carbs
-                        },
-                        fat: {
-                          target: nutritionSummary.fat.target,
-                          actual: selectedDayPlan.nutritionSummary.fat
-                        }
-                      }}
-                      userGoal={'weight-loss'}
-                      userWeight={70}
-                      userHeight={170}
-                      userGender={'male'}
-                      userAge={30}
-                      userActivityLevel={'medium'}
-                    />
-                  )}
+        {/* 예산 카드 */}
+        <Card>
+          <CardHeader>
+            <CardTitle>예산</CardTitle>
+            <CardDescription>
+              일일 예산: {formatCurrency(budgetInfo.totalBudget)}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <div className="flex justify-between mb-1">
+                  <span>사용: {formatCurrency(budgetInfo.usedBudget)}</span>
+                  <span className={budgetInfo.isOverBudget ? "text-red-500" : "text-green-500"}>
+                    {budgetInfo.budgetPercentage}%
+                  </span>
                 </div>
+                <Progress 
+                  value={Math.min(budgetInfo.budgetPercentage, 100)} 
+                  className={budgetInfo.isOverBudget ? "bg-red-200" : ""}
+                />
+              </div>
+              
+              {budgetInfo.isOverBudget && (
+                <AlertCustom type="danger" className="mb-2">
+                  <strong>예산 초과:</strong> 일일 예산을 {formatCurrency(budgetInfo.usedBudget - budgetInfo.totalBudget)} 초과했습니다.
+                  식단 구성을 조정하거나 예산을 늘려보세요.
+                </AlertCustom>
+              )}
+              
+              {hasAllergies && (
+                <AlertCustom type="danger" className="mb-2">
+                  <strong>알레르기 경고:</strong> 현재 식단에 알레르기 유발 성분이 포함되어 있습니다.
+                  신중하게 검토하고 필요시 조정해 주세요.
+                </AlertCustom>
+              )}
+            </div>
+          </CardContent>
+          <CardContent>
+            <Button className="w-full" onClick={handleSharePlan}>
+              <Copy className="mr-2 h-4 w-4" />
+              식단 공유
+            </Button>
+          </CardContent>
+        </Card>
+        
+        {/* 목표 카드 */}
+        <Card>
+          <CardHeader>
+            <CardTitle>나의 목표</CardTitle>
+            <CardDescription>
+              {userStore.goal === 'weight-loss' ? '체중 감량' : '근육 증가'}
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div className="flex items-center gap-4">
+                <Avatar className="h-12 w-12">
+                  <AvatarImage src="" />
+                  <AvatarFallback>{userStore.gender === 'male' ? 'M' : 'F'}</AvatarFallback>
+                </Avatar>
                 <div>
-                  <h3 className="text-xl font-bold mb-4">AI Nutrition Coach</h3>
-                  {selectedDayPlan && (
-                    <AIRecommendations 
-                      userGoal={'weight-loss'}
-                      foods={[...selectedDayPlan.meals.breakfast, ...selectedDayPlan.meals.lunch, ...selectedDayPlan.meals.dinner]}
-                      nutritionSummary={{
-                        calories: {
-                          target: nutritionSummary.calories.target,
-                          actual: selectedDayPlan.nutritionSummary.calories
-                        },
-                        protein: {
-                          target: nutritionSummary.protein.target,
-                          actual: selectedDayPlan.nutritionSummary.protein
-                        },
-                        carbs: {
-                          target: nutritionSummary.carbs.target,
-                          actual: selectedDayPlan.nutritionSummary.carbs
-                        },
-                        fat: {
-                          target: nutritionSummary.fat.target,
-                          actual: selectedDayPlan.nutritionSummary.fat
-                        }
-                      }}
-                      userProfile={{
-                        gender: 'male',
-                        age: 30,
-                        height: 170,
-                        weight: 70,
-                        activityLevel: 'medium',
-                        allergies: []
-                      }}
-                    />
-                  )}
+                  <div className="font-medium">
+                    {userStore.goal === 'weight-loss' ? '체중 감량 계획' : '근육 증가 계획'}
+                  </div>
+                  <div className="text-sm text-muted-foreground">
+                    {userStore.height}cm, {userStore.weight}kg
+                  </div>
+                </div>
+              </div>
+              
+              <Separator />
+              
+              <div>
+                <div className="mb-2 font-medium">활동 수준</div>
+                <Badge variant="outline">
+                  {userStore.activityLevel === 'low' ? '낮은 활동량' : 
+                   userStore.activityLevel === 'medium' ? '보통 활동량' : '높은 활동량'}
+                </Badge>
+              </div>
+              
+              <div>
+                <div className="mb-2 font-medium">알레르기</div>
+                <div className="text-sm text-muted-foreground">
+                  {userStore.allergies && userStore.allergies.length > 0 
+                    ? userStore.allergies.join(', ')
+                    : '알레르기 없음'}
                 </div>
               </div>
             </div>
-          </TabsContent>
-        ))}
-      </Tabs>
+          </CardContent>
+        </Card>
+      </div>
+      
+      {/* 5️⃣ 식사별 구성 */}
+      <div className="mt-8">
+        <h2 className="text-2xl font-bold mb-4">식사별 구성</h2>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {/* 아침식사 */}
+          <Card>
+            <CardHeader>
+              <CardTitle>아침식사</CardTitle>
+              <CardDescription>
+                {selectedPerMeal.breakfast.reduce((sum, food) => sum + (food.calories || food.kcal || 0), 0)} kcal
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {selectedPerMeal.breakfast.length === 0 ? (
+                  <p className="text-muted-foreground text-sm">식단이 아직 구성되지 않았습니다</p>
+                ) : (
+                  selectedPerMeal.breakfast.map((food: FoodItem) => (
+                    <div key={food.id} className="p-2 border rounded-md">
+                      <div className="font-medium">{food.name}</div>
+                      <div className="text-sm text-muted-foreground flex justify-between">
+                        <span>{food.calories || food.kcal || 0} kcal</span>
+                        <span>{formatCurrency(food.price || 0)}</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        단백질: {food.protein || 0}g | 탄수화물: {food.carbs || 0}g | 지방: {food.fat || 0}g
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
+          
+          {/* 점심식사 */}
+          <Card>
+            <CardHeader>
+              <CardTitle>점심식사</CardTitle>
+              <CardDescription>
+                {selectedPerMeal.lunch.reduce((sum, food) => sum + (food.calories || food.kcal || 0), 0)} kcal
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {selectedPerMeal.lunch.length === 0 ? (
+                  <p className="text-muted-foreground text-sm">식단이 아직 구성되지 않았습니다</p>
+                ) : (
+                  selectedPerMeal.lunch.map((food: FoodItem) => (
+                    <div key={food.id} className="p-2 border rounded-md">
+                      <div className="font-medium">{food.name}</div>
+                      <div className="text-sm text-muted-foreground flex justify-between">
+                        <span>{food.calories || food.kcal || 0} kcal</span>
+                        <span>{formatCurrency(food.price || 0)}</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        단백질: {food.protein || 0}g | 탄수화물: {food.carbs || 0}g | 지방: {food.fat || 0}g
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
+          
+          {/* 저녁식사 */}
+          <Card>
+            <CardHeader>
+              <CardTitle>저녁식사</CardTitle>
+              <CardDescription>
+                {selectedPerMeal.dinner.reduce((sum, food) => sum + (food.calories || food.kcal || 0), 0)} kcal
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-3">
+                {selectedPerMeal.dinner.length === 0 ? (
+                  <p className="text-muted-foreground text-sm">식단이 아직 구성되지 않았습니다</p>
+                ) : (
+                  selectedPerMeal.dinner.map((food: FoodItem) => (
+                    <div key={food.id} className="p-2 border rounded-md">
+                      <div className="font-medium">{food.name}</div>
+                      <div className="text-sm text-muted-foreground flex justify-between">
+                        <span>{food.calories || food.kcal || 0} kcal</span>
+                        <span>{formatCurrency(food.price || 0)}</span>
+                      </div>
+                      <div className="text-xs text-muted-foreground mt-1">
+                        단백질: {food.protein || 0}g | 탄수화물: {food.carbs || 0}g | 지방: {food.fat || 0}g
+                      </div>
+                    </div>
+                  ))
+                )}
+              </div>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 };

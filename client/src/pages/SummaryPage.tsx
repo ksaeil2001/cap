@@ -642,47 +642,169 @@ const SummaryPage = () => {
 
       {/* AI Recommendations Section */}
       <div className="mt-8">
-        <h2 className="text-2xl font-bold mb-4">AI 식단 개선 제안</h2>
+        <h2 className="text-2xl font-bold mb-4">🧠 AI 식단 분석 및 개선 제안</h2>
         <Card>
           <CardContent className="py-6">
-            <div className="space-y-4">
-              {budgetInfo.isOverBudget && (
-                <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
-                  <h3 className="font-semibold text-red-800 mb-2">💰 예산 최적화 제안</h3>
-                  <p className="text-red-700 text-sm">
-                    현재 예산을 {formatCurrency(budgetInfo.usedBudget - budgetInfo.totalBudget)} 초과했습니다. 
-                    더 경제적인 대체 음식을 찾아보거나 일부 음식의 양을 조절해보세요.
-                  </p>
+            {!hasSelectedMeals ? (
+              <div className="text-center py-8">
+                <p className="text-muted-foreground">먼저 식단을 구성해 주세요.</p>
+              </div>
+            ) : (
+              <div className="space-y-6">
+                {/* 분석 결과 요약 */}
+                <div className="bg-gray-50 p-4 rounded-lg">
+                  <h3 className="font-semibold mb-3">📊 식단 분석 결과</h3>
+                  <div className="grid grid-cols-2 md:grid-cols-5 gap-2 text-sm">
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-600">예산:</span>
+                      <span className={`font-medium ${
+                        budgetInfo.budgetPercentage > 120 ? 'text-red-600' :
+                        budgetInfo.budgetPercentage < 50 ? 'text-blue-600' : 'text-green-600'
+                      }`}>
+                        {budgetInfo.budgetPercentage > 120 ? '초과' :
+                         budgetInfo.budgetPercentage < 50 ? '부족' : '적정'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-600">칼로리:</span>
+                      <span className={`font-medium ${
+                        nutritionProgress.calories.status === 'insufficient' ? 'text-red-600' :
+                        nutritionProgress.calories.status === 'excess' ? 'text-yellow-600' : 'text-green-600'
+                      }`}>
+                        {nutritionProgress.calories.status === 'insufficient' ? '부족' :
+                         nutritionProgress.calories.status === 'excess' ? '과다' : '적정'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-600">단백질:</span>
+                      <span className={`font-medium ${
+                        nutritionProgress.protein.status === 'insufficient' ? 'text-red-600' :
+                        nutritionProgress.protein.status === 'excess' ? 'text-yellow-600' : 'text-green-600'
+                      }`}>
+                        {nutritionProgress.protein.status === 'insufficient' ? '부족' :
+                         nutritionProgress.protein.status === 'excess' ? '과다' : '적정'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-600">탄수화물:</span>
+                      <span className={`font-medium ${
+                        nutritionProgress.carbs.status === 'insufficient' ? 'text-red-600' :
+                        nutritionProgress.carbs.status === 'excess' ? 'text-yellow-600' : 'text-green-600'
+                      }`}>
+                        {nutritionProgress.carbs.status === 'insufficient' ? '부족' :
+                         nutritionProgress.carbs.status === 'excess' ? '과다' : '적정'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="text-gray-600">지방:</span>
+                      <span className={`font-medium ${
+                        nutritionProgress.fat.status === 'insufficient' ? 'text-red-600' :
+                        nutritionProgress.fat.status === 'excess' ? 'text-yellow-600' : 'text-green-600'
+                      }`}>
+                        {nutritionProgress.fat.status === 'insufficient' ? '부족' :
+                         nutritionProgress.fat.status === 'excess' ? '과다' : '적정'}
+                      </span>
+                    </div>
+                  </div>
                 </div>
-              )}
-              
-              {nutritionSummary.totalProtein < 50 && (
-                <div className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
-                  <h3 className="font-semibold text-blue-800 mb-2">🥩 단백질 보충 제안</h3>
-                  <p className="text-blue-700 text-sm">
-                    단백질 섭취가 부족합니다. 계란, 닭가슴살, 두부 등의 단백질 식품을 추가해보세요.
-                  </p>
+
+                {/* 개선 제안 */}
+                <div className="space-y-3">
+                  <h3 className="font-semibold flex items-center gap-2">
+                    📌 개선 제안
+                  </h3>
+                  
+                  {(() => {
+                    const issues = [];
+                    const recommendations = [];
+                    
+                    // 예산 분석
+                    if (budgetInfo.budgetPercentage > 120) {
+                      issues.push('예산 초과');
+                      recommendations.push('더 경제적인 대체 식품을 고려해보세요. 편의점 도시락보다 김밥이나 삼각김밥이 예산 절약에 도움됩니다.');
+                    } else if (budgetInfo.budgetPercentage < 50) {
+                      issues.push('예산 부족');
+                      recommendations.push('현재 예산이 충분히 활용되지 않고 있습니다. 영양가 높은 식품을 추가로 선택하셔도 좋습니다.');
+                    }
+                    
+                    // 칼로리 분석
+                    if (nutritionProgress.calories.status === 'insufficient') {
+                      issues.push('칼로리 부족');
+                      recommendations.push(`현재 ${nutritionProgress.calories.percentage}%만 섭취하고 있습니다. 견과류나 과일을 간식으로 추가해보세요.`);
+                    } else if (nutritionProgress.calories.status === 'excess') {
+                      issues.push('칼로리 과다');
+                      recommendations.push('칼로리 섭취가 많습니다. 일부 식품의 양을 줄이거나 저칼로리 대안을 고려해보세요.');
+                    }
+                    
+                    // 단백질 분석
+                    if (nutritionProgress.protein.status === 'insufficient') {
+                      issues.push('단백질 부족');
+                      recommendations.push(`단백질이 목표의 ${nutritionProgress.protein.percentage}%에 불과합니다. 닭가슴살 도시락, 계란김밥, 두부 샐러드를 추가해보세요.`);
+                    }
+                    
+                    // 탄수화물 분석
+                    if (nutritionProgress.carbs.status === 'excess') {
+                      issues.push('탄수화물 과다');
+                      recommendations.push('탄수화물 섭취가 권장치를 초과했습니다. 일부 밥류 식품을 샐러드로 대체하는 것을 추천합니다.');
+                    } else if (nutritionProgress.carbs.status === 'insufficient') {
+                      issues.push('탄수화물 부족');
+                      recommendations.push('에너지원이 부족합니다. 현미밥이나 통곡물 식품을 추가해보세요.');
+                    }
+                    
+                    // 지방 분석
+                    if (nutritionProgress.fat.status === 'insufficient') {
+                      issues.push('지방 부족');
+                      recommendations.push('건강한 지방이 부족합니다. 견과류나 아보카도를 포함한 식품을 고려해보세요.');
+                    } else if (nutritionProgress.fat.status === 'excess') {
+                      issues.push('지방 과다');
+                      recommendations.push('지방 섭취가 많습니다. 튀김류보다는 구이나 찜 요리를 선택해보세요.');
+                    }
+                    
+                    // 끼니별 불균형 체크
+                    const mealCalories = {
+                      breakfast: selectedPerMeal.breakfast.reduce((sum, food) => sum + (food.calories || food.kcal || 0), 0),
+                      lunch: selectedPerMeal.lunch.reduce((sum, food) => sum + (food.calories || food.kcal || 0), 0),
+                      dinner: selectedPerMeal.dinner.reduce((sum, food) => sum + (food.calories || food.kcal || 0), 0)
+                    };
+                    
+                    const totalMealCalories = mealCalories.breakfast + mealCalories.lunch + mealCalories.dinner;
+                    if (totalMealCalories > 0) {
+                      const lunchRatio = (mealCalories.lunch / totalMealCalories) * 100;
+                      const breakfastRatio = (mealCalories.breakfast / totalMealCalories) * 100;
+                      
+                      if (lunchRatio > 60) {
+                        issues.push('끼니 불균형');
+                        recommendations.push('점심에 칼로리가 과도하게 집중되어 있습니다. 아침과 저녁에도 균형있게 배분해보세요.');
+                      } else if (breakfastRatio < 15 && mealCalories.breakfast > 0) {
+                        recommendations.push('아침 식사를 좀 더 충실하게 드시는 것이 좋겠습니다.');
+                      }
+                    }
+                    
+                    // 결과 출력
+                    if (issues.length === 0) {
+                      return (
+                        <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
+                          <p className="text-green-800 font-medium">✅ 균형잡힌 식단</p>
+                          <p className="text-green-700 text-sm mt-1">
+                            영양과 예산이 모두 적절한 식단입니다. 현재 식단을 그대로 유지하셔도 좋습니다.
+                          </p>
+                        </div>
+                      );
+                    }
+                    
+                    return (
+                      <div className="space-y-3">
+                        {recommendations.map((recommendation, index) => (
+                          <div key={index} className="p-4 bg-blue-50 border border-blue-200 rounded-lg">
+                            <p className="text-blue-800 text-sm">{recommendation}</p>
+                          </div>
+                        ))}
+                      </div>
+                    );
+                  })()}
                 </div>
-              )}
-              
-              {nutritionSummary.totalCalories < 1200 && (
-                <div className="p-4 bg-yellow-50 border border-yellow-200 rounded-lg">
-                  <h3 className="font-semibold text-yellow-800 mb-2">⚡ 칼로리 보충 제안</h3>
-                  <p className="text-yellow-700 text-sm">
-                    총 칼로리가 너무 낮습니다. 건강한 간식이나 견과류를 추가하여 영양을 보충해보세요.
-                  </p>
-                </div>
-              )}
-              
-              {!budgetInfo.isOverBudget && nutritionSummary.totalProtein >= 50 && nutritionSummary.totalCalories >= 1200 && (
-                <div className="p-4 bg-green-50 border border-green-200 rounded-lg">
-                  <h3 className="font-semibold text-green-800 mb-2">✅ 균형잡힌 식단</h3>
-                  <p className="text-green-700 text-sm">
-                    영양 균형과 예산이 잘 맞춰진 훌륭한 식단입니다! 이대로 유지하시면 좋겠습니다.
-                  </p>
-                </div>
-              )}
-            </div>
+              </div>
+            )}
           </CardContent>
         </Card>
       </div>

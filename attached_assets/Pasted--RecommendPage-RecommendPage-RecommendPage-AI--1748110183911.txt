@@ -1,0 +1,105 @@
+📌 RecommendPage 컴포넌트 중심 설계도
+🔹 RecommendPage 주요 구성 요소:
+RecommendPage는 AI가 추천한 음식 리스트를 보여주고, 각 음식에 대한 상세 정보를 확인할 수 있게 하며, 사용자가 음식을 선택한 뒤 다음 단계(MealConfigPage)로 진행할 수 있도록 합니다.
+
+이 페이지는 크게 다음과 같은 구성 요소로 이루어집니다:
+
+MealTypeTabs (끼니별 탭 선택: Breakfast, Lunch, Dinner)
+
+FoodCardList (선택된 끼니별 추천 음식 목록)
+
+FoodCard (각 음식 항목의 간략 정보 카드)
+
+FoodDetailModal (음식 상세 정보 표시 및 선택 버튼 포함 모달)
+
+RetryButton (추천 결과 재요청 버튼)
+
+NextStepButton (식단 구성을 완료하고 다음 페이지로 이동 버튼)
+
+AllergyBadge (알레르기 포함 음식 경고 배지)
+
+🔹 React 컴포넌트 명칭 및 역할 정의:
+컴포넌트명	설명 및 역할
+RecommendPage	전체 페이지를 감싸는 최상위 부모 컴포넌트로, 페이지 상태 관리 및 전체 레이아웃 구성
+MealTypeTabs	끼니별 탭 선택 (Breakfast, Lunch, Dinner 등)으로 선택된 탭에 따라 음식 리스트 변경
+FoodCardList	선택된 탭에 해당하는 음식 리스트를 표시하는 컨테이너 컴포넌트
+FoodCard	개별 음식의 간략한 정보(이름, 칼로리, 가격, 태그)를 카드 형태로 보여주는 컴포넌트
+FoodDetailModal	FoodCard 클릭 시 열리는 모달로 상세한 음식 정보(영양 성분 등)를 보여주고 사용자가 음식을 선택할 수 있도록 하는 컴포넌트
+RetryButton	API 호출 실패 시 또는 추천 결과가 부적합할 때 다시 시도할 수 있게 하는 버튼 컴포넌트
+NextStepButton	음식을 선택 완료하고 다음 페이지로 넘어가는 버튼 컴포넌트
+AllergyBadge	사용자의 알레르기와 충돌하는 음식에 붙는 알림 배지 컴포넌트
+🔹 RecommendPage 컴포넌트 트리 구조
+RecommendPage
+├── MealTypeTabs
+├── FoodCardList
+│    └── FoodCard (multiple)
+│           └── AllergyBadge (conditional)
+├── FoodDetailModal (conditional)
+├── RetryButton (conditional)
+└── NextStepButton
+설명:
+
+RecommendPage는 전체 컨테이너 역할
+
+FoodCardList는 현재 활성화된 MealTypeTab에 따라 음식 카드를 렌더링
+
+FoodCard 클릭 시 FoodDetailModal이 렌더링되어 상세 보기 제공
+
+AllergyBadge는 알레르기 포함 음식에만 조건부로 렌더링
+
+RetryButton은 fallback이 활성화되었을 경우에만 조건부로 렌더링
+
+NextStepButton은 사용자가 음식을 하나 이상 선택해야 활성화됨
+
+🔹 Zustand 상태 연동 방식 설명
+RecommendPage는 Zustand를 이용하여 다음과 같이 상태를 관리하고 연동합니다:
+
+✅ 사용하는 Zustand 상태 구조 (예시)
+interface RecommendStore {
+  meals: FoodItem[][];
+  summary: NutritionSummary;
+  fallback: boolean;
+  selectedFoods: FoodItem[]; // 사용자가 선택한 음식
+  currentMealType: 'breakfast' | 'lunch' | 'dinner';
+  setMealType: (type: 'breakfast' | 'lunch' | 'dinner') => void;
+  selectFood: (food: FoodItem) => void;
+  removeFood: (foodId: number) => void;
+  fetchRecommendations: () => Promise<void>;
+}
+🔄 각 컴포넌트별 Zustand 상태 연결
+컴포넌트명	상태 연동 방식 설명
+RecommendPage	fallback 상태에 따라 RetryButton 표시 여부 결정
+MealTypeTabs	currentMealType 상태 관리 (setMealType 호출로 상태 변경)
+FoodCardList	meals[currentMealType] 상태에서 음식 목록 렌더링
+FoodCard	사용자의 선택 여부에 따라 스타일 및 선택상태 표시 (selectedFoods 이용)
+FoodDetailModal	선택한 음식 상세정보 표시 및 선택 시 selectFood 호출
+RetryButton	클릭 시 fetchRecommendations 호출하여 상태 재요청
+NextStepButton	최소 1개 이상 음식이 선택된 경우(selectedFoods.length > 0) 활성화
+AllergyBadge	사용자 알레르기(userInfo.allergies) 상태와 음식 성분 비교해 표시
+🔹 추천 페이지의 전체 흐름 정리
+RecommendPage가 마운트되면 Zustand에서 recommendStore.meals 데이터를 가져와 표시합니다.
+
+사용자는 MealTypeTabs를 이용하여 아침, 점심, 저녁 끼니를 선택하고, 선택된 끼니에 맞는 음식 리스트를 FoodCardList를 통해 확인합니다.
+
+사용자는 각 FoodCard를 클릭하여 FoodDetailModal에서 상세한 정보를 확인 후 음식을 선택할 수 있습니다.
+
+음식 선택 시 선택된 음식은 Zustand의 selectedFoods에 저장됩니다.
+
+AllergyBadge는 알레르기 있는 음식에 조건부로 표시되어 사용자에게 경고합니다.
+
+RetryButton은 추천 결과가 마음에 들지 않거나 fallback 상태에서 다시 API 호출이 필요할 때 사용합니다.
+
+사용자는 NextStepButton을 클릭하여 MealConfigPage로 이동합니다. (최소 한 개 이상 음식 선택 조건)
+
+🎯 요약: Zustand 상태 흐름 요약도
+graph TD
+A[Zustand: RecommendStore] --> B[RecommendPage]
+B -->|fallback 상태| C[RetryButton]
+B -->|currentMealType 상태| D[MealTypeTabs]
+B -->|meals 상태| E[FoodCardList]
+E --> F[FoodCard]
+F -->|클릭| G[FoodDetailModal]
+G -->|음식 선택| H[selectedFoods 상태 업데이트]
+H --> I[NextStepButton 활성화]
+F -->|알레르기 포함| J[AllergyBadge 표시]
+위의 구조를 따라 Replit 환경에서 RecommendPage를 명확한 컴포넌트 단위로 구성하고, Zustand 상태를 체계적으로 관리하며 구현하면, 높은 유지보수성과 확장성을 갖춘 식단 추천 페이지 개발이 가능합니다.

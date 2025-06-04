@@ -1,0 +1,146 @@
+다음은 React + Zustand 기반의 웹앱에서 4단계 페이지 흐름(MainInputPage → RecommendPage → MealConfigPage → SummaryPage)을 자세하고 명확하게 설명한 것입니다.
+
+🗂️ 전체 페이지 흐름 개요
+MainInputPage → RecommendPage → MealConfigPage → SummaryPage
+이 흐름은 사용자가 입력한 정보와 AI 기반의 식단 추천 및 사용자의 식단 조정 과정을 거쳐 최종적으로 식단을 요약하고 시각화하는 프로세스입니다.
+
+1️⃣ MainInputPage
+🔹역할:
+
+사용자로부터 필수 정보(성별, 연령, 키, 몸무게, 목표, 예산, 끼니 수, 동의 체크) 및 선택 정보(체지방률, 활동량, 알레르기)를 입력받는 최초 페이지
+
+입력값의 유효성을 검사하고, Zustand 상태로 저장
+
+백엔드 API (/api/recommend)에 사용자 정보를 전송하여 추천 식단 데이터를 요청함
+
+🔹페이지 전환 조건:
+
+모든 필수 입력값이 유효한 경우
+
+사용자가 개인정보 활용 동의(agreement)를 체크한 경우
+
+API 호출이 정상적으로 완료된 경우
+
+🔹전달되는 Zustand 상태:
+
+userInfo: {
+  gender: 'male' | 'female';
+  age: number;
+  height: number;
+  weight: number;
+  bodyFatPercent?: number;
+  goal: 'weight-loss' | 'muscle-gain';
+  activityLevel?: 'low' | 'medium' | 'high';
+  mealCount: 2 | 3;
+  allergies: string[];
+  budget: number;
+  isAgreementChecked: boolean;
+}
+2️⃣ RecommendPage
+🔹역할:
+
+사용자의 입력 정보를 기반으로 API에서 전달받은 식단 추천 결과를 보여줌
+
+추천 음식은 카드 형태로 제공되며, 사용자는 음식 상세정보(영양 정보, 가격, 태그 등)를 확인하고 선택 가능
+
+사용자의 선택은 Zustand 상태로 관리되고, 다음 페이지로 전달됨
+
+🔹페이지 전환 조건:
+
+사용자가 추천 음식을 최소 1개 이상 선택하고, 최종적으로 다음 페이지로 이동을 원할 때
+
+🔹전달받는 Zustand 상태:
+
+이전 페이지에서 저장된 userInfo
+
+API로부터 받은 recommendation 결과 (meals, summary, fallback 여부)
+
+🔹추가 저장되는 상태:
+
+recommendStore: {
+  meals: FoodItem[][];
+  summary: NutritionSummary;
+  fallback: boolean;
+  selectedFoods: FoodItem[]; // 사용자 선택 음식
+}
+3️⃣ MealConfigPage
+🔹역할:
+
+RecommendPage에서 선택된 음식들을 기반으로 아침, 점심, 저녁 식단을 구성하고 조정할 수 있게 하는 페이지
+
+끼니별 음식의 추가/삭제/변경이 가능하며, 예산 및 영양소를 실시간으로 검증하여 사용자에게 피드백을 제공
+
+끼니별로 최적의 식단을 구성하고 Zustand에 저장하여 다음 페이지로 전달
+
+🔹페이지 전환 조건:
+
+사용자가 각 끼니의 음식 구성을 완료하고, 예산/영양소 검증이 통과된 상태에서 다음 단계로 이동을 선택한 경우
+
+🔹전달받는 Zustand 상태:
+
+이전 페이지에서 저장된 recommendStore (선택된 음식 정보, 추천 음식 배열)
+
+🔹추가 저장되는 상태:
+
+mealConfigStore: {
+  meals: {
+    breakfast: FoodItem[];
+    lunch: FoodItem[];
+    dinner: FoodItem[];
+  };
+  nutritionSummary: NutritionSummary; // 실시간 검증 후 갱신
+  budgetUsed: number; // 사용된 총 예산
+  validationStatus: {
+    budgetExceeded: boolean;
+    nutritionMismatch: boolean;
+    hasAllergies: boolean;
+  };
+}
+4️⃣ SummaryPage
+🔹역할:
+
+MealConfigPage에서 최종적으로 구성된 식단을 시각적으로 요약하고 분석
+
+영양소 분석 차트, 예산 소비 현황, 알레르기 경고 등을 명확히 표시하여 사용자에게 최종 확인과 공유·저장 기능 제공
+
+Zustand에서 관리된 최종 식단 정보를 표시 및 내보내기 기능 제공
+
+🔹페이지 전환 조건:
+
+사용자가 MealConfigPage에서 최종 식단을 확정한 경우 자동 이동
+
+사용자는 이 페이지에서 처음부터 다시 시작하거나, 식단을 저장 및 공유 가능
+
+🔹전달받는 Zustand 상태:
+
+최종적으로 확정된 mealConfigStore 정보 (최종 식단 구성과 영양, 예산 정보)
+
+🔄 Zustand 상태 흐름도 요약
+graph TD
+  subgraph Zustand Stores
+    A[userInfo] --> B[recommendStore]
+    B --> C[mealConfigStore]
+    C --> D[SummaryPage에서 최종 활용]
+  end
+
+  subgraph Pages
+    E[MainInputPage: 사용자 입력 저장] -->|API 호출| F[RecommendPage: 추천 음식 선택]
+    F --> G[MealConfigPage: 식단 구성 최종화]
+    G --> H[SummaryPage: 식단 요약·공유]
+  end
+
+  E --> A
+  F --> B
+  G --> C
+  D --> H
+설명:
+
+MainInputPage → RecommendPage:
+사용자 입력(userInfo)을 API에 전달하여 추천 식단 데이터를 받아 Zustand의 recommendStore에 저장 후 RecommendPage에서 사용
+
+RecommendPage → MealConfigPage:
+사용자가 선택한 추천 음식을 바탕으로 Zustand의 mealConfigStore에 저장하여 끼니별 구성과 실시간 검증 진행
+
+MealConfigPage → SummaryPage:
+최종 구성된 식단 정보를 SummaryPage에서 사용하여 시각화 및 공유 가능하게 함
+

@@ -1,0 +1,185 @@
+이 코드는 React 앱의 실제 API 없이 개발 및 테스트를 진행할 때 유용합니다.
+
+🚀 파일 경로: src/api/mockRecommend.ts
+// src/api/mockRecommend.ts
+
+import { UserInfo } from '../stores/useUserInfoStore';
+
+// 음식 아이템 타입 정의
+interface FoodItem {
+  foodId: number;
+  name: string;
+  kcal: number;
+  protein: number;
+  fat: number;
+  carbs: number;
+  price: number;
+  tags: string[];
+}
+
+// 영양 요약 타입 정의
+interface NutritionSummary {
+  calories: {
+    target: number;
+    actual: number;
+  };
+  protein: {
+    target: number;
+    actual: number;
+  };
+  fat: {
+    target: number;
+    actual: number;
+  };
+  carbs: {
+    target: number;
+    actual: number;
+  };
+  budget: {
+    target: number;
+    actual: number;
+  };
+  allergy: boolean;
+}
+
+// Recommend 응답 타입 정의
+interface RecommendResponse {
+  meals: FoodItem[][];
+  summary: NutritionSummary;
+  fallback: boolean;
+}
+
+// Mock 음식 데이터 샘플 (임의로 구성)
+const mockFoods: FoodItem[] = [
+  {
+    foodId: 1,
+    name: 'Grilled Chicken Salad',
+    kcal: 350,
+    protein: 30,
+    fat: 15,
+    carbs: 20,
+    price: 7000,
+    tags: ['healthy', 'high-protein'],
+  },
+  {
+    foodId: 2,
+    name: 'Oatmeal with Fruits',
+    kcal: 250,
+    protein: 10,
+    fat: 5,
+    carbs: 45,
+    price: 5000,
+    tags: ['healthy', 'fiber-rich'],
+  },
+  {
+    foodId: 3,
+    name: 'Beef Steak',
+    kcal: 500,
+    protein: 40,
+    fat: 30,
+    carbs: 10,
+    price: 12000,
+    tags: ['high-protein'],
+  },
+  {
+    foodId: 4,
+    name: 'Avocado Toast',
+    kcal: 300,
+    protein: 8,
+    fat: 15,
+    carbs: 35,
+    price: 6000,
+    tags: ['healthy', 'vegetarian'],
+  },
+  {
+    foodId: 5,
+    name: 'Protein Smoothie',
+    kcal: 200,
+    protein: 25,
+    fat: 2,
+    carbs: 20,
+    price: 4000,
+    tags: ['healthy', 'quick'],
+  },
+];
+
+// Mock 추천 API 함수
+export const mockRecommend = async (
+  userInfo: UserInfo,
+): Promise<RecommendResponse> => {
+  // 단순 모의 계산: 각 끼니에 음식 무작위 배정
+  const meals: FoodItem[][] = [];
+  for (let i = 0; i < userInfo.mealCount; i++) {
+    meals.push([mockFoods[i % mockFoods.length]]);
+  }
+
+  // 실제 계산된 영양소 합산 (간단한 더미 계산)
+  const actualCalories = meals.flat().reduce((sum, food) => sum + food.kcal, 0);
+  const actualProtein = meals.flat().reduce((sum, food) => sum + food.protein, 0);
+  const actualFat = meals.flat().reduce((sum, food) => sum + food.fat, 0);
+  const actualCarbs = meals.flat().reduce((sum, food) => sum + food.carbs, 0);
+  const actualBudget = meals.flat().reduce((sum, food) => sum + food.price, 0);
+
+  // 사용자 정보로부터 목표 영양소 간단히 설정 (실제 구현 시 고도화 필요)
+  const targetCalories = userInfo.goal === 'weight-loss' ? 1500 : 2200;
+  const targetProtein = userInfo.weight * (userInfo.goal === 'muscle-gain' ? 2 : 1.5);
+  const targetFat = (targetCalories * 0.25) / 9;
+  const targetCarbs = (targetCalories * 0.5) / 4;
+
+  // 알러지 포함 여부 간단 처리 (모의)
+  const hasAllergyConflict = meals.flat().some(food =>
+    userInfo.allergies.some(allergy => food.name.toLowerCase().includes(allergy.toLowerCase())),
+  );
+
+  // fallback 여부 설정 (예산 초과 등 간단 조건으로 모의 설정)
+  const fallback = actualBudget > userInfo.budget;
+
+  const summary: NutritionSummary = {
+    calories: { target: targetCalories, actual: actualCalories },
+    protein: { target: targetProtein, actual: actualProtein },
+    fat: { target: targetFat, actual: actualFat },
+    carbs: { target: targetCarbs, actual: actualCarbs },
+    budget: { target: userInfo.budget, actual: actualBudget },
+    allergy: hasAllergyConflict,
+  };
+
+  // 지연 시간 시뮬레이션 (실제 API 호출 느낌을 주기 위해)
+  await new Promise(resolve => setTimeout(resolve, 500));
+
+  return {
+    meals,
+    summary,
+    fallback,
+  };
+};
+🚀 사용 예시 (React 컴포넌트에서 사용)
+import React, { useEffect } from 'react';
+import { mockRecommend } from '../api/mockRecommend';
+import { useUserInfoStore } from '../stores/useUserInfoStore';
+
+const RecommendTest: React.FC = () => {
+  const userInfo = useUserInfoStore(state => state.userInfo);
+
+  useEffect(() => {
+    const fetchRecommendations = async () => {
+      if (!userInfo) return;
+
+      const response = await mockRecommend(userInfo);
+      console.log('Mock Recommendations:', response);
+    };
+
+    fetchRecommendations();
+  }, [userInfo]);
+
+  return <div>Check console for mock recommendation results.</div>;
+};
+
+export default RecommendTest;
+📌 코드 특징 및 용도
+로컬 환경에서 API 없이 식단 추천 기능을 모의 테스트 가능
+
+Zustand 상태와 같은 UserInfo 타입 기반으로 입력 처리
+
+실제 API 호출과 유사한 지연 시간 및 응답 구조 제공
+
+개발 초기 단계에서 UI 및 로직 테스트에 이상적입니다.

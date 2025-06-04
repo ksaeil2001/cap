@@ -1,0 +1,198 @@
+다음은 React + TypeScript + Zustand 기반의 AI 식단 추천 웹앱을 위한 SummaryPage.tsx의 완전한 구현 코드입니다.
+
+이 페이지는 최종 식단 구성을 시각적으로 분석 및 요약하고, 사용자가 결과를 확인하고 저장하거나 공유할 수 있는 기능을 제공합니다.
+
+✅ 구성 요소:
+
+Zustand 상태 연동 (useMealConfigStore)
+
+시각적 요약 (Nutrition Chart, Budget Gauge, Allergy Warning)
+
+식단 상세 목록 (끼니별 음식 리스트)
+
+저장/공유 기능 (LocalStorage, Clipboard 복사)
+
+버튼 동작 (초기화, 공유 링크 복사)
+
+반응형 및 모바일 대응 간단 스타일링
+
+Chart.js 라이브러리 활용한 차트 시각화
+
+🚀 Zustand Store (useSummaryStore.ts)
+경로: src/stores/useSummaryStore.ts
+
+import { create } from 'zustand';
+import { FoodItem } from './useRecommendStore';
+
+export interface NutritionSummary {
+  calories: number;
+  protein: number;
+  fat: number;
+  carbs: number;
+}
+
+interface SummaryStore {
+  finalMeals: {
+    breakfast: FoodItem[];
+    lunch: FoodItem[];
+    dinner: FoodItem[];
+  };
+  nutritionSummary: NutritionSummary;
+  budgetUsed: number;
+  budgetTotal: number;
+  allergyWarning: boolean;
+  setSummaryData: (data: Omit<SummaryStore, 'setSummaryData' | 'reset'>) => void;
+  reset: () => void;
+}
+
+export const useSummaryStore = create<SummaryStore>((set) => ({
+  finalMeals: { breakfast: [], lunch: [], dinner: [] },
+  nutritionSummary: { calories: 0, protein: 0, fat: 0, carbs: 0 },
+  budgetUsed: 0,
+  budgetTotal: 0,
+  allergyWarning: false,
+
+  setSummaryData: (data) => set(data),
+  reset: () =>
+    set({
+      finalMeals: { breakfast: [], lunch: [], dinner: [] },
+      nutritionSummary: { calories: 0, protein: 0, fat: 0, carbs: 0 },
+      budgetUsed: 0,
+      budgetTotal: 0,
+      allergyWarning: false,
+    }),
+}));
+📘 SummaryPage.tsx 전체 구현 코드
+경로: src/pages/SummaryPage.tsx
+
+import React, { useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useMealConfigStore } from '../stores/useMealConfigStore';
+import { useUserInfoStore } from '../stores/useUserInfoStore';
+import { useSummaryStore } from '../stores/useSummaryStore';
+import { Doughnut } from 'react-chartjs-2';
+import 'chart.js/auto';
+
+const SummaryPage: React.FC = () => {
+  const navigate = useNavigate();
+
+  const { meals } = useMealConfigStore();
+  const { budget, allergies, mealCount } = useUserInfoStore((state) => state.userInfo!);
+  const { nutritionSummary, budgetUsed, allergyWarning, setSummaryData, reset } = useSummaryStore();
+
+  // 영양소 및 예산 계산 로직
+  useEffect(() => {
+    const allFoods = Object.values(meals).flat();
+
+    const nutrition = {
+      calories: allFoods.reduce((sum, f) => sum + f.kcal, 0),
+      protein: allFoods.reduce((sum, f) => sum + f.protein, 0),
+      fat: allFoods.reduce((sum, f) => sum + f.fat, 0),
+      carbs: allFoods.reduce((sum, f) => sum + f.carbs, 0),
+    };
+
+    const budgetSum = allFoods.reduce((sum, f) => sum + f.price, 0);
+    const allergyConflict = allFoods.some((food) =>
+      allergies.some((allergy) => food.name.toLowerCase().includes(allergy.toLowerCase())),
+    );
+
+    setSummaryData({
+      finalMeals: meals,
+      nutritionSummary: nutrition,
+      budgetUsed: budgetSum,
+      budgetTotal: budget,
+      allergyWarning: allergyConflict,
+    });
+  }, [meals, allergies, budget, setSummaryData]);
+
+  const handleExport = () => {
+    const summaryData = {
+      meals,
+      nutritionSummary,
+      budgetUsed,
+      budgetTotal: budget,
+      allergyWarning,
+    };
+    localStorage.setItem('mealSummary', JSON.stringify(summaryData));
+    navigator.clipboard.writeText(JSON.stringify(summaryData));
+    alert('Meal summary copied to clipboard and saved locally!');
+  };
+
+  const handleRestart = () => {
+    reset();
+    navigate('/');
+  };
+
+  return (
+    <div style={{ padding: 20, maxWidth: 700, margin: 'auto' }}>
+      <h2>Final Meal Summary</h2>
+
+      <section style={{ marginBottom: 30 }}>
+        <h3>Nutrition Overview</h3>
+        <Doughnut
+          data={{
+            labels: ['Protein (g)', 'Carbs (g)', 'Fat (g)'],
+            datasets: [
+              {
+                data: [nutritionSummary.protein, nutritionSummary.carbs, nutritionSummary.fat],
+                backgroundColor: ['#36A2EB', '#FFCE56', '#FF6384'],
+              },
+            ],
+          }}
+        />
+        <p>Total Calories: {nutritionSummary.calories} kcal</p>
+      </section>
+
+      <section style={{ marginBottom: 30 }}>
+        <h3>Budget Overview</h3>
+        <p>
+          Budget Used: ₩{budgetUsed} / ₩{budget} {' '}
+          {budgetUsed <= budget ? '✅' : '⚠️ Budget Exceeded!'}
+        </p>
+      </section>
+
+      {allergyWarning && (
+        <section style={{ color: 'red', marginBottom: 30 }}>
+          ⚠️ Your meal contains allergens! Please review carefully.
+        </section>
+      )}
+
+      <section>
+        <h3>Meal Details</h3>
+        {(['breakfast', 'lunch', 'dinner'] as const).slice(0, mealCount).map((mealType) => (
+          <div key={mealType}>
+            <h4>{mealType.toUpperCase()}</h4>
+            <ul>
+              {meals[mealType].map((food) => (
+                <li key={food.foodId}>
+                  {food.name}: {food.kcal} kcal, {food.protein}g protein, ₩{food.price}
+                  <br />
+                  <small>Tags: {food.tags.join(', ')}</small>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ))}
+      </section>
+
+      <div style={{ marginTop: 30 }}>
+        <button onClick={handleRestart}>🔄 Start Over</button>
+        <button onClick={handleExport} style={{ marginLeft: 10 }}>
+          📋 Export / Copy Summary
+        </button>
+      </div>
+    </div>
+  );
+};
+
+export default SummaryPage;
+🧑‍💻 구현 포인트 요약
+Zustand 상태 관리: 식단, 영양소 및 예산, 알레르기 상태는 Zustand로 일관성 있게 관리됩니다.
+
+시각적 요약: chart.js + react-chartjs-2를 사용하여 영양소 분포를 도넛 차트로 시각화합니다.
+
+알레르기 및 예산 초과 경고: 조건부 렌더링으로 알림 메시지 명확히 제공
+
+저장 및 공유: localStorage에 저장하고, JSON 형식으로 클립보드 복사 기능 제공
+
+버튼 동작 명확화: 상태 초기화 후 다시 입력 페이지로 이동 가능, 간편한 내보내기 기능 포함

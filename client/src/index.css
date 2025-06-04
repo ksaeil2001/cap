@@ -1,0 +1,122 @@
+@import url('https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&family=Open+Sans:wght@400;500;600&display=swap');
+@import url('https://cdn.jsdelivr.net/npm/remixicon@3.5.0/fonts/remixicon.css');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 210 11% 98%; /* #F5F7FA */
+  --foreground: 210 30% 16%; /* #1F2933 */
+  
+  --muted: 220 14% 96%;
+  --muted-foreground: 220 8% 46%;
+  
+  --popover: 0 0% 100%;
+  --popover-foreground: 210 30% 16%;
+  
+  --card: 0 0% 100%;
+  --card-foreground: 210 30% 16%;
+  
+  --border: 220 13% 91%;
+  --input: 220 13% 91%;
+  
+  /* Primary - Green color from the design */
+  --primary: 120 40% 50%; /* #4CAF50 */
+  --primary-foreground: 0 0% 100%;
+  
+  /* Secondary - Blue color from the design */
+  --secondary: 210 90% 54%; /* #2196F3 */
+  --secondary-foreground: 0 0% 100%;
+  
+  /* Accent - Orange color from the design */
+  --accent: 36 100% 50%; /* #FF9800 */
+  --accent-foreground: 210 30% 16%;
+  
+  --destructive: 0 84% 60%;
+  --destructive-foreground: 0 0% 98%;
+  
+  --ring: 120 40% 50%;
+  
+  --radius: 0.5rem;
+
+  /* Chart colors */
+  --chart-1: 120 40% 50%;
+  --chart-2: 210 90% 54%;
+  --chart-3: 36 100% 50%;
+  --chart-4: 0 84% 60%;
+  --chart-5: 270 60% 50%;
+
+  /* Sidebar colors */
+  --sidebar-background: 220 26% 14%;
+  --sidebar-foreground: 210 40% 98%;
+  --sidebar-primary: 120 40% 50%;
+  --sidebar-primary-foreground: 0 0% 100%;
+  --sidebar-accent: 36 100% 50%;
+  --sidebar-accent-foreground: 210 30% 16%;
+  --sidebar-border: 215 28% 17%;
+  --sidebar-ring: 120 40% 50%;
+}
+
+.dark {
+  --background: 210 30% 8%;
+  --foreground: 0 0% 98%;
+  
+  --muted: 217 19% 27%;
+  --muted-foreground: 215 20% 65%;
+  
+  --popover: 210 30% 8%;
+  --popover-foreground: 0 0% 98%;
+  
+  --card: 210 30% 8%;
+  --card-foreground: 0 0% 98%;
+  
+  --border: 217 19% 27%;
+  --input: 217 19% 27%;
+  
+  --primary: 120 40% 50%;
+  --primary-foreground: 0 0% 100%;
+  
+  --secondary: 210 90% 54%;
+  --secondary-foreground: 0 0% 100%;
+  
+  --accent: 36 100% 50%;
+  --accent-foreground: 210 30% 16%;
+  
+  --destructive: 0 62% 30%;
+  --destructive-foreground: 0 0% 98%;
+  
+  --ring: 120 40% 50%;
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground;
+    font-family: 'Open Sans', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Montserrat', sans-serif;
+  }
+}
+
+@layer components {
+  .meal-slot {
+    min-height: 80px;
+    border: 2px dashed hsl(var(--border));
+    border-radius: 0.5rem;
+  }
+
+  .meal-slot.filled {
+    border: 2px solid hsl(120, 40%, 70%);
+    background-color: hsl(120, 70%, 95%);
+  }
+
+  .draggable-meal {
+    cursor: move;
+  }
+}

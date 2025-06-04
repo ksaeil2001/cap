@@ -1,0 +1,215 @@
+다음은 요구사항을 기반으로 완성한 MainInputPage.tsx 컴포넌트의 전체 코드입니다.
+
+이 코드는 React + TypeScript + Zustand + Axios + React Router DOM 스택으로 작성되었으며, 사용자 입력을 Zustand로 관리하고, API 호출 후 RecommendPage로 이동합니다.
+
+✅ MainInputPage.tsx 전체 구현
+경로: src/pages/MainInputPage.tsx
+
+import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
+import { useUserStore } from '../stores/useUserStore';
+
+const allergiesOptions = [
+  'Eggs', 'Milk', 'Peanuts', 'Fish', 'Shellfish', 'Soy', 'Wheat',
+];
+
+const MainInputPage: React.FC = () => {
+  const navigate = useNavigate();
+  const setUserInfo = useUserStore((state) => state.setUserInfo);
+
+  const [form, setForm] = useState({
+    gender: 'male',
+    age: '',
+    height: '',
+    weight: '',
+    bodyFatPercent: '',
+    goal: 'weight-loss',
+    activityLevel: '',
+    budget: '',
+    mealCount: '3',
+    allergies: [] as string[],
+    agreement: false,
+  });
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
+    const { name, value, type, checked } = e.target as HTMLInputElement;
+    if (type === 'checkbox' && name === 'agreement') {
+      setForm((prev) => ({ ...prev, agreement: checked }));
+    } else {
+      setForm((prev) => ({ ...prev, [name]: value }));
+    }
+  };
+
+  const handleAllergiesChange = (allergy: string) => {
+    setForm((prev) => {
+      const isSelected = prev.allergies.includes(allergy);
+      if (isSelected) {
+        return { ...prev, allergies: prev.allergies.filter(a => a !== allergy) };
+      } else if (prev.allergies.length < 5) {
+        return { ...prev, allergies: [...prev.allergies, allergy] };
+      }
+      return prev; // 최대 5개까지만 선택 허용
+    });
+  };
+
+  const validateForm = () => {
+    const { age, height, weight, budget, agreement } = form;
+    if (
+      !age || Number(age) < 10 || Number(age) > 120 ||
+      !height || Number(height) < 100 || Number(height) > 250 ||
+      !weight || Number(weight) < 30 || Number(weight) > 200 ||
+      !budget || Number(budget) <= 0 ||
+      !agreement
+    ) {
+      alert('Please fill out all required fields correctly.');
+      return false;
+    }
+    return true;
+  };
+
+  const handleSubmit = async () => {
+    if (!validateForm()) return;
+
+    const userInfo = {
+      gender: form.gender as 'male' | 'female',
+      age: Number(form.age),
+      height: Number(form.height),
+      weight: Number(form.weight),
+      bodyFatPercent: form.bodyFatPercent ? Number(form.bodyFatPercent) : undefined,
+      goal: form.goal as 'weight-loss' | 'muscle-gain',
+      activityLevel: form.activityLevel || undefined,
+      budget: Number(form.budget),
+      mealCount: Number(form.mealCount),
+      allergies: form.allergies,
+    };
+
+    setUserInfo(userInfo);
+
+    try {
+      await axios.post('/api/recommend', userInfo);
+      navigate('/recommend');
+    } catch (error) {
+      alert('Error occurred while fetching recommendations.');
+      console.error(error);
+    }
+  };
+
+  return (
+    <div className="container">
+      <h2>Personalized Meal Planner</h2>
+
+      <label>Gender (required)</label>
+      <select name="gender" value={form.gender} onChange={handleChange}>
+        <option value="male">Male</option>
+        <option value="female">Female</option>
+      </select>
+
+      <label>Age (required, 10-120)</label>
+      <input type="number" name="age" value={form.age} onChange={handleChange} />
+
+      <label>Height (cm, required, 100-250)</label>
+      <input type="number" name="height" value={form.height} onChange={handleChange} />
+
+      <label>Weight (kg, required, 30-200)</label>
+      <input type="number" name="weight" value={form.weight} onChange={handleChange} />
+
+      <label>Body Fat Percent (%) (optional)</label>
+      <input type="number" name="bodyFatPercent" value={form.bodyFatPercent} onChange={handleChange} />
+
+      <label>Health Goal (required)</label>
+      <select name="goal" value={form.goal} onChange={handleChange}>
+        <option value="weight-loss">Weight Loss</option>
+        <option value="muscle-gain">Muscle Gain</option>
+      </select>
+
+      <label>Activity Level (optional)</label>
+      <select name="activityLevel" value={form.activityLevel} onChange={handleChange}>
+        <option value="">Select Activity Level</option>
+        <option value="low">Low</option>
+        <option value="medium">Medium</option>
+        <option value="high">High</option>
+      </select>
+
+      <label>Daily Budget (KRW, required)</label>
+      <input type="number" name="budget" value={form.budget} onChange={handleChange} />
+
+      <label>Meals per day (required)</label>
+      <select name="mealCount" value={form.mealCount} onChange={handleChange}>
+        <option value="2">2 meals</option>
+        <option value="3">3 meals</option>
+      </select>
+
+      <label>Allergies (optional, max 5)</label>
+      <div>
+        {allergiesOptions.map((allergy) => (
+          <label key={allergy}>
+            <input
+              type="checkbox"
+              checked={form.allergies.includes(allergy)}
+              onChange={() => handleAllergiesChange(allergy)}
+            />
+            {allergy}
+          </label>
+        ))}
+      </div>
+
+      <label>
+        <input type="checkbox" name="agreement" checked={form.agreement} onChange={handleChange} />
+        I agree to provide my data (required)
+      </label>
+
+      <button onClick={handleSubmit}>Next</button>
+    </div>
+  );
+};
+
+export default MainInputPage;
+🗂️ Zustand Store 정의 (useUserStore.ts)
+경로: src/stores/useUserStore.ts
+
+import { create } from 'zustand';
+
+interface UserInfo {
+  gender: 'male' | 'female';
+  age: number;
+  height: number;
+  weight: number;
+  bodyFatPercent?: number;
+  goal: 'weight-loss' | 'muscle-gain';
+  activityLevel?: 'low' | 'medium' | 'high';
+  budget: number;
+  mealCount: number;
+  allergies: string[];
+}
+
+interface UserStore {
+  userInfo: UserInfo | null;
+  setUserInfo: (info: UserInfo) => void;
+}
+
+export const useUserStore = create<UserStore>((set) => ({
+  userInfo: null,
+  setUserInfo: (info) => set({ userInfo: info }),
+}));
+⚙️ 라우터 설정 (App.tsx 내에 포함할 설정 예시)
+import { Routes, Route } from 'react-router-dom';
+import MainInputPage from './pages/MainInputPage';
+import RecommendPage from './pages/RecommendPage';
+
+function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<MainInputPage />} />
+      <Route path="/recommend" element={<RecommendPage />} />
+    </Routes>
+  );
+}
+
+export default App;
+📌 구현 참고사항 및 베스트 프랙티스
+Axios의 기본 URL은 실제 백엔드 배포 시 환경변수로 관리하는 것이 좋습니다.
+
+각 컴포넌트와 입력 필드는 실제 UI 요구에 맞게 CSS 등 스타일링을 추가적으로 설정하면 더욱 완성도 높은 앱이 됩니다.
+
+위의 코드 구현으로 완벽한 상태 관리 및 검증, API 연동 및 라우팅이 가능한 MainInputPage가 완성됩니다.
